@@ -1,0 +1,27 @@
+@import "tailwindcss";
+@plugin "daisyui" {
+  themes: light, dark;
+}
+
+@theme {
+  --color-primary: #3885f8;
+  --color-primary-content: #ffffff;
+}
+
+:root, [data-theme="light"], [data-theme="dark"] {
+  --color-primary: #3885f8 !important;
+  --color-primary-content: #ffffff !important;
+
+  --p: 61% 0.17 260 !important;
+  --pc: 100% 0 0 !important;
+}
+
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
