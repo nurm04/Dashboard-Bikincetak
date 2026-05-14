@@ -64,7 +64,7 @@ const doDelete = () => {
             <div class="mx-auto max-w-7xl">
 
                 <div class="flex flex-col gap-4 mb-8 md:flex-row md:items-center md:justify-between">
-                    <CustomButton type="link" :href="route('kategori.create')" variant="primary" class="px-6 py-2 rounded-xl">
+                    <CustomButton v-if="$can('kategori', 'tambah')" type="link" :href="route('kategori.create')" variant="primary" class="px-6 py-2 rounded-xl">
                         <template #icon>
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
                         </template>
@@ -78,10 +78,10 @@ const doDelete = () => {
                         <td class="px-6 py-4 font-bold text-base-content">{{ item.nama_kategori }}</td>
                         <td>
                             <div class="flex space-x-2">
-                                <CustomButton type="link" :href="route('kategori.edit', item.id_kategori || item.id)" variant="info" size="sm">
+                                <CustomButton v-if="$can('kategori', 'ubah')" type="link" :href="route('kategori.edit', item.id_kategori || item.id)" variant="info" size="sm">
                                     Edit
                                 </CustomButton>
-                                <CustomButton @click="openDeleteModal(item.id_kategori)" variant="error" size="sm">
+                                <CustomButton v-if="$can('kategori', 'hapus')" @click="openDeleteModal(item.id_kategori)" variant="error" size="sm">
                                     Hapus
                                 </CustomButton>
                             </div>

@@ -12,7 +12,8 @@ const props = defineProps({ produk: Object });
 const form = useForm({
     skus: props.produk.produk_sku?.map(s => ({
         nama_sku: s.nama_sku,
-        harga_jasa: s.harga_jasa,
+        minimum_pesan: s.minimum_pesan,
+        harga: s.harga,
         pilihan_ids: s.sku_detail_pilihan?.map(d => d.id_pilihan) || []
     })) || []
 });
@@ -53,7 +54,7 @@ const addManualSku = () => {
     const namaSku = `${props.produk.id_produk}-${props.produk.nama_produk}-${names.join('-')}`;
     if (form.skus.find(s => s.nama_sku === namaSku)) return alert('Kombinasi ini sudah ada!');
 
-    form.skus.push({ nama_sku: namaSku, harga_jasa: 0, pilihan_ids: ids });
+    form.skus.push({ nama_sku: namaSku, minimum_pesan: 1, harga: 0, pilihan_ids: ids });
 };
 
 const generateAllCombinations = () => {
@@ -65,7 +66,8 @@ const generateAllCombinations = () => {
         if (index === keys.length) {
             combinations.push({
                 nama_sku: `${props.produk.id_produk}-${props.produk.nama_produk}-${currentNames.join('-')}`,
-                harga_jasa: 0,
+                minimum_pesan: 1,
+                harga: 0,
                 pilihan_ids: [...currentIds]
             });
             return;
@@ -150,22 +152,25 @@ const submit = () => {
                     <div class="p-8 border rounded-lg shadow-xl bg-base-100 border-base-300">
                         <div class="flex items-center justify-between mb-8">
                             <div>
-                                <h2 class="text-xl font-bold tracking-tighter uppercase">Setting Harga SKU</h2>
+                                <h2 class="text-xl font-bold tracking-tighter uppercase">Setting SKU</h2>
                                 <p class="text-[10px] font-medium opacity-50 tracking-widest uppercase">{{ produk.nama_produk }}</p>
                             </div>
                             <CustomButton @click="clearTable" variant="error" size="xs" outline>Kosongkan Tabel</CustomButton>
                         </div>
 
-                        <CustomTableForm v-model="form.skus" :headers="['Kombinasi Produk', 'Harga Jasa']" :can-add="false">
+                        <CustomTableForm v-model="form.skus" :headers="['Kombinasi Produk', 'Minimum Pesan', 'Harga']" :can-add="false">
                             <template #row="{ row, index }">
                                 <td class="w-2/3 px-4 py-4">
-                                    <div class="text-[10px] font-black text-primary break-words uppercase">{{ row.nama_sku }}</div>
+                                    <div class="text-[10px] font-black text-primary wrap-break-word uppercase">{{ row.nama_sku }}</div>
                                     <div class="flex flex-wrap gap-1 mt-1">
                                         <span v-for="id in row.pilihan_ids" :key="id" class="px-1.5 py-0.5 bg-base-200 text-[8px] rounded font-bold opacity-50">{{ id }}</span>
                                     </div>
                                 </td>
-                                <td class="px-4 py-4 min-w-[180px]">
-                                    <CustomInputNumber v-model="form.skus[index].harga_jasa" :min="0" prefix="IDR" />
+                                <td class="px-4 py-4 min-w-37.5">
+                                    <CustomInputNumber v-model="form.skus[index].minimum_pesan" :min="1" />
+                                </td>
+                                <td class="px-4 py-4 min-w-45">
+                                    <CustomInputNumber v-model="form.skus[index].harga" :min="0" prefix="Rp" />
                                 </td>
                             </template>
                         </CustomTableForm>

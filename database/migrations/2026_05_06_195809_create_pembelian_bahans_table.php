@@ -16,6 +16,8 @@ return new class extends Migration
             $table->dateTime('tanggal_beli');
             $table->string('nama_supplier');
             $table->float('total_biaya');
+            $table->string('id_staf');
+            $table->foreign('id_staf')->references('id_staf')->on('staf');
             $table->timestamps();
         });
     }

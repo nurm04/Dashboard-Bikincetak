@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Finishing;
 use App\Models\ProdukSku;
 use App\Models\RoleCustomer;
 use App\Models\SkuDetailPilihan;
@@ -30,7 +31,8 @@ class ProdukSkuController extends Controller
                         'id_sku' => $skuId,
                         'id_produk' => $id_produk,
                         'nama_sku' => $data['nama_sku'],
-                        'harga_jasa' => $data['harga_jasa']
+                        'minimum_pesan' => $data['minimum_pesan'],
+                        'harga' => $data['harga']
                     ]);
 
                     foreach ($data['pilihan_ids'] as $id_pilihan) {
@@ -48,6 +50,17 @@ class ProdukSkuController extends Controller
             DB::rollBack();
             return redirect()->back()->with('error', $e->getMessage());
         }
+    }
+
+    public function finishing($id_sku)
+    {
+        $sku = ProdukSku::with(['produk', 'skuFinishing.pilihanFinishing'])->findOrFail($id_sku);
+        $finishings = Finishing::with('pilihanFinishing')->get();
+
+        return Inertia::render('Produk/FormFinishing', [
+            'sku' => $sku,
+            'finishings' => $finishings,
+        ]);
     }
 
     public function hargaBertingkat($id_sku)

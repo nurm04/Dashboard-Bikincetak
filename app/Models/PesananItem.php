@@ -5,18 +5,21 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class DetailPesanan extends Model
+class PesananItem extends Model
 {
     use HasFactory;
-    protected $table = 'detail_pesanan';
+    protected $table = 'pesanan_item';
     protected $primaryKey = 'id';
     public $incrementing = true;
 
     protected $fillable = [
-        'id_sku',
         'id_pesan',
+        'id_sku',
+        'nama_produk_snapshot',
         'jumlah',
+        'harga_satuan_snapshot'
     ];
 
     protected $casts = [
@@ -24,6 +27,10 @@ class DetailPesanan extends Model
         'tanggal_selesai' => 'datetime',
     ];
 
+    public function pesananItemFinishing(): HasMany
+    {
+        return $this->hasMany(PesananItemFinishing::class, 'id_pesan_item', 'id');
+    }
     public function pesan(): BelongsTo
     {
         return $this->belongsTo(Pesan::class, 'id_pesan', 'id_pesan');

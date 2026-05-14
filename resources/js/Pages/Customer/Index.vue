@@ -61,7 +61,7 @@ const doDelete = () => {
         <div class="min-h-screen px-4 py-3 sm:px-6 lg:px-8">
             <div class="mx-auto max-w-7xl">
                 <div class="flex flex-col gap-4 mb-10 md:flex-row md:items-center md:justify-between">
-                    <CustomButton type="link" :href="route('customer.create')" variant="primary" size="md">
+                    <CustomButton v-if="$can('akun', 'tambah')" type="link" :href="route('customer.create')" variant="primary" size="md">
                         <template #icon>
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
                         </template>
@@ -84,10 +84,10 @@ const doDelete = () => {
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex justify-center space-x-2">
-                                <CustomButton type="link" :href="route('customer.edit', cust.id_customer)" variant="info" size="sm">
+                                <CustomButton v-if="$can('customer', 'ubah')" type="link" :href="route('customer.edit', cust.id_customer)" variant="info" size="sm">
                                     Edit
                                 </CustomButton>
-                                <CustomButton @click="openDeleteModal(cust.id_customer)" variant="error" size="sm">
+                                <CustomButton v-if="$can('akun', 'hapus')" @click="openDeleteModal(cust.id_customer)" variant="error" size="sm">
                                     Hapus
                                 </CustomButton>
                             </div>

@@ -48,7 +48,7 @@ const submit = () => {
                             <CustomInput
                                 v-model="form.nama_varian"
                                 label="Nama Varian"
-                                placeholder="Contoh: Bahan, Laminasi, Ukuran"
+                                placeholder="Contoh: Bahan, Ukuran"
                                 :error="form.errors.nama_varian"
                             />
                         </div>

@@ -31,9 +31,9 @@ class Pesan extends Model
         'tanggal_selesai' => 'datetime',
     ];
 
-    public function detailPesanan(): HasMany
+    public function pesananItem(): HasMany
     {
-        return $this->hasMany(DetailPesanan::class, 'id_pesan', 'id_pesan');
+        return $this->hasMany(PesananItem::class, 'id_pesan', 'id_pesan');
     }
     public function customer(): BelongsTo
     {

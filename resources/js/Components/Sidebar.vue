@@ -38,7 +38,7 @@ const toggleProductDropdown = () => {
                 Dashboard
             </Link>
 
-            <Link :href="route('akun.index')"
+            <Link v-if="$can('akun')" :href="route('akun.index')"
                 :class="[route().current('akun.*')
                     ? 'bg-primary text-white shadow-lg shadow-primary/30 translate-x-1'
                     : 'text-base-content/70 hover:bg-base-200 hover:text-base-content hover:translate-x-1']"
@@ -47,7 +47,7 @@ const toggleProductDropdown = () => {
                 Data Akun COA
             </Link>
 
-            <Link :href="route('customer.index')"
+            <Link v-if="$can('customer')" :href="route('customer.index')"
                 :class="[route().current('customer.*')
                     ? 'bg-primary text-white shadow-lg shadow-primary/30 translate-x-1'
                     : 'text-base-content/70 hover:bg-base-200 hover:text-base-content hover:translate-x-1']"
@@ -56,9 +56,18 @@ const toggleProductDropdown = () => {
                 Data Customer
             </Link>
 
-            <div class="space-y-1">
+            <Link v-if="$can('staf')" :href="route('staf.index')"
+                :class="[route().current('staf.*')
+                    ? 'bg-primary text-white shadow-lg shadow-primary/30 translate-x-1'
+                    : 'text-base-content/70 hover:bg-base-200 hover:text-base-content hover:translate-x-1']"
+                class="flex items-center px-4 py-3 text-sm font-bold transition-all duration-300 rounded-xl">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                Data Staf
+            </Link>
+
+            <div v-if="$can('kategori') || $can('produk') || $can('varian') || $can('produk-sku') || $can('finishing')" class="space-y-1">
                 <button @click="toggleProductDropdown"
-                    :class="[route().current('produk.*') || route().current('kategori.*') || route().current('varian.*') || route().current('sku.*')
+                    :class="[route().current('produk.*') || route().current('finishing.*') || route().current('kategori.*') || route().current('varian.*') || route().current('sku.*')
                         ? 'bg-primary text-white shadow-lg shadow-primary/30 translate-x-1'
                         : 'text-base-content/70 hover:bg-base-200 hover:text-base-content hover:translate-x-1']"
                     class="flex items-center justify-between w-full px-4 py-3 text-sm font-bold transition-all duration-300 rounded-xl group">
@@ -74,7 +83,7 @@ const toggleProductDropdown = () => {
                 </button>
 
                 <div v-show="isProductDropdownOpen" class="pl-2 mt-1 ml-4 space-y-2 border-l-2 border-base-300/50">
-                    <Link :href="route('kategori.index')"
+                    <Link v-if="$can('kategori')" :href="route('kategori.index')"
                         :class="[route().current('kategori.*')
                             ? 'bg-primary text-white shadow-lg shadow-primary/30 translate-x-1'
                             : 'text-base-content/60 hover:bg-base-200 hover:text-base-content hover:translate-x-1']"
@@ -82,7 +91,7 @@ const toggleProductDropdown = () => {
                         Kategori
                     </Link>
 
-                    <Link :href="route('produk.index')"
+                    <Link v-if="$can('produk')" :href="route('produk.index')"
                         :class="[route().current('produk.*') || route().current('sku.*')
                             ? 'bg-primary text-white shadow-lg shadow-primary/30 translate-x-1'
                             : 'text-base-content/60 hover:bg-base-200 hover:text-base-content hover:translate-x-1']"
@@ -90,15 +99,39 @@ const toggleProductDropdown = () => {
                         Produk
                     </Link>
 
-                    <Link :href="route('varian.index')"
+                    <Link v-if="$can('varian')" :href="route('varian.index')"
                         :class="[route().current('varian.*')
                             ? 'bg-primary text-white shadow-lg shadow-primary/30 translate-x-1'
                             : 'text-base-content/60 hover:bg-base-200 hover:text-base-content hover:translate-x-1']"
                         class="flex items-center px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-all duration-300 rounded-lg">
                         Varian
                     </Link>
+
+                    <Link v-if="$can('finishing')" :href="route('finishing.index')"
+                        :class="[route().current('finishing.*')
+                            ? 'bg-primary text-white shadow-lg shadow-primary/30 translate-x-1'
+                            : 'text-base-content/60 hover:bg-base-200 hover:text-base-content hover:translate-x-1']"
+                        class="flex items-center px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-all duration-300 rounded-lg">
+                        Finishing
+                    </Link>
                 </div>
             </div>
+            <Link v-if="$can('bahan-baku')" :href="route('bahan-baku.index')"
+                :class="[route().current('bahan-baku.*')
+                    ? 'bg-primary text-white shadow-lg shadow-primary/30 translate-x-1'
+                    : 'text-base-content/70 hover:bg-base-200 hover:text-base-content hover:translate-x-1']"
+                class="flex items-center px-4 py-3 text-sm font-bold transition-all duration-300 rounded-xl">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                Bahan Baku
+            </Link>
+            <Link v-if="$can('hak-akses')" :href="route('hak-akses.index')"
+                :class="[route().current('hak-akses.*')
+                    ? 'bg-primary text-white shadow-lg shadow-primary/30 translate-x-1'
+                    : 'text-base-content/70 hover:bg-base-200 hover:text-base-content hover:translate-x-1']"
+                class="flex items-center px-4 py-3 text-sm font-bold transition-all duration-300 rounded-xl">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                Hak Akses
+            </Link>
         </nav>
 
         <div class="p-4 border-t border-base-300 bg-base-100">

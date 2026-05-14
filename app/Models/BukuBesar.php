@@ -15,10 +15,11 @@ class BukuBesar extends Model
     protected $keyType = 'string';
     protected $fillable = [
         'id_buku_besar',
-        'tanggal_transaksi',
-        'tipe_referensi',
-        'id_referensi',
         'id_akun',
+        'tanggal_transaksi',
+        'id_referensi',
+        'tipe_referensi',
+        'keterangan',
         'debit',
         'kredit',
     ];

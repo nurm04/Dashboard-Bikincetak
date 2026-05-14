@@ -17,11 +17,11 @@ return new class extends Migration
             $table->string('id_alamat');
             $table->timestamp('tanggal_pesan')->useCurrent()->useCurrentOnUpdate();
             $table->dateTime('tanggal_selesai');
-            $table->enum('status_operasional', ['keranjang', 'menunggu_diproses', 'proses_pengerjaan', 'selesai']);
+            $table->enum('status_operasional', ['keranjang', 'menunggu_diproses', 'proses_pengerjaan', 'proses_pengantaran', 'selesai', 'batal']);
             $table->enum('status_pembayaran', ['belum_lunas', 'lunas']);
             $table->string('estimasi_pengerjaan');
-            $table->foreign('id_customer')->references('id_customer')->on('customer')->onDelete('cascade');
-            $table->foreign('id_alamat')->references('id_alamat')->on('alamat')->onDelete('cascade');
+            $table->foreign('id_customer')->references('id_customer')->on('customer');
+            $table->foreign('id_alamat')->references('id_alamat')->on('alamat');
             $table->timestamps();
         });
     }

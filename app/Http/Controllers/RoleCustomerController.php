@@ -14,7 +14,7 @@ class RoleCustomerController extends Controller
             'role' => 'required|string|max:255|unique:role_customer,role',
         ]);
 
-        $idRole = 'ROLE-' . strtoupper(Str::slug($request->role));
+        $idRole = 'ROLE-CUST-' . strtoupper(Str::slug($request->role));
 
         if (RoleCustomer::where('id_role_customer', $idRole)->exists()) {
             $idRole .= '-' . rand(100, 999);
@@ -25,6 +25,6 @@ class RoleCustomerController extends Controller
             'role' => $request->role,
         ]);
 
-        return redirect()->back()->with('success', 'Level member baru berhasil ditambahkan!');
+        return redirect()->back()->with('success', 'Level customer baru berhasil ditambahkan!');
     }
 }

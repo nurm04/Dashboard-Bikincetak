@@ -13,10 +13,11 @@ return new class extends Migration
     {
         Schema::create('buku_besar', function (Blueprint $table) {
             $table->string('id_buku_besar')->primary();
-            $table->dateTime('tanggal_transaksi');
-            $table->enum('tipe_referensi', ['pesanan', 'pembelian']);
-            $table->string('id_referensi');
             $table->string('id_akun');
+            $table->dateTime('tanggal_transaksi');
+            $table->string('id_referensi');
+            $table->enum('tipe_referensi', ['penjualan', 'pembelian']);
+            $table->text('keterangan');
             $table->float('debit')->default(0);
             $table->float('kredit')->default(0);
             $table->timestamps();

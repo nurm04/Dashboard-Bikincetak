@@ -3,7 +3,6 @@ import { ref } from 'vue';
 import StafLayout from '@/Layouts/StafLayout.vue';
 import CustomButton from '@/Components/CustomButton.vue';
 import CustomTable from '@/Components/CustomTable.vue';
-import Modal from '@/Components/Modal.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { alertStore } from '@/Utils/alertStore';
 import CustomAlertConfirm from '@/Components/CustomAlertConfirm.vue';
@@ -66,7 +65,7 @@ const doDelete = () => {
             <div class="mx-auto max-w-7xl">
 
                 <div class="flex flex-col gap-4 mb-8 md:flex-row md:items-center md:justify-between">
-                    <CustomButton type="link" :href="route('varian.create')" variant="primary">
+                    <CustomButton v-if="$can('varian', 'tambah')" type="link" :href="route('varian.create')" variant="primary">
                         <template #icon>
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path>
@@ -103,10 +102,10 @@ const doDelete = () => {
 
                         <td class="px-6 py-4">
                             <div class="flex justify-center space-x-2">
-                                <CustomButton type="link" :href="route('varian.edit', varian.id_varian)" variant="info" size="sm">
+                                <CustomButton v-if="$can('varian', 'ubah')" type="link" :href="route('varian.edit', varian.id_varian)" variant="info" size="sm">
                                     Edit
                                 </CustomButton>
-                                <CustomButton @click="openDeleteModal(varian.id_varian)" variant="error" size="sm">
+                                <CustomButton v-if="$can('varian', 'hapus')" @click="openDeleteModal(varian.id_varian)" variant="error" size="sm">
                                     Hapus
                                 </CustomButton>
                             </div>

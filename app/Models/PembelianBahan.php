@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PembelianBahan extends Model
@@ -19,6 +20,7 @@ class PembelianBahan extends Model
         'tanggal_beli',
         'nama_supplier',
         'total_biaya',
+        'id_staf',
     ];
 
     protected $casts = [
@@ -28,5 +30,10 @@ class PembelianBahan extends Model
     public function detailPembelian(): HasMany
     {
         return $this->hasMany(DetailPembelian::class, 'id_pembelian', 'id_pembelian');
+    }
+
+    public function staf(): BelongsTo
+    {
+        return $this->belongsTo(Staf::class, 'id_staf', 'id_staf');
     }
 }

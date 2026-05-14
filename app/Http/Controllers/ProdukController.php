@@ -115,6 +115,7 @@ class ProdukController extends Controller
     public function detailSku($id)
     {
         $produk = Produk::with([
+            'produkSku.skuFinishing',
             'produkSku.hargaBertingkat',
             'produkSku.hargaPengerjaan',
             'produkSku.diskonCustomer',

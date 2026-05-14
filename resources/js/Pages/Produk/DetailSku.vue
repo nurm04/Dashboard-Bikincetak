@@ -12,7 +12,7 @@ const props = defineProps({
     produk: Object,
 });
 
-const headers = ['ID SKU', 'Nama SKU', 'Daftar Harga Grosir', 'Daftar Harga Pengerjaan', 'Daftar Diskon', 'Aksi'];
+const headers = ['Nama SKU / ID SKU', 'Daftar Finishing', 'Daftar Harga Grosir', 'Daftar Harga Pengerjaan', 'Daftar Diskon', 'Aksi'];
 
 const isDeleteModalOpen = ref(false);
 const selectedId = ref(null);
@@ -66,12 +66,19 @@ const doDelete = () => {
 
                 <CustomTable :headers="headers">
                     <tr v-for="sku in props.produk.produk_sku" :key="sku.id_sku" class="transition-colors hover:bg-base-200/50">
-                        <td class="px-6 py-4 font-mono text-xs font-bold text-primary">
-                            {{ sku.id_sku }}
+                        <td class="px-6 py-4">
+                            <div class="font-bold text-base-content">{{ sku.nama_sku }}</div>
+                            <div class="text-[10px] text-primary font-medium">{{ sku.id_sku }}</div>
                         </td>
-                        <td class="px-6 py-4 font-bold text-base-content">
-                            {{ sku.nama_sku }}
+
+                        <td class="px-6 py-4">
+                            <div v-if="sku.sku_finishing?.length > 0" class="flex items-center gap-2">
+                                <span class="font-black badge badge-primary badge-sm">{{ sku.sku_finishing.length }}</span>
+                                <span class="text-[10px] font-bold uppercase opacity-50">Finishing</span>
+                            </div>
+                            <span v-else class="text-[10px] italic opacity-30">Belum diatur</span>
                         </td>
+
                         <td class="px-6 py-4">
                             <div v-if="sku.harga_bertingkat?.length > 0" class="flex items-center gap-2">
                                 <span class="font-black badge badge-primary badge-sm">{{ sku.harga_bertingkat.length }}</span>
@@ -102,24 +109,29 @@ const doDelete = () => {
                                     Menu Produk
                                 </div>
 
-                                <Link :href="route('sku.hargaBertingkat', sku.id_sku)" @click="close" class="flex items-center px-4 py-2.5 text-sm font-bold text-primary hover:bg-primary/10 transition-colors">
+                                <Link v-if="$can('produk-sku', 'tambah') && $can('produk-sku', 'ubah') && $can('produk-sku', 'hapus')" :href="route('sku.finishing', sku.id_sku)" @click="close" class="flex items-center px-4 py-2.5 text-sm font-bold text-success hover:bg-success/10 transition-colors">
+                                    <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                                    Finishing
+                                </Link>
+
+                                <Link v-if="$can('produk-sku', 'tambah') && $can('produk-sku', 'ubah') && $can('produk-sku', 'hapus')" :href="route('sku.hargaBertingkat', sku.id_sku)" @click="close" class="flex items-center px-4 py-2.5 text-sm font-bold text-primary hover:bg-primary/10 transition-colors">
                                     <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
                                     Harga Bertingkat
                                 </Link>
 
-                                <Link :href="route('sku.hargaPengerjaan', sku.id_sku)" @click="close" class="flex items-center px-4 py-2.5 text-sm font-bold text-info hover:bg-info/10 transition-colors">
+                                <Link v-if="$can('produk-sku', 'tambah') && $can('produk-sku', 'ubah') && $can('produk-sku', 'hapus')" :href="route('sku.hargaPengerjaan', sku.id_sku)" @click="close" class="flex items-center px-4 py-2.5 text-sm font-bold text-info hover:bg-info/10 transition-colors">
                                     <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
                                     Harga Pengerjaan
                                 </Link>
 
-                                <Link :href="route('sku.diskonCustomer', sku.id_sku)" @click="close" class="flex items-center px-4 py-2.5 text-sm font-bold text-warning hover:bg-warning/10 transition-colors">
+                                <Link v-if="$can('produk-sku', 'tambah') && $can('produk-sku', 'ubah') && $can('produk-sku', 'hapus')" :href="route('sku.diskonCustomer', sku.id_sku)" @click="close" class="flex items-center px-4 py-2.5 text-sm font-bold text-warning hover:bg-warning/10 transition-colors">
                                     <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                     Diskon Member
                                 </Link>
 
                                 <div class="my-1 border-t border-base-300/50"></div>
 
-                                <button @click="openDeleteModal(sku.id_sku); close()" class="flex items-center w-full px-4 py-2.5 text-sm font-bold text-error hover:bg-error/10 transition-colors">
+                                <button v-if="$can('produk-sku', 'hapus')" @click="openDeleteModal(sku.id_sku); close()" class="flex items-center w-full px-4 py-2.5 text-sm font-bold text-error hover:bg-error/10 transition-colors">
                                     <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                     Hapus Sku
                                 </button>

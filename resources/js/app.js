@@ -16,12 +16,27 @@ createInertiaApp({
             import.meta.glob('./Pages/**/*.vue'),
         ),
     setup({ el, App, props, plugin }) {
-        return createApp({ render: () => h(App, props) })
-            .use(plugin)
-            .use(ZiggyVue)
-            .mount(el);
+        // return createApp({ render: () => h(App, props) })
+        //     .use(plugin)
+        //     .use(ZiggyVue)
+        //     .mount(el);
+
+        const app = createApp({ render: () => h(App, props) });
+        app.use(plugin)
+           .use(ZiggyVue);
+        app.config.globalProperties.$can = function (modul, aksi = 'buka') {
+            const permissions = this.$page.props.auth?.can;
+
+            if (!permissions || !permissions[modul]) {
+                return false;
+            }
+
+            return permissions[modul][aksi] ?? false;
+        };
+
+        return app.mount(el);
     },
     progress: {
-        color: '#4B5563',
+        color: '#3885f8',
     },
 });

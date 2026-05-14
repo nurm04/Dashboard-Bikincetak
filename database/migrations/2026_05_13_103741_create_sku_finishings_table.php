@@ -11,13 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('detail_pesanan', function (Blueprint $table) {
+        Schema::create('sku_finishing', function (Blueprint $table) {
             $table->id();
             $table->string('id_sku');
-            $table->string('id_pesan');
-            $table->string('jumlah');
+            $table->string('id_pilihan_finishing');
+            $table->integer('minimum_pesan')->default(1);
+            $table->float('harga_tambahan');
             $table->foreign('id_sku')->references('id_sku')->on('produk_sku')->onDelete('cascade');
-            $table->foreign('id_pesan')->references('id_pesan')->on('pesan')->onDelete('cascade');
+            $table->foreign('id_pilihan_finishing')->references('id_pilihan_finishing')->on('pilihan_finishing')->onDelete('cascade');
             $table->timestamps();
         });
     }
@@ -27,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('detail_pesanan');
+        Schema::dropIfExists('sku_finishings');
     }
 };

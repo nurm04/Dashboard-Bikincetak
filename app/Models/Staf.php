@@ -27,6 +27,6 @@ class Staf extends Model
     }
     public function roleStaf(): BelongsTo
     {
-        return $this->belongsTo(RoleStaf::class, 'id_role_customer', 'id_role_customer');
+        return $this->belongsTo(RoleStaf::class, 'id_role_staf', 'id_role_staf');
     }
 }

@@ -70,7 +70,7 @@ class VarianController extends Controller
     {
         $request->validate([
             'nama_varian' => 'required|string',
-            'pilihans' => 'required|array|min:1' // Berisi array nama: ['Vinyl', 'Chromo']
+            'pilihans' => 'required|array|min:1'
         ]);
 
         try {

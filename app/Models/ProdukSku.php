@@ -19,12 +19,17 @@ class ProdukSku extends Model
         'id_sku',
         'id_produk',
         'nama_sku',
-        'harga_jasa',
+        'minimum_pesan',
+        'harga',
     ];
 
-    public function detailPesanan(): HasMany
+    public function pesananItem(): HasMany
     {
-        return $this->hasMany(DetailPesanan::class, 'id_sku', 'id_sku');
+        return $this->hasMany(PesananItem::class, 'id_sku', 'id_sku');
+    }
+    public function skuFinishing(): HasMany
+    {
+        return $this->hasMany(SkuFinishing::class, 'id_sku', 'id_sku');
     }
     public function diskonCustomer(): HasMany
     {

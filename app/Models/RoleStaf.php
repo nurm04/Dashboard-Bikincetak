@@ -23,4 +23,8 @@ class RoleStaf extends Model
     {
         return $this->hasMany(Staf::class, 'id_role_staf', 'id_role_staf');
     }
+    public function hakAkses(): HasMany
+    {
+        return $this->hasMany(HakAkses::class, 'id_role_staf', 'id_role_staf');
+    }
 }

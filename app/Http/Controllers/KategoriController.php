@@ -39,7 +39,7 @@ class KategoriController extends Controller
             'nama_kategori' => $request->nama_kategori
         ]);
 
-        return redirect()->route('kategori.index')->with('success', 'Kategori berhasil dibuat dengan nama ' . $nama_kategori);
+        return redirect()->route('kategori.index')->with('success', 'Kategori berhasil dibuat dengan nama ' . $request->nama_kategori);
     }
 
     public function update(Request $request, Kategori $kategori)

@@ -1,17 +1,25 @@
 <?php
 
 use App\Http\Controllers\AkunController;
+use App\Http\Controllers\BahanBakuController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DiskonCustomerController;
+use App\Http\Controllers\FinishingController;
+use App\Http\Controllers\HakAksesController;
 use App\Http\Controllers\HargaBertingkatController;
 use App\Http\Controllers\HargaPengerjaanController;
 use App\Http\Controllers\KategoriController;
+use App\Http\Controllers\ModulController;
+use App\Http\Controllers\PilihanFinishingController;
 use App\Http\Controllers\PilihanVarianController;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\ProdukSkuController;
 use App\Http\Controllers\ProdukVarianController;
 use App\Http\Controllers\ProfilController;
 use App\Http\Controllers\RoleCustomerController;
+use App\Http\Controllers\RoleStafController;
+use App\Http\Controllers\SkuFinishingController;
+use App\Http\Controllers\StafController;
 use App\Http\Controllers\VarianController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -31,6 +39,11 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+    Route::resource('modul', ModulController::class);
+    Route::get('/hak-akses', [ModulController::class, 'index'])->name('hak-akses.index');
+    Route::get('/hak-akses/{id_modul}/edit', [HakAksesController::class, 'edit'])->name('hak-akses.edit');
+    Route::post('/hak-akses/{id_modul}/sync', [HakAksesController::class, 'sync'])->name('hak-akses.sync');
+
     Route::get('/profil', [ProfilController::class, 'edit'])->name('profil.edit');
     Route::patch('/profil', [ProfilController::class, 'update'])->name('profil.update');
     Route::delete('/profil', [ProfilController::class, 'destroy'])->name('profil.destroy');
@@ -39,6 +52,9 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('customer', CustomerController::class);
     Route::post('/role-customer', [RoleCustomerController::class, 'store'])->name('role-customer.store');
+
+    Route::resource('staf', StafController::class);
+    Route::post('/role-staf', [RoleStafController::class, 'store'])->name('role-staf.store');
 
     Route::resource('kategori', KategoriController::class);
 
@@ -50,6 +66,8 @@ Route::middleware('auth')->group(function () {
     Route::get('produk/{id}/sku', [ProdukController::class, 'sku'])->name('produk.sku');
     Route::post('produk/{id}/sku', [ProdukSkuController::class, 'syncSku'])->name('produk.syncSku');
     Route::get('/produk/{id}/detail-sku', [ProdukController::class, 'detailSku'])->name('produk.detailSku');
+    Route::get('/sku/{id_sku}/finishing', [ProdukSkuController::class, 'finishing'])->name('sku.finishing');
+    Route::post('/sku/{id_sku}/finishing/sync', [SkuFinishingController::class, 'sync'])->name('sku.syncFinishing');
     Route::get('/sku/{id_sku}/harga-bertingkat', [ProdukSkuController::class, 'hargaBertingkat'])->name('sku.hargaBertingkat');
     Route::post('/sku/{id_sku}/harga-bertingkat/sync', [HargaBertingkatController::class, 'sync'])->name('sku.syncHargaBertingkat');
     Route::get('/sku/{id_sku}/harga-pengerjaan', [ProdukSkuController::class, 'hargaPengerjaan'])->name('sku.hargaPengerjaan');
@@ -62,6 +80,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/pilihan-varian', [PilihanVarianController::class, 'store'])->name('pilihan-varian.store');
     Route::put('/pilihan-varian/{id}', [PilihanVarianController::class, 'update'])->name('pilihan-varian.update');
     Route::delete('/pilihan-varian/{id}', [PilihanVarianController::class, 'destroy'])->name('pilihan-varian.destroy');
-    });
+
+    Route::resource('finishing', FinishingController::class);
+    Route::post('/pilihan-finishing', [PilihanFinishingController::class, 'store'])->name('pilihan-finishing.store');
+    Route::put('/pilihan-finishing/{id}', [PilihanFinishingController::class, 'update'])->name('pilihan-finishing.update');
+    Route::delete('/pilihan-finishing/{id}', [PilihanFinishingController::class, 'destroy'])->name('pilihan-finishing.destroy');
+
+    Route::resource('bahan-baku', BahanBakuController::class);
+});
 
 require __DIR__.'/auth.php';
