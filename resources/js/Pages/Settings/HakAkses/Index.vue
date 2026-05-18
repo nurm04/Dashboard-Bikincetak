@@ -34,7 +34,7 @@ const submit = () => {
     <Head :title="'Hak Akses: ' + modul.nama_modul" />
     <StafLayout>
         <template #header>
-            <h2 class="text-xl font-semibold leading-tight text-base-content">
+            <h2 class="text-xl font-bold leading-tight text-base-content">
                 Konfigurasi Akses: {{ modul.nama_modul }}
             </h2>
         </template>

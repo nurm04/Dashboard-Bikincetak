@@ -23,7 +23,7 @@ const submit = () => {
     <Head :title="isEdit ? 'Edit Produk' : 'Tambah Produk'" />
     <StafLayout>
         <template #header>
-            <h2 class="text-xl font-semibold leading-tight text-base-content">
+            <h2 class="text-xl font-bold leading-tight text-base-content">
                 {{ isEdit ? 'Edit produk: ' + props.produk.id_produk : 'Registrasi Produk Baru' }}
             </h2>
         </template>

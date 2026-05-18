@@ -23,7 +23,6 @@ class Pesan extends Model
         'tanggal_selesai',
         'status_operasional',
         'status_pembayaran',
-        'estimasi_pengerjaan',
     ];
 
     protected $casts = [
@@ -31,6 +30,10 @@ class Pesan extends Model
         'tanggal_selesai' => 'datetime',
     ];
 
+    public function pembayaran()
+    {
+        return $this->hasMany(Pembayaran::class, 'id_pesan', 'id_pesan');
+    }
     public function pesananItem(): HasMany
     {
         return $this->hasMany(PesananItem::class, 'id_pesan', 'id_pesan');

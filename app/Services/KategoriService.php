@@ -8,10 +8,14 @@ class KategoriService
 {
     public static function generateId(): string
     {
-        $lastKategori = Kategori::orderBy('id_kategori', 'desc')->first();
+        $lastKategori = Kategori::orderByRaw('LENGTH(id_kategori) DESC')
+            ->orderBy('id_kategori', 'desc')
+            ->first();
 
         if ($lastKategori) {
-            $lastNumber = (int) substr($lastKategori->id_kategori, 1);
+            $stringParts = explode('-', $lastKategori->id_kategori);
+            $lastNumber = isset($stringParts[1]) ? (int) $stringParts[1] : 0;
+
             $nextNumber = str_pad($lastNumber + 1, 3, '0', STR_PAD_LEFT);
         } else {
             $nextNumber = '001';

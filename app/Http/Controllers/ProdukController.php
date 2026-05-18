@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Produk;
+use App\Models\Customer;
 use App\Models\Kategori;
+use App\Models\Produk;
 use App\Models\Varian;
 use App\Services\ProdukService;
 use Illuminate\Http\Request;
@@ -140,5 +141,55 @@ class ProdukController extends Controller
             DB::rollBack();
             return redirect()->back()->with('error', 'Gagal hapus: ' . $e->getMessage());
         }
+    }
+
+    // Request Api / Vue
+    public function katalogWeb(Request $request)
+    {
+        $kategoris = Kategori::all();
+        $produks = Produk::where('is_active', true)->get();
+
+        $customers = Customer::with(['user', 'alamat'])->get();
+
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json([
+                'status' => 'success',
+                'data' => [
+                    'kategoris' => $kategoris,
+                    'produks' => $produks,
+                    'customers' => $customers
+                ]
+            ], 200);
+        }
+
+        return Inertia::render('Pesan/PosKasir', [
+            'kategoris' => $kategoris,
+            'produks' => $produks,
+            'customers' => $customers
+        ]);
+    }
+
+    public function detailKatalogWeb(Request $request, $id_produk)
+    {
+        $produk = Produk::with([
+            'kategori',
+            'produkSku.hargaPengerjaan',
+            'produkSku.hargaBertingkat',
+            'produkSku.diskonCustomer',
+            'produkSku.skuFinishing.pilihanFinishing.finishing'
+        ])->where('is_active', true)->findOrFail($id_produk);
+
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json([
+                'status' => 'success',
+                'data' => [
+                    'produk' => $produk
+                ]
+            ], 200);
+        }
+
+        return Inertia::render('Pesan/DetailProdukKasir', [
+            'produk' => $produk
+        ]);
     }
 }

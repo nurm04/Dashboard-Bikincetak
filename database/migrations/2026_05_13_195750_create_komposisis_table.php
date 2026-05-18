@@ -15,10 +15,12 @@ return new class extends Migration
             $table->id();
             $table->string('id_sku');
             $table->string('id_bahan_baku');
-            $table->string('jumlah_pakai');
+            $table->string('id_pilihan_finishing')->nullable();
+            $table->float('jumlah_pakai');
             $table->float('hpp');
             $table->foreign('id_sku')->references('id_sku')->on('produk_sku')->onDelete('cascade');
             $table->foreign('id_bahan_baku')->references('id_bahan_baku')->on('bahan_baku')->onDelete('cascade');
+            $table->foreign('id_pilihan_finishing')->references('id_pilihan_finishing')->on('pilihan_finishing')->onDelete('cascade');
             $table->timestamps();
         });
     }

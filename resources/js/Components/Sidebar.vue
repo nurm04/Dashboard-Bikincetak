@@ -18,15 +18,15 @@ const toggleProductDropdown = () => {
 </script>
 
 <template>
-    <aside class="fixed top-0 left-0 z-50 flex flex-col w-64 min-h-screen transition-colors border-r bg-base-100 border-base-300">
+    <aside class="fixed top-0 left-0 z-50 flex flex-col w-64 h-screen transition-colors border-r bg-base-100 border-base-300">
 
-        <div class="flex items-center h-16 px-6 border-b border-base-300">
+        <div class="flex items-center shrink-0 h-16 px-6 border-b border-base-300">
             <span class="text-xl italic font-black tracking-tighter text-primary drop-shadow-sm">
                 BIKIN<span class="text-base-content">CETAK</span>
             </span>
         </div>
 
-        <nav class="flex-1 px-4 mt-6 space-y-2 overflow-y-auto">
+        <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
             <p class="text-[10px] font-black text-base-content/30 uppercase tracking-widest ml-3 mb-4">Navigasi Utama</p>
 
             <Link :href="route('dashboard')"
@@ -116,6 +116,7 @@ const toggleProductDropdown = () => {
                     </Link>
                 </div>
             </div>
+
             <Link v-if="$can('bahan-baku')" :href="route('bahan-baku.index')"
                 :class="[route().current('bahan-baku.*')
                     ? 'bg-primary text-white shadow-lg shadow-primary/30 translate-x-1'
@@ -124,6 +125,25 @@ const toggleProductDropdown = () => {
                 <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
                 Bahan Baku
             </Link>
+
+            <Link v-if="$can('pembelian-bahan')" :href="route('pembelian-bahan.index')"
+                :class="[route().current('pembelian-bahan.*')
+                    ? 'bg-primary text-white shadow-lg shadow-primary/30 translate-x-1'
+                    : 'text-base-content/70 hover:bg-base-200 hover:text-base-content hover:translate-x-1']"
+                class="flex items-center px-4 py-3 text-sm font-bold transition-all duration-300 rounded-xl">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                Pembelian Bahan
+            </Link>
+
+            <Link v-if="$can('pesan')" :href="route('pesan.index')"
+                :class="[route().current('pesan.*')
+                    ? 'bg-primary text-white shadow-lg shadow-primary/30 translate-x-1'
+                    : 'text-base-content/70 hover:bg-base-200 hover:text-base-content hover:translate-x-1']"
+                class="flex items-center px-4 py-3 text-sm font-bold transition-all duration-300 rounded-xl">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                Pesanan
+            </Link>
+
             <Link v-if="$can('hak-akses')" :href="route('hak-akses.index')"
                 :class="[route().current('hak-akses.*')
                     ? 'bg-primary text-white shadow-lg shadow-primary/30 translate-x-1'
@@ -134,7 +154,7 @@ const toggleProductDropdown = () => {
             </Link>
         </nav>
 
-        <div class="p-4 border-t border-base-300 bg-base-100">
+        <div class="p-4 border-t border-base-300 bg-base-100 shrink-0">
             <div class="flex items-center px-3 py-3 border bg-base-200 rounded-2xl border-base-300/50">
                 <div class="mr-3 avatar placeholder">
                     <div class="flex items-center justify-center font-black text-white rounded-lg shadow-sm bg-primary w-9 h-9">
@@ -149,3 +169,19 @@ const toggleProductDropdown = () => {
         </div>
     </aside>
 </template>
+
+<style scoped>
+nav::-webkit-scrollbar {
+    width: 4px;
+}
+nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+nav::-webkit-scrollbar-thumb {
+    background-color: oklch(var(--p) / 0.2);
+    border-radius: 10px;
+}
+nav:hover::-webkit-scrollbar-thumb {
+    background-color: oklch(var(--p) / 0.5);
+}
+</style>

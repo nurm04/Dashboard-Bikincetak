@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Staf extends Model
@@ -21,6 +22,10 @@ class Staf extends Model
         'id_role_staf',
     ];
 
+    public function pembelianBahan(): HasMany
+    {
+        return $this->hasMany(PembelianBahan::class, 'id_staf', 'id_staf');
+    }
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id', 'id');

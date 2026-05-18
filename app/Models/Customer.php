@@ -26,7 +26,7 @@ class Customer extends Model
     }
     public function alamat(): HasMany
     {
-        return $this->hasMany(Pesan::class, 'id_customer', 'id_customer');
+        return $this->hasMany(Alamat::class, 'id_customer', 'id_customer');
     }
     public function user(): BelongsTo
     {

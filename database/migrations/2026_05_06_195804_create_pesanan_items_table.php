@@ -16,8 +16,10 @@ return new class extends Migration
             $table->string('id_pesan');
             $table->string('id_sku');
             $table->string('nama_produk_snapshot');
-            $table->string('jumlah');
-            $table->string('harga_satuan_snapshot');
+            $table->integer('jumlah');
+            $table->float('harga_satuan_snapshot');
+            $table->string('estimasi_pengerjaan_snapshot');
+            $table->float('harga_pengerjaan_snapshot')->default(0);
             $table->text('file_desain')->nullable();
             $table->text('catatan')->nullable();
             $table->foreign('id_sku')->references('id_sku')->on('produk_sku');

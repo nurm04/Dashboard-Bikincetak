@@ -113,7 +113,7 @@ const submit = () => {
     <Head title="Manajemen SKU" />
     <StafLayout>
         <template #header>
-            <h2 class="text-xl font-semibold leading-tight text-base-content">
+            <h2 class="text-xl font-bold leading-tight text-base-content">
                 Generate SKU {{ produk.nama_produk }}
             </h2>
         </template>

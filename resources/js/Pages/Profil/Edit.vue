@@ -20,7 +20,7 @@ defineProps({
 
     <StafLayout>
         <template #header>
-            <h2 class="text-xl font-bold leading-tight tracking-wider uppercase text-base-content">
+            <h2 class="text-xl font-bold leading-tight text-base-content">
                 Profil Saya
             </h2>
         </template>

@@ -28,7 +28,7 @@ const submit = () => {
     <Head title="Pilih Varian Produk" />
     <StafLayout>
         <template #header>
-            <h2 class="text-xl font-semibold leading-tight text-base-content">
+            <h2 class="text-xl font-bold leading-tight text-base-content">
                 Pilih Varian {{ produk.nama_produk }}
             </h2>
         </template>

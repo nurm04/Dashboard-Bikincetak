@@ -31,7 +31,7 @@ class SkuFinishingController extends Controller
             }
 
             DB::commit();
-            return redirect()->route('produk.detailSku')->with('success', 'Finishing SKU diperbarui');
+            return redirect()->route('produk.detailSku', $request->id_produk)->with('success', 'Finishing SKU diperbarui');
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with('error', $e->getMessage());

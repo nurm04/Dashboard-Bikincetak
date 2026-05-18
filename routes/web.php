@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AkunController;
+use App\Http\Controllers\AlamatController;
 use App\Http\Controllers\BahanBakuController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DiskonCustomerController;
@@ -9,7 +10,10 @@ use App\Http\Controllers\HakAksesController;
 use App\Http\Controllers\HargaBertingkatController;
 use App\Http\Controllers\HargaPengerjaanController;
 use App\Http\Controllers\KategoriController;
+use App\Http\Controllers\KomposisiController;
 use App\Http\Controllers\ModulController;
+use App\Http\Controllers\PembelianBahanController;
+use App\Http\Controllers\PesanController;
 use App\Http\Controllers\PilihanFinishingController;
 use App\Http\Controllers\PilihanVarianController;
 use App\Http\Controllers\ProdukController;
@@ -52,6 +56,9 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('customer', CustomerController::class);
     Route::post('/role-customer', [RoleCustomerController::class, 'store'])->name('role-customer.store');
+    Route::post('/alamat', [AlamatController::class, 'store'])->name('alamat.store');
+    Route::put('/alamat/{id_alamat}', [AlamatController::class, 'update'])->name('alamat.update');
+    Route::delete('/alamat/{id_alamat}', [AlamatController::class, 'destroy'])->name('alamat.destroy');
 
     Route::resource('staf', StafController::class);
     Route::post('/role-staf', [RoleStafController::class, 'store'])->name('role-staf.store');
@@ -74,6 +81,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/sku/{id_sku}/harga-pengerjaan/sync', [HargaPengerjaanController::class, 'sync'])->name('sku.syncHargaPengerjaan');
     Route::get('/sku/{id_sku}/diskon-customer', [ProdukSkuController::class, 'diskonCustomer'])->name('sku.diskonCustomer');
     Route::post('/sku/{id_sku}/diskon-customer/sync', [DiskonCustomerController::class, 'sync'])->name('sku.syncdiskonCustomer');
+    Route::get('/sku/{id_sku}/komposisi', [ProdukSkuController::class, 'komposisi'])->name('sku.komposisi');
+    Route::post('/sku/{id_sku}/komposisi/sync', [KomposisiController::class, 'sync'])->name('sku.syncKomposisi');
     Route::delete('/sku/{id_sku}', [ProdukSkuController::class, 'destroy'])->name('sku.destroy');
 
     Route::resource('varian', VarianController::class);
@@ -87,6 +96,16 @@ Route::middleware('auth')->group(function () {
     Route::delete('/pilihan-finishing/{id}', [PilihanFinishingController::class, 'destroy'])->name('pilihan-finishing.destroy');
 
     Route::resource('bahan-baku', BahanBakuController::class);
+    Route::resource('pembelian-bahan', PembelianBahanController::class);
+
+    Route::get('pesan', [PesanController::class, 'index'])->name('pesan.index');
+    Route::post('pesan', [PesanController::class, 'store'])->name('pesan.store');
+    Route::get('pesan/{id}/detail', [PesanController::class, 'detail'])->name('pesan.detail');
+    Route::put('pesan/{id}/operasional', [PesanController::class, 'updateOperasional'])->name('pesan.updateOperasional');
+    Route::put('pesan/{id}/pembayaran', [PesanController::class, 'updatePembayaran'])->name('pesan.updatePembayaran');
+
+    Route::get('/pos-kasir', [ProdukController::class, 'katalogWeb'])->name('pos.katalog');
+    Route::get('/pos-kasir/produk/{id_produk}', [ProdukController::class, 'detailKatalogWeb'])->name('pos.detail');
 });
 
 require __DIR__.'/auth.php';

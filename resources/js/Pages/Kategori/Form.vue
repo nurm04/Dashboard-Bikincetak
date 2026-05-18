@@ -45,7 +45,7 @@ const submit = () => {
 
     <StafLayout>
         <template #header>
-            <h2 class="text-xl font-semibold leading-tight text-gray-800">
+            <h2 class="text-xl font-bold leading-tight text-base-content">
                 {{ isEdit ? 'Edit Kategori: ' + (kategori.id_kategori || kategori.id) : 'Tambah Kategori' }}
             </h2>
         </template>

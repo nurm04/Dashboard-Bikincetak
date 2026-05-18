@@ -129,6 +129,11 @@ const doDelete = () => {
                                     Diskon Member
                                 </Link>
 
+                                <Link v-if="$can('produk-sku', 'tambah') && $can('produk-sku', 'ubah') && $can('produk-sku', 'hapus')" :href="route('sku.komposisi', sku.id_sku)" @click="close" class="flex items-center px-4 py-2.5 text-sm font-bold text-base-content hover:bg-base-content/10 transition-colors">
+                                    <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                                    Komposisi Produk
+                                </Link>
+
                                 <div class="my-1 border-t border-base-300/50"></div>
 
                                 <button v-if="$can('produk-sku', 'hapus')" @click="openDeleteModal(sku.id_sku); close()" class="flex items-center w-full px-4 py-2.5 text-sm font-bold text-error hover:bg-error/10 transition-colors">

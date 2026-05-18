@@ -54,7 +54,7 @@ const doDelete = () => {
     <Head title="Data Staf" />
     <StafLayout>
         <template #header>
-            <h2 class="text-xl font-semibold leading-tight">
+            <h2 class="text-xl font-bold leading-tight text-base-content">
                 Database Staf
             </h2>
         </template>

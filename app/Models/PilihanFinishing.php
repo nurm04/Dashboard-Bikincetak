@@ -25,6 +25,10 @@ class PilihanFinishing extends Model
     {
         return $this->hasMany(SkuFinishing::class, 'id_pilihan_finishing', 'id_pilihan_finishing');
     }
+    public function komposisi(): HasMany
+    {
+        return $this->hasMany(Komposisi::class, 'id_pilihan_finishing', 'id_pilihan_finishing');
+    }
     public function finishing(): BelongsTo
     {
         return $this->belongsTo(Finishing::class, 'id_finishing', 'id_finishing');

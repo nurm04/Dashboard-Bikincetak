@@ -34,7 +34,7 @@ const submit = () => {
 
     <StafLayout>
         <template #header>
-            <h2 class="text-xl font-semibold leading-tight text-base-content">
+            <h2 class="text-xl font-bold leading-tight text-base-content">
                 {{ isEdit ? 'Edit Varian: ' + varian.nama_varian : 'Master Varian Baru' }}
             </h2>
         </template>

@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('pesanan_item_finishings', function (Blueprint $table) {
+        Schema::create('pesanan_item_finishing', function (Blueprint $table) {
             $table->id();
             $table->foreignId('id_pesanan_item')->constrained('pesanan_item')->onDelete('cascade');
             $table->string('id_sku_finishing');

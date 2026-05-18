@@ -4,6 +4,8 @@ import CustomInput from '@/Components/CustomInput.vue';
 import CustomSelectSearch from '@/Components/CustomSelectSearch.vue';
 import CustomButton from '@/Components/CustomButton.vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
+import CustomTableForm from '@/Components/CustomTableForm.vue';
+import { alertStore } from '@/Utils/alertStore';
 
 const props = defineProps({
     customer: Object,
@@ -18,6 +20,7 @@ const form = useForm({
     password: '',
     no_hp: props.customer?.no_hp ?? '',
     id_role_customer: props.customer?.id_role_customer ?? '',
+    alamats: props.customer?.alamat?.map(a => a.alamat) ?? [''],
 });
 
 const addNewRole = (val) => {
@@ -27,11 +30,21 @@ const addNewRole = (val) => {
     }
 };
 
+const addRow = () => {
+    form.alamats.push('');
+};
+
 const submit = () => {
     if (isEdit) {
-        form.put(route('customer.update', props.customer.id_customer));
+        form.put(route('customer.update', props.customer.id_customer), {
+            onSuccess: () => alertStore.show('Data customer dan alamat berhasil diperbarui!', 'success'),
+            onError: () => alertStore.show('Gagal memperbarui data!', 'error')
+        });
     } else {
-        form.post(route('customer.store'));
+        form.post(route('customer.store'), {
+            onSuccess: () => alertStore.show('Customer berhasil disimpan!', 'success'),
+            onError: () => alertStore.show('Gagal menyimpan data!', 'error')
+        });
     }
 };
 </script>
@@ -41,7 +54,7 @@ const submit = () => {
 
     <StafLayout>
         <template #header>
-            <h2 class="text-xl font-semibold leading-tight text-base-content">
+            <h2 class="text-xl font-bold leading-tight text-base-content">
                 {{ isEdit ? 'Edit Data: ' + customer.id_customer : 'Tambah Customer Baru' }}
             </h2>
         </template>
@@ -53,8 +66,8 @@ const submit = () => {
 
                         <div class="p-6 space-y-4 border rounded-lg bg-base-200/50 border-base-300">
                             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                <CustomInput v-model="form.name" label="Nama Lengkap" placeholder="John Doe" :error="form.errors.name" />
-                                <CustomInput v-model="form.email" label="Email Aktif" type="email" placeholder="john@example.com" :error="form.errors.email" />
+                                <CustomInput v-model="form.name" label="Nama Lengkap" placeholder="John Doe" :error="form.errors.name" required />
+                                <CustomInput v-model="form.email" label="Email Aktif" type="email" placeholder="john@example.com" :error="form.errors.email" required />
                             </div>
                             <CustomInput v-model="form.password" label="Password" type="password"
                                 :placeholder="isEdit ? 'Kosongkan jika tidak ganti' : 'Minimal 8 karakter'"
@@ -64,7 +77,7 @@ const submit = () => {
                         <div class="space-y-4">
                             <h2 class="text-xs font-black text-base-content/50 uppercase tracking-[0.2em] ml-1">Profil & Membership</h2>
                             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                <CustomInput v-model="form.no_hp" label="No. WhatsApp" placeholder="0812..." :error="form.errors.no_hp" />
+                                <CustomInput v-model="form.no_hp" label="No. WhatsApp" placeholder="0812..." :error="form.errors.no_hp" required />
 
                                 <CustomSelectSearch
                                     v-model="form.id_role_customer"
@@ -78,11 +91,34 @@ const submit = () => {
                             </div>
                         </div>
 
+                        <CustomTableForm
+                            v-model="form.alamats"
+                            label="Daftar Alamat"
+                            :headers="['Alamat']"
+                            @add="addRow"
+                        >
+                            <template #row="{ row, index }">
+                                <td class="px-4 py-2">
+                                    <input
+                                        v-model="form.alamats[index]"
+                                        type="text"
+                                        placeholder="Ketik Alamat..."
+                                        class="w-full p-0 text-sm font-bold bg-transparent border-none focus:ring-0 text-base-content outline-none"
+                                        required
+                                    />
+                                </td>
+                            </template>
+                        </CustomTableForm>
+
+                        <p v-if="form.errors.alamats" class="text-error text-[10px] font-bold ml-1">
+                            {{ form.errors.alamats }}
+                        </p>
+
                         <div class="flex flex-col items-center gap-4 pt-6 sm:flex-row">
                             <CustomButton
                                 type="submit"
                                 variant="primary"
-                                class="flex-1 w-full py-4 rounded-lg sm:w-auto"
+                                class="flex-1 w-full py-4 rounded-lg sm:w-auto font-black"
                                 :disabled="form.processing"
                             >
                                 <template #icon v-if="!form.processing">

@@ -12,7 +12,7 @@ const props = defineProps({
 });
 
 const form = useForm({
-    // Load data lama dari database
+    id_produk: props.sku.id_produk,
     finishing: props.sku.sku_finishing?.map(f => ({
         id_pilihan_finishing: f.id_pilihan_finishing,
         nama_pilihan: f.pilihan_finishing?.nama_pilihan,
@@ -22,7 +22,6 @@ const form = useForm({
 });
 
 const addFinishingToTable = (pilihan) => {
-    // Cek biar gak double input pilihan yang sama
     const exists = form.finishing.find(f => f.id_pilihan_finishing === pilihan.id_pilihan_finishing);
     if (exists) return alert('Pilihan ini sudah ada di tabel!');
 
@@ -43,7 +42,7 @@ const submit = () => {
     <Head title="Setting Finishing SKU" />
     <StafLayout>
         <template #header>
-            <h2 class="text-xl font-bold uppercase tracking-tighter italic">
+            <h2 class="text-xl font-bold leading-tight text-base-content">
                 Finishing: <span class="text-primary">{{ sku.nama_sku }}</span>
             </h2>
         </template>

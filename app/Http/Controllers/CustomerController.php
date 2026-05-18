@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
+use App\Models\Alamat;
 use App\Models\Customer;
 use App\Models\RoleCustomer;
+use App\Models\User;
 use App\Services\CustomerService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class CustomerController extends Controller
@@ -22,15 +25,15 @@ class CustomerController extends Controller
     public function create()
     {
         return Inertia::render('Customer/Form', [
-            'roles' => RoleCustomer::all()
+            'roles' => RoleCustomer::all(),
         ]);
     }
 
     public function edit($id)
     {
         return Inertia::render('Customer/Form', [
-            'customer' => Customer::with('user')->findOrFail($id),
-            'roles' => RoleCustomer::all()
+            'customer' => Customer::with(['user', 'alamat'])->findOrFail($id),
+            'roles' => RoleCustomer::all(),
         ]);
     }
 
@@ -42,23 +45,45 @@ class CustomerController extends Controller
             'password' => 'required|min:8',
             'no_hp' => 'required|string|max:15',
             'id_role_customer' => 'required|exists:role_customer,id_role_customer',
+            'alamats' => 'required|array|min:1',
+            'alamats.*' => 'required|string|max:500',
         ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => 'customer',
-        ]);
+        try {
+            DB::beginTransaction();
 
-        Customer::create([
-            'id_customer' => CustomerService::generateId(),
-            'user_id' => $user->id,
-            'no_hp' => $request->no_hp,
-            'id_role_customer' => $request->id_role_customer,
-        ]);
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'role' => 'customer',
+            ]);
 
-        return redirect()->route('customer.index')->with('success', 'Customer berhasil didaftarkan.');
+            $id_customer = CustomerService::generateId();
+            Customer::create([
+                'id_customer' => $id_customer,
+                'user_id' => $user->id,
+                'no_hp' => $request->no_hp,
+                'id_role_customer' => $request->id_role_customer,
+            ]);
+
+            foreach ($request->alamats as $stringAlamat) {
+                if (blank($stringAlamat)) continue;
+
+                Alamat::create([
+                    'id_alamat' => 'ALM-' . date('Ymd') . '-' . strtoupper(Str::random(4)),
+                    'id_customer' => $id_customer,
+                    'alamat' => $stringAlamat,
+                ]);
+            }
+
+            DB::commit();
+            return redirect()->route('customer.index')->with('success', 'Customer berhasil didaftarkan.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Gagal mendaftarkan customer: ' . $e->getMessage());
+        }
     }
 
     public function update(Request $request, $id)
@@ -72,23 +97,46 @@ class CustomerController extends Controller
             'no_hp' => 'required|string|max:15',
             'id_role_customer' => 'required|exists:role_customer,id_role_customer',
             'password' => 'nullable|min:8',
+            'alamats' => 'required|array|min:1',
+            'alamats.*' => 'required|string|max:500',
         ]);
 
-        $user->update([
-            'name' => $request->name,
-            'email' => $request->email,
-        ]);
+        try {
+            DB::beginTransaction();
 
-        if ($request->filled('password')) {
-            $user->update(['password' => Hash::make($request->password)]);
+            $user->update([
+                'name' => $request->name,
+                'email' => $request->email,
+            ]);
+
+            if ($request->filled('password')) {
+                $user->update(['password' => Hash::make($request->password)]);
+            }
+
+            $customer->update([
+                'no_hp' => $request->no_hp,
+                'id_role_customer' => $request->id_role_customer,
+            ]);
+
+            Alamat::where('id_customer', $id)->delete();
+
+            foreach ($request->alamats as $stringAlamat) {
+                if (blank($stringAlamat)) continue;
+
+                Alamat::create([
+                    'id_alamat' => 'ALM-' . date('Ymd') . '-' . strtoupper(Str::random(4)),
+                    'id_customer' => $id,
+                    'alamat' => $stringAlamat,
+                ]);
+            }
+
+            DB::commit();
+            return redirect()->route('customer.index')->with('success', 'Data customer berhasil diperbarui.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Gagal memperbarui data: ' . $e->getMessage());
         }
-
-        $customer->update([
-            'no_hp' => $request->no_hp,
-            'id_role_customer' => $request->id_role_customer,
-        ]);
-
-        return redirect()->route('customer.index')->with('success', 'Data customer berhasil diperbarui.');
     }
 
     public function destroy($id)

@@ -34,7 +34,7 @@ const submit = () => {
 
     <StafLayout>
         <template #header>
-            <h2 class="text-xl font-semibold leading-tight text-base-content">
+            <h2 class="text-xl font-bold leading-tight text-base-content">
                 {{ isEdit ? 'Edit Finishing: ' + finishing.nama_finishing : 'Master Finishing Baru' }}
             </h2>
         </template>

@@ -26,7 +26,7 @@ const submit = () => {
     <Head :title="isEdit ? 'Edit Modul' : 'Tambah Modul Baru'" />
     <StafLayout>
         <template #header>
-            <h2 class="text-xl font-bold uppercase tracking-tighter italic">
+            <h2 class="text-xl font-bold leading-tight text-base-content">
                 {{ isEdit ? 'Edit Modul: ' + modul.nama_modul : 'Tambah Modul Sistem Baru' }}
             </h2>
         </template>

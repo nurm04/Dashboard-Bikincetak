@@ -20,8 +20,12 @@ class PesananItemFinishing extends Model
         'harga_finishing_snapshot'
     ];
 
+    public function skuFinishing(): BelongsTo
+    {
+        return $this->belongsTo(SkuFinishing::class, 'id_sku_finishing', 'id_sku_finishing');
+    }
     public function pesananItem(): BelongsTo
     {
-        return $this->belongsTo(PesananItem::class, 'id_pesanan_item', 'id_pesanan_item');
+        return $this->belongsTo(PesananItem::class, 'id_pesanan_item', 'id');
     }
 }

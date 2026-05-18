@@ -16,6 +16,7 @@ class Komposisi extends Model
     protected $fillable = [
         'id_sku',
         'id_bahan_baku',
+        'id_pilihan_finishing',
         'jumlah_pakai',
         'hpp',
     ];
@@ -27,5 +28,9 @@ class Komposisi extends Model
     public function bahanBaku(): BelongsTo
     {
         return $this->belongsTo(bahanBaku::class, 'id_bahan_baku', 'id_bahan_baku');
+    }
+    public function pilihanFinishing()
+    {
+        return $this->belongsTo(PilihanFinishing::class, 'id_pilihan_finishing', 'id_pilihan_finishing');
     }
 }

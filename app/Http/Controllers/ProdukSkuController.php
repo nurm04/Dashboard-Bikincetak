@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BahanBaku;
 use App\Models\Finishing;
+use App\Models\PilihanFinishing;
 use App\Models\ProdukSku;
 use App\Models\RoleCustomer;
 use App\Models\SkuDetailPilihan;
@@ -89,6 +91,20 @@ class ProdukSkuController extends Controller
         return Inertia::render('Produk/FormDiskonCustomer', [
             'sku' => $sku,
             'roles' => $roles
+        ]);
+    }
+
+    public function komposisi($id_sku)
+    {
+        $sku = ProdukSku::with(['produk', 'komposisi.bahanBaku'])->findOrFail($id_sku);
+        $bahan_baku = BahanBaku::where('is_active', true)->get();
+
+        $pilihan_finishing = PilihanFinishing::all();
+
+        return Inertia::render('Produk/FormKomposisi', [
+            'sku' => $sku,
+            'bahan_baku' => $bahan_baku,
+            'pilihan_finishing' => $pilihan_finishing,
         ]);
     }
 

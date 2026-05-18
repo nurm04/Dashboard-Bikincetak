@@ -47,7 +47,7 @@ const submit = () => {
 
     <StafLayout>
         <template #header>
-            <h2 class="text-xl font-semibold leading-tight text-gray-800">
+            <h2 class="text-xl font-bold leading-tight text-base-content">
                 {{ isEdit ? 'Edit Akun: ' + (akun.id_akun || akun.id) : 'Tambah COA' }}
             </h2>
         </template>

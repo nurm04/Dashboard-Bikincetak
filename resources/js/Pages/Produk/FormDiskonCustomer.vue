@@ -41,7 +41,7 @@ const tipeOptions = [
     <Head title="Atur Diskon Member" />
     <StafLayout>
         <template #header>
-            <h2 class="text-xl font-bold leading-tight italic uppercase tracking-tighter">
+            <h2 class="text-xl font-bold leading-tight text-base-content">
                 Diskon Member: {{ sku.nama_sku }}
             </h2>
         </template>
@@ -77,7 +77,7 @@ const tipeOptions = [
                                     />
                                 </td>
 
-                                <td class="px-2 py-4 border-l border-base-300/30 min-w-[180px]">
+                                <td class="px-2 py-4 border-l border-base-300/30 min-w-45">
                                     <CustomInputNumber
                                         v-model="form.diskon[index].nilai"
                                         :prefix="form.diskon[index].tipe === 'nominal' ? 'Rp' : ''"

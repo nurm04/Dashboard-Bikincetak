@@ -57,7 +57,7 @@ onUnmounted(() => {
         >
             <div
                 v-if="isOpen"
-                class="absolute right-0 top-full mt-2 w-52 z-[999] bg-base-100 border border-base-300 shadow-2xl rounded-2xl overflow-hidden py-2"
+                class="absolute right-0 top-full mt-2 w-52 z-999 bg-base-100 border border-base-300 shadow-2xl rounded-2xl overflow-hidden py-2"
             >
                 <slot :close="close" />
             </div>

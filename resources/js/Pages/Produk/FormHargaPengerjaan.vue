@@ -30,7 +30,7 @@ const submit = () => {
 
     <StafLayout>
         <template #header>
-            <h2 class="text-xl italic font-bold leading-tight tracking-tighter uppercase text-base-content">
+            <h2 class="text-xl font-bold leading-tight text-base-content">
                 Estimasi Pengerjaan: {{ sku.nama_sku }}
             </h2>
         </template>
@@ -61,7 +61,7 @@ const submit = () => {
                                         class="w-full text-sm font-bold bg-transparent border-none focus:ring-0 text-base-content"
                                     />
                                 </td>
-                                <td class="px-4 py-4 border-l border-base-300/30 min-w-[200px]">
+                                <td class="px-4 py-4 border-l border-base-300/30 min-w-50">
                                     <CustomInputNumber
                                         v-model="form.pengerjaans[index].harga"
                                         prefix="Rp"

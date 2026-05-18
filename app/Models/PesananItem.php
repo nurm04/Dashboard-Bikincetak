@@ -19,17 +19,14 @@ class PesananItem extends Model
         'id_sku',
         'nama_produk_snapshot',
         'jumlah',
-        'harga_satuan_snapshot'
-    ];
-
-    protected $casts = [
-        'tanggal_pesan' => 'datetime',
-        'tanggal_selesai' => 'datetime',
+        'harga_satuan_snapshot',
+        'estimasi_pengerjaan_snapshot',
+        'harga_pengerjaan_snapshot',
     ];
 
     public function pesananItemFinishing(): HasMany
     {
-        return $this->hasMany(PesananItemFinishing::class, 'id_pesan_item', 'id');
+        return $this->hasMany(PesananItemFinishing::class, 'id_pesanan_item', 'id');
     }
     public function pesan(): BelongsTo
     {
