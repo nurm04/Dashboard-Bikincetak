@@ -56,9 +56,9 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('customer', CustomerController::class);
     Route::post('/role-customer', [RoleCustomerController::class, 'store'])->name('role-customer.store');
-    Route::post('/alamat', [AlamatController::class, 'store'])->name('alamat.store');
-    Route::put('/alamat/{id_alamat}', [AlamatController::class, 'update'])->name('alamat.update');
-    Route::delete('/alamat/{id_alamat}', [AlamatController::class, 'destroy'])->name('alamat.destroy');
+    // Route::post('/alamat', [AlamatController::class, 'store'])->name('alamat.store');
+    // Route::put('/alamat/{id_alamat}', [AlamatController::class, 'update'])->name('alamat.update');
+    // Route::delete('/alamat/{id_alamat}', [AlamatController::class, 'destroy'])->name('alamat.destroy');
 
     Route::resource('staf', StafController::class);
     Route::post('/role-staf', [RoleStafController::class, 'store'])->name('role-staf.store');

@@ -34,6 +34,6 @@ class Customer extends Model
     }
     public function roleCustomer(): BelongsTo
     {
-        return $this->belongsTo(roleCustomer::class, 'id_role_customer', 'id_role_customer');
+        return $this->belongsTo(RoleCustomer::class, 'id_role_customer', 'id_role_customer');
     }
 }
