@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('id_customer');
             $table->string('id_alamat');
             $table->timestamp('tanggal_pesan')->useCurrent()->useCurrentOnUpdate();
-            $table->dateTime('tanggal_selesai')->nullable();;
+            $table->dateTime('tanggal_selesai')->nullable();
             $table->enum('status_operasional', ['keranjang', 'menunggu_diproses', 'proses_pengerjaan', 'proses_pengantaran', 'selesai', 'batal']);
             $table->enum('status_pembayaran', ['belum_lunas', 'dibayar_sebagian', 'lunas']);
             $table->foreign('id_customer')->references('id_customer')->on('customer');

@@ -3,11 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ProdukController;
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\KeranjangController;
+use App\Http\Controllers\Api\PesanController;
 use Illuminate\Http\Request;
-
-// Route::get('/katalog', [ProdukController::class, 'katalogWeb']);
-// Route::get('/katalog/produk/{id_produk}', [ProdukController::class, 'detailKatalogWeb']);
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -24,9 +21,9 @@ Route::middleware('auth:sanctum')->group(function () {
         ]);
     });
 
-    Route::get('/cart', [KeranjangController::class, 'index']);
-    Route::post('/cart', [KeranjangController::class, 'store']);
-    Route::put('/cart/{id}', [KeranjangController::class, 'update']);
-    Route::delete('/cart/{id}', [KeranjangController::class, 'destroy']);
+    Route::get('/cart', [PesanController::class, 'getCart']);
+    Route::post('/cart', [PesanController::class, 'addCart']);
+    Route::patch('/cart/item/{id}', [PesanController::class, 'updateCart']);
+    Route::delete('/cart/item/{id}', [PesanController::class, 'destroyCart']);
 
 });

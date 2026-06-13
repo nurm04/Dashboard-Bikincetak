@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SkuFinishing extends Model
 {
@@ -20,6 +21,10 @@ class SkuFinishing extends Model
         'harga_tambahan',
     ];
 
+    public function pesananItemFinishing(): HasMany
+    {
+        return $this->hasMany(PesananItemFinishing::class, 'id_sku_finishing', 'id');
+    }
     public function produkSku(): BelongsTo
     {
         return $this->belongsTo(ProdukSku::class, 'id_sku', 'id_sku');

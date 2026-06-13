@@ -22,7 +22,7 @@ class PesananItemFinishing extends Model
 
     public function skuFinishing(): BelongsTo
     {
-        return $this->belongsTo(SkuFinishing::class, 'id_sku_finishing', 'id_sku_finishing');
+        return $this->belongsTo(SkuFinishing::class, 'id_sku_finishing', 'id');
     }
     public function pesananItem(): BelongsTo
     {

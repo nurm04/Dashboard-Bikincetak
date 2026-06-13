@@ -48,7 +48,7 @@ class PesanController extends Controller
         try {
             DB::beginTransaction();
 
-            $id_pesan = (new PesanService())->generateId();
+            $id_pesan = PesanService::generateId();
 
             $pesanan = Pesan::create([
                 'id_pesan' => $id_pesan,
@@ -79,10 +79,10 @@ class PesanController extends Controller
                     'catatan' => $item['catatan'] ?? null,
                 ]);
 
-                $finishings = isset($item['finishings']) ? json_decode($item['finishings'], true) : [];
+                $finishing = isset($item['finishing']) ? json_decode($item['finishing'], true) : [];
 
-                if (!empty($finishings) && is_array($finishings)) {
-                    foreach ($finishings as $finishing) {
+                if (!empty($finishing) && is_array($finishing)) {
+                    foreach ($finishing as $finishing) {
                         PesananItemFinishing::create([
                             'id_pesanan_item' => $pesananItem->id,
                             'id_sku_finishing' => $finishing['id_sku_finishing'],
@@ -111,7 +111,7 @@ class PesanController extends Controller
             'status_operasional' => 'required|in:keranjang,menunggu_diproses,proses_pengerjaan,proses_pengantaran,selesai,batal'
         ]);
 
-        $pesanan = Pesan::with(['pesananItem.pesananItemFinishings.skuFinishing'])->findOrFail($id_pesan);
+        $pesanan = Pesan::with(['pesananItem.pesananItemFinishing.skuFinishing'])->findOrFail($id_pesan);
         $statusLama = $pesanan->status_operasional;
         $statusBaru = $request->status_operasional;
 
@@ -123,7 +123,7 @@ class PesanController extends Controller
                 $items = $pesanan->pesananItem || [];
 
                 foreach ($items as $item) {
-                    $finishingTerpilih = collect($item->pesananItemFinishings ?? [])
+                    $finishingTerpilih = collect($item->pesananItemFinishing ?? [])
                         ->map(fn($f) => $f->skuFinishing->id_pilihan_finishing ?? null)
                         ->filter()
                         ->toArray();

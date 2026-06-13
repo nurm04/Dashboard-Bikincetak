@@ -6,7 +6,7 @@ use App\Models\Pesan;
 
 class PesanService
 {
-    public function generateId(): string
+    public static function generateId(): string
     {
         $prefix = 'PSN-' . date('ym') . '-';
 

@@ -32,6 +32,7 @@ class CustomerController extends Controller
     public function edit($id)
     {
         return Inertia::render('Customer/Form', [
+            // Pastikan relasi di model namanya 'alamat' atau 'alamats'
             'customer' => Customer::with(['user', 'alamat'])->findOrFail($id),
             'roles' => RoleCustomer::all(),
         ]);
@@ -71,8 +72,9 @@ class CustomerController extends Controller
                 if (blank($stringAlamat)) continue;
 
                 Alamat::create([
+                    // Membuat kode alamat unik menggunakan tahun 2026 saat ini
                     'id_alamat' => 'ALM-' . date('Ymd') . '-' . strtoupper(Str::random(4)),
-                    'id_customer' => $id_customer,
+                    'id_customer' => $id_customer, // Tetap aman pakai string CUST-XXX
                     'alamat' => $stringAlamat,
                 ]);
             }
@@ -118,14 +120,15 @@ class CustomerController extends Controller
                 'id_role_customer' => $request->id_role_customer,
             ]);
 
-            Alamat::where('id_customer', $id)->delete();
+            // FIX UTAMA: Hapus alamat lama bersandarkan string 'id_customer' milik model Customer, bukan route $id murni
+            Alamat::where('id_customer', $customer->id_customer)->delete();
 
             foreach ($request->alamats as $stringAlamat) {
                 if (blank($stringAlamat)) continue;
 
                 Alamat::create([
                     'id_alamat' => 'ALM-' . date('Ymd') . '-' . strtoupper(Str::random(4)),
-                    'id_customer' => $id,
+                    'id_customer' => $customer->id_customer, // FIX: Gunakan kode unik string dari model
                     'alamat' => $stringAlamat,
                 ]);
             }
