@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Alamat;
 use App\Models\Customer;
 use App\Models\RoleCustomer;
 use App\Models\User;
@@ -10,8 +9,9 @@ use App\Services\CustomerService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
+use App\Mail\CustomerPasswordChanged;
+use Illuminate\Support\Facades\Mail;
 
 class CustomerController extends Controller
 {
@@ -38,6 +38,15 @@ class CustomerController extends Controller
         ]);
     }
 
+    public function editPassword($id)
+    {
+        $customer = Customer::with('user')->findOrFail($id);
+
+        return Inertia::render('Customer/Password', [
+            'customer' => $customer
+        ]);
+    }
+
     public function store(Request $request)
     {
         $request->validate([
@@ -46,8 +55,6 @@ class CustomerController extends Controller
             'password' => 'required|min:8',
             'no_hp' => 'required|string|max:15',
             'id_role_customer' => 'required|exists:role_customer,id_role_customer',
-            'alamats' => 'required|array|min:1',
-            'alamats.*' => 'required|string|max:500',
         ]);
 
         try {
@@ -60,31 +67,26 @@ class CustomerController extends Controller
                 'role' => 'customer',
             ]);
 
-            $id_customer = CustomerService::generateId();
             Customer::create([
-                'id_customer' => $id_customer,
+                'id_customer' => CustomerService::generateId(),
                 'user_id' => $user->id,
                 'no_hp' => $request->no_hp,
                 'id_role_customer' => $request->id_role_customer,
             ]);
 
-            foreach ($request->alamats as $stringAlamat) {
-                if (blank($stringAlamat)) continue;
-
-                Alamat::create([
-                    // Membuat kode alamat unik menggunakan tahun 2026 saat ini
-                    'id_alamat' => 'ALM-' . date('Ymd') . '-' . strtoupper(Str::random(4)),
-                    'id_customer' => $id_customer, // Tetap aman pakai string CUST-XXX
-                    'alamat' => $stringAlamat,
-                ]);
-            }
-
             DB::commit();
-            return redirect()->route('customer.index')->with('success', 'Customer berhasil didaftarkan.');
+
+            return redirect()
+                ->route('customer.index')
+                ->with('success', 'Customer berhasil didaftarkan.');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Gagal mendaftarkan customer: ' . $e->getMessage());
+
+            return back()->with(
+                'error',
+                'Gagal mendaftarkan customer: ' . $e->getMessage()
+            );
         }
     }
 
@@ -98,9 +100,6 @@ class CustomerController extends Controller
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
             'no_hp' => 'required|string|max:15',
             'id_role_customer' => 'required|exists:role_customer,id_role_customer',
-            'password' => 'nullable|min:8',
-            'alamats' => 'required|array|min:1',
-            'alamats.*' => 'required|string|max:500',
         ]);
 
         try {
@@ -111,34 +110,64 @@ class CustomerController extends Controller
                 'email' => $request->email,
             ]);
 
-            if ($request->filled('password')) {
-                $user->update(['password' => Hash::make($request->password)]);
-            }
-
             $customer->update([
                 'no_hp' => $request->no_hp,
                 'id_role_customer' => $request->id_role_customer,
             ]);
 
-            // FIX UTAMA: Hapus alamat lama bersandarkan string 'id_customer' milik model Customer, bukan route $id murni
-            Alamat::where('id_customer', $customer->id_customer)->delete();
-
-            foreach ($request->alamats as $stringAlamat) {
-                if (blank($stringAlamat)) continue;
-
-                Alamat::create([
-                    'id_alamat' => 'ALM-' . date('Ymd') . '-' . strtoupper(Str::random(4)),
-                    'id_customer' => $customer->id_customer, // FIX: Gunakan kode unik string dari model
-                    'alamat' => $stringAlamat,
-                ]);
-            }
-
             DB::commit();
-            return redirect()->route('customer.index')->with('success', 'Data customer berhasil diperbarui.');
+
+            return redirect()
+                ->route('customer.index')
+                ->with('success', 'Data customer berhasil diperbarui.');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Gagal memperbarui data: ' . $e->getMessage());
+
+            return back()->with(
+                'error',
+                'Gagal memperbarui data: ' . $e->getMessage()
+            );
+        }
+    }
+
+    public function updatePassword(Request $request, $id)
+    {
+        $customer = Customer::with('user')->findOrFail($id);
+
+        $request->validate([
+            'password' => 'required|min:8|confirmed',
+        ]);
+
+        try {
+
+            $plainPassword = $request->password;
+
+            $customer->user->update([
+                'password' => Hash::make($plainPassword)
+            ]);
+
+            Mail::to($customer->user->email)
+                ->send(
+                    new CustomerPasswordChanged(
+                        $customer->user,
+                        $plainPassword
+                    )
+                );
+
+            return redirect()
+                ->route('customer.index')
+                ->with(
+                    'success',
+                    'Password berhasil diperbarui dan email telah dikirim.'
+                );
+
+        } catch (\Exception $e) {
+
+            return back()->with(
+                'error',
+                'Gagal mengubah password: ' . $e->getMessage()
+            );
         }
     }
 

@@ -4,7 +4,6 @@ import CustomInput from '@/Components/CustomInput.vue';
 import CustomSelectSearch from '@/Components/CustomSelectSearch.vue';
 import CustomButton from '@/Components/CustomButton.vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
-import CustomTableForm from '@/Components/CustomTableForm.vue';
 import { alertStore } from '@/Utils/alertStore';
 
 const props = defineProps({
@@ -28,10 +27,6 @@ const addNewRole = (val) => {
     if (roleName) {
         router.post(route('role-customer.store'), { role: roleName }, { preserveScroll: true });
     }
-};
-
-const addRow = () => {
-    form.alamats.push('');
 };
 
 const submit = () => {
@@ -69,9 +64,15 @@ const submit = () => {
                                 <CustomInput v-model="form.name" label="Nama Lengkap" placeholder="John Doe" :error="form.errors.name" required />
                                 <CustomInput v-model="form.email" label="Email Aktif" type="email" placeholder="john@example.com" :error="form.errors.email" required />
                             </div>
-                            <CustomInput v-model="form.password" label="Password" type="password"
-                                :placeholder="isEdit ? 'Kosongkan jika tidak ganti' : 'Minimal 8 karakter'"
-                                :required="!isEdit" :error="form.errors.password" />
+                            <CustomInput
+                                v-if="!isEdit"
+                                v-model="form.password"
+                                label="Password"
+                                type="password"
+                                placeholder="Minimal 8 karakter"
+                                required
+                                :error="form.errors.password"
+                            />
                         </div>
 
                         <div class="space-y-4">
@@ -90,25 +91,6 @@ const submit = () => {
                                 />
                             </div>
                         </div>
-
-                        <CustomTableForm
-                            v-model="form.alamats"
-                            label="Daftar Alamat"
-                            :headers="['Alamat']"
-                            @add="addRow"
-                        >
-                            <template #row="{ row, index }">
-                                <td class="px-4 py-2">
-                                    <input
-                                        v-model="form.alamats[index]"
-                                        type="text"
-                                        placeholder="Ketik Alamat..."
-                                        class="w-full p-0 text-sm font-bold bg-transparent border-none focus:ring-0 text-base-content outline-none"
-                                        required
-                                    />
-                                </td>
-                            </template>
-                        </CustomTableForm>
 
                         <p v-if="form.errors.alamats" class="text-error text-[10px] font-bold ml-1">
                             {{ form.errors.alamats }}

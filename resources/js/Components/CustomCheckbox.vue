@@ -1,16 +1,14 @@
 <script setup>
-// Props tetap sama supaya gak ngerusak logic v-model di Form
-defineProps({
-    modelValue: [Boolean, Number],
+const props = defineProps({
+    modelValue: Boolean,
     label: String,
-    color: { type: String, default: 'primary' }
+    color: {
+        type: String,
+        default: 'primary'
+    }
 });
 
 const emit = defineEmits(['update:modelValue']);
-
-const toggle = () => {
-    emit('update:modelValue', !modelValue);
-};
 </script>
 
 <template>

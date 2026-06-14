@@ -3,9 +3,9 @@ import { ref } from 'vue';
 import StafLayout from '@/Layouts/StafLayout.vue';
 import CustomButton from '@/Components/CustomButton.vue';
 import CustomTable from '@/Components/CustomTable.vue';
-import { Head, useForm } from '@inertiajs/vue3';
-import Modal from '@/Components/Modal.vue';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 import CustomAlertConfirm from '@/Components/CustomAlertConfirm.vue';
+import CustomTableAction from '@/Components/CustomTableAction.vue';
 
 const props = defineProps({
     customers: Array,
@@ -82,15 +82,32 @@ const doDelete = () => {
                                 {{ cust.role_customer?.role }}
                             </span>
                         </td>
-                        <td class="px-6 py-4">
-                            <div class="flex justify-center space-x-2">
-                                <CustomButton v-if="$can('customer', 'ubah')" type="link" :href="route('customer.edit', cust.id_customer)" variant="info" size="sm">
-                                    Edit
-                                </CustomButton>
-                                <CustomButton v-if="$can('akun', 'hapus')" @click="openDeleteModal(cust.id_customer)" variant="error" size="sm">
-                                    Hapus
-                                </CustomButton>
-                            </div>
+                        <td class="px-6 py-4 text-center">
+                            <CustomTableAction v-slot="{ close }">
+                                <div class="px-4 py-2 text-[10px] font-black text-base-content/20 uppercase tracking-widest border-b border-base-300/50 mb-1">
+                                    Menu Customer
+                                </div>
+
+                                <Link v-if="$can('customer', 'ubah')" :href="route('customer.edit', cust.id_customer)" @click="close" class="flex items-center px-4 py-2.5 text-sm font-bold text-primary hover:bg-primary/10 transition-colors">
+                                    <svg class="w-4 h-4 mr-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                    Edit Customer
+                                </Link>
+                                <Link v-if="$can('alamat', 'ubah')" :href="route('alamat.customer', cust.id_customer)" @click="close" class="flex items-center px-4 py-2.5 text-sm font-bold text-info hover:bg-info/10 transition-colors">
+                                    <svg class="w-4 h-4 mr-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                    Alamat Customer
+                                </Link>
+                                <Link v-if="$can('customer', 'ubah')" :href="route('customer.password', cust.id_customer)" @click="close" class="flex items-center px-4 py-2.5 text-sm font-bold text-warning hover:bg-warning/10 transition-colors">
+                                    <svg class="w-4 h-4 mr-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                    Password Customer
+                                </Link>
+
+                                <div class="my-1 border-t border-base-300/50"></div>
+
+                                <button v-if="$can('customer', 'hapus')" @click="openDeleteModal(cust.id_customer); close()" class="flex items-center w-full px-4 py-2.5 text-sm font-bold text-error hover:bg-error/10 transition-colors">
+                                    <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                    Hapus Customer
+                                </button>
+                            </CustomTableAction>
                         </td>
                     </tr>
 

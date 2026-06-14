@@ -16,7 +16,25 @@ class Alamat extends Model
     protected $fillable = [
         'id_alamat',
         'id_customer',
-        'alamat',
+
+        'label',
+
+        'nama_penerima',
+        'no_hp',
+
+        'provinsi',
+        'kota',
+        'kecamatan',
+        'kelurahan',
+
+        'kode_pos',
+
+        'alamat_lengkap',
+
+        'latitude',
+        'longitude',
+
+        'is_default',
     ];
 
     public function customer(): BelongsTo

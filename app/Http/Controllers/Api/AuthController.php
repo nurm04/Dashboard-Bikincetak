@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Alamat;
 use App\Models\Customer;
 use App\Models\RoleCustomer;
 use App\Models\User;
@@ -27,7 +26,6 @@ class AuthController extends Controller
         try {
             DB::beginTransaction();
 
-            // 1. Buat User
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
@@ -79,9 +77,10 @@ class AuthController extends Controller
             'password' => 'required'
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $user = User::with('customer')
+            ->where('email', $request->email)
+            ->first();
 
-        // Cek kecocokan password
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
                 'success' => false,
@@ -91,10 +90,83 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
+        $user->load('customer');
+
         return response()->json([
             'success' => true,
             'data' => $user,
             'token' => $token
         ], 200);
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'no_hp' => 'required|string|max:15',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $user->update([
+                'name' => $request->name,
+            ]);
+
+            $user->customer()->update([
+                'no_hp' => $request->no_hp,
+            ]);
+
+            DB::commit();
+
+            $user->load('customer');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Profil berhasil diperbarui',
+                'data' => $user,
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $request->validate([
+            'old_password' => 'required',
+            'password' => 'required|min:8|confirmed',
+        ]);
+
+        $user = $request->user();
+
+        if (!Hash::check(
+            $request->old_password,
+            $user->password
+        )) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Password lama tidak sesuai'
+            ], 422);
+        }
+
+        $user->update([
+            'password' => Hash::make(
+                $request->password
+            )
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password berhasil diperbarui'
+        ]);
     }
 }
