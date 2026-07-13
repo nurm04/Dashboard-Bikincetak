@@ -17,7 +17,8 @@ class PesananItemFinishing extends Model
         'id_pesanan_item',
         'id_sku_finishing',
         'nama_finishing_snapshot',
-        'harga_finishing_snapshot'
+        'harga_finishing_snapshot',
+        'hpp_finishing_snapshot'
     ];
 
     public function skuFinishing(): BelongsTo

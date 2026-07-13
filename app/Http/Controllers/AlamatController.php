@@ -32,10 +32,13 @@ class AlamatController extends Controller
             'nama_penerima' => 'required|string|max:255',
             'no_hp' => 'required|string|max:20',
 
+            'provinsi_id' => 'required|integer',
+            'kota_id' => 'required|integer',
+            'kecamatan_id' => 'nullable|integer',
+
             'provinsi' => 'required|string|max:255',
             'kota' => 'required|string|max:255',
             'kecamatan' => 'required|string|max:255',
-            'kelurahan' => 'nullable|string|max:255',
 
             'kode_pos' => 'required|string|max:10',
 
@@ -70,10 +73,13 @@ class AlamatController extends Controller
                 'nama_penerima' => $request->nama_penerima,
                 'no_hp' => $request->no_hp,
 
+                'provinsi_id' => $request->provinsi_id,
+                'kota_id' => $request->kota_id,
+                'kecamatan_id' => $request->kecamatan_id,
+
                 'provinsi' => $request->provinsi,
                 'kota' => $request->kota,
                 'kecamatan' => $request->kecamatan,
-                'kelurahan' => $request->kelurahan,
 
                 'kode_pos' => $request->kode_pos,
 
@@ -112,10 +118,13 @@ class AlamatController extends Controller
             'nama_penerima' => 'required|string|max:255',
             'no_hp' => 'required|string|max:20',
 
+            'provinsi_id' => 'required|integer',
+            'kota_id' => 'required|integer',
+            'kecamatan_id' => 'nullable|integer',
+
             'provinsi' => 'required|string|max:255',
             'kota' => 'required|string|max:255',
             'kecamatan' => 'required|string|max:255',
-            'kelurahan' => 'nullable|string|max:255',
 
             'kode_pos' => 'required|string|max:10',
 
@@ -146,10 +155,13 @@ class AlamatController extends Controller
                 'nama_penerima' => $request->nama_penerima,
                 'no_hp' => $request->no_hp,
 
+                'provinsi_id' => $request->provinsi_id,
+                'kota_id' => $request->kota_id,
+                'kecamatan_id' => $request->kecamatan_id,
+
                 'provinsi' => $request->provinsi,
                 'kota' => $request->kota,
                 'kecamatan' => $request->kecamatan,
-                'kelurahan' => $request->kelurahan,
 
                 'kode_pos' => $request->kode_pos,
 

@@ -1,10 +1,8 @@
 <script setup>
 import GuestLayout from '@/Layouts/GuestLayout.vue';
-import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
-import TextInput from '@/Components/TextInput.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import CustomInput from '@/Components/CustomInput.vue';
+import CustomButton from '@/Components/CustomButton.vue';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 
 defineProps({
     status: {
@@ -23,46 +21,57 @@ const submit = () => {
 
 <template>
     <GuestLayout>
-        <Head title="Forgot Password" />
+        <Head title="Lupa Password" />
 
-        <div class="mb-4 text-sm text-gray-600">
-            Forgot your password? No problem. Just let us know your email
-            address and we will email you a password reset link that will allow
-            you to choose a new one.
-        </div>
+        <div class="w-full max-w-md p-8 mx-auto shadow-2xl sm:p-10 card bg-base-100 rounded-3xl border border-base-content/5">
 
-        <div
-            v-if="status"
-            class="mb-4 text-sm font-medium text-green-600"
-        >
-            {{ status }}
-        </div>
+            <div class="mb-6 text-center">
+                <h2 class="text-xl font-black tracking-widest uppercase text-primary">Reset Password</h2>
+                <p class="mt-4 text-[10px] font-bold text-base-content/50 uppercase tracking-widest leading-relaxed">
+                    Tidak masalah. Masukkan alamat email Anda dan kami akan mengirimkan tautan untuk mengatur ulang password.
+                </p>
+            </div>
 
-        <form @submit.prevent="submit">
-            <div>
-                <InputLabel for="email" value="Email" />
+            <div
+                v-if="status"
+                class="p-3 mb-6 text-[10px] font-black tracking-widest uppercase border rounded-xl text-success bg-success/10 border-success/20 text-center"
+            >
+                {{ status }}
+            </div>
 
-                <TextInput
+            <form @submit.prevent="submit" class="space-y-6">
+                <CustomInput
+                    v-model="form.email"
                     id="email"
                     type="email"
-                    class="mt-1 block w-full"
-                    v-model="form.email"
+                    label="Alamat Email"
+                    placeholder="admin@bikincetak.com"
+                    :error="form.errors.email"
                     required
                     autofocus
                     autocomplete="username"
                 />
 
-                <InputError class="mt-2" :message="form.errors.email" />
-            </div>
+                <div class="pt-2">
+                    <CustomButton
+                        type="submit"
+                        variant="primary"
+                        class="w-full h-12 shadow-lg rounded-xl shadow-primary/30 hover:shadow-primary/50"
+                        :disabled="form.processing"
+                    >
+                        {{ form.processing ? 'Memproses...' : 'Kirim Link Reset' }}
+                    </CustomButton>
+                </div>
 
-            <div class="mt-4 flex items-center justify-end">
-                <PrimaryButton
-                    :class="{ 'opacity-25': form.processing }"
-                    :disabled="form.processing"
-                >
-                    Email Password Reset Link
-                </PrimaryButton>
-            </div>
-        </form>
+                <div class="mt-6 text-center">
+                    <Link
+                        :href="route('login')"
+                        class="text-[10px] font-black tracking-widest uppercase text-base-content/40 hover:text-primary transition-colors"
+                    >
+                        Kembali ke Halaman Login
+                    </Link>
+                </div>
+            </form>
+        </div>
     </GuestLayout>
 </template>

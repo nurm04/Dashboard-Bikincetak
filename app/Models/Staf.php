@@ -26,6 +26,10 @@ class Staf extends Model
     {
         return $this->hasMany(PembelianBahan::class, 'id_staf', 'id_staf');
     }
+    public function pembayaran(): HasMany
+    {
+        return $this->hasMany(Pembayaran::class, 'id_staf', 'id_staf');
+    }
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id', 'id');

@@ -1,14 +1,24 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
+import { Head, useForm, router } from '@inertiajs/vue3';
 import StafLayout from '@/Layouts/StafLayout.vue';
 import CustomButton from '@/Components/CustomButton.vue';
 import CustomTable from '@/Components/CustomTable.vue';
-import { Head, useForm } from '@inertiajs/vue3';
-import { alertStore } from '@/Utils/alertStore';
 import CustomAlertConfirm from '@/Components/CustomAlertConfirm.vue';
+import CustomInputSearch from '@/Components/CustomInputSearch.vue';
+import { alertStore } from '@/Utils/alertStore';
+
+const debounce = (fn, delay) => {
+    let timeoutId;
+    return (...args) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => fn(...args), delay);
+    };
+};
 
 const props = defineProps({
     pembelian: Array,
+    filters: Object
 });
 
 const headers = ['ID Pembelian', 'Tanggal', 'Supplier', 'Total Biaya', 'Staf', 'Aksi'];
@@ -16,6 +26,21 @@ const headers = ['ID Pembelian', 'Tanggal', 'Supplier', 'Total Biaya', 'Staf', '
 const isDeleteModalOpen = ref(false);
 const selectedId = ref(null);
 const form = useForm({});
+
+const search = ref(props.filters?.search || '');
+
+watch(
+    search,
+    debounce((newSearch) => {
+        router.get(route('pembelian-bahan.index'), {
+            search: newSearch
+        }, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true
+        });
+    }, 300)
+);
 
 const openDeleteModal = (id) => {
     selectedId.value = id;
@@ -65,7 +90,7 @@ const doDelete = () => {
             <div class="mx-auto max-w-7xl">
 
                 <div class="flex flex-col gap-4 mb-8 md:flex-row md:items-center md:justify-between">
-                    <CustomButton v-if="$can('pembelian-bahan', 'tambah')" type="link" :href="route('pembelian-bahan.create')" variant="primary">
+                    <CustomButton v-if="$can('pembelian-bahan', 'tambah')" type="link" :href="route('pembelian-bahan.create')" variant="primary" class="shrink-0 rounded-xl">
                         <template #icon>
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path>
@@ -73,6 +98,14 @@ const doDelete = () => {
                         </template>
                         Tambah Pembelian
                     </CustomButton>
+
+                    <div class="flex flex-col w-full md:w-auto">
+                        <CustomInputSearch
+                            v-model="search"
+                            class="w-full sm:w-80"
+                            placeholder="Cari ID, Supplier, Nama Bahan..."
+                        />
+                    </div>
                 </div>
 
                 <CustomTable :headers="headers">
@@ -90,11 +123,13 @@ const doDelete = () => {
                         </td>
 
                         <td class="px-6 py-4 font-bold text-base-content">
-                            Rp {{ pb.total_biaya.toLocaleString() }}
+                            Rp {{ pb.total_biaya.toLocaleString('id-ID') }}
                         </td>
 
-                        <td class="px-6 py-4 font-bold text-base-content">
-                            {{ pb.staf?.user?.name ?? '-' }}
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 rounded-md bg-base-200 border border-base-300 text-[10px] font-black uppercase tracking-wider text-base-content/60">
+                                {{ pb.staf?.user?.name ?? '-' }}
+                            </span>
                         </td>
 
                         <td class="px-6 py-4">
@@ -115,7 +150,9 @@ const doDelete = () => {
                                 <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                                 </svg>
-                                <p class="text-sm font-bold tracking-widest uppercase">Belum ada Transaksi</p>
+                                <p class="text-sm font-bold tracking-widest uppercase">
+                                    {{ search ? 'Pencarian Tidak Ditemukan' : 'Belum ada Transaksi' }}
+                                </p>
                             </div>
                         </td>
                     </tr>

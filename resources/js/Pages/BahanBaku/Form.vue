@@ -15,6 +15,7 @@ const isEdit = !!props.bahan;
 const form = useForm({
     nama_bahan_baku: props.bahan?.nama_bahan_baku ?? '',
     satuan: props.bahan?.satuan ?? '',
+    berat_gram_persatuan: props.bahan?.berat_gram_persatuan ?? '',
     harga_beli: props.bahan?.harga_beli ?? 0,
     stok_awal: props.bahan?.stok_awal ?? 0,
     is_active: props.bahan ? !!props.bahan.is_active : true,
@@ -59,10 +60,16 @@ const submit = () => {
                                     placeholder="Lembar/Roll/Botol"
                                     :error="form.errors.satuan"
                                 />
-                                <div>
-                                    <label class="block mb-1 ml-1 text-xs font-bold text-base-content/70">Harga Beli</label>
-                                    <CustomInputNumber v-model="form.harga_beli" prefix="Rp" />
-                                </div>
+                                <CustomInput
+                                    v-model="form.berat_gram_persatuan"
+                                    label="Berat Gram Persatuan"
+                                    placeholder="0 gram"
+                                    :error="form.errors.berat_gram_persatuan"
+                                />
+                            </div>
+                            <div>
+                                <label class="block mb-1 ml-1 text-xs font-bold text-base-content/70">Harga Beli</label>
+                                <CustomInputNumber v-model="form.harga_beli" prefix="Rp" />
                             </div>
                         </div>
 

@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('id_sku_finishing');
             $table->string('nama_finishing_snapshot');
             $table->float('harga_finishing_snapshot');
+            $table->float('hpp_finishing_snapshot')->default(0);
             $table->timestamps();
         });
     }

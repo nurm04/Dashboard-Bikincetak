@@ -23,6 +23,10 @@ class ProdukSku extends Model
         'harga',
     ];
 
+    public function voucherTarget(): HasMany
+    {
+        return $this->hasMany(Voucher::class, 'id_sku_target', 'id_sku');
+    }
     public function pesananItem(): HasMany
     {
         return $this->hasMany(PesananItem::class, 'id_sku', 'id_sku');

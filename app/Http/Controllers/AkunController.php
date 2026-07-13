@@ -5,14 +5,49 @@ namespace App\Http\Controllers;
 use App\Models\Akun;
 use App\Services\AkunService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class AkunController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return Inertia::render('Akun/Index', [
-            'akuns' => Akun::all()
+        $search = $request->query('search');
+        $filterKategori = $request->query('kategori');
+        $filterSaldo = $request->query('saldo_normal');
+
+        $query = Akun::query();
+
+        if (!empty($search)) {
+            $query->where(function($q) use ($search) {
+                $q->where('id_akun', 'like', "%{$search}%")
+                  ->orWhere('nama_akun', 'like', "%{$search}%");
+            });
+        }
+
+        if (!empty($filterKategori) && $filterKategori !== 'semua') {
+            $query->where('kategori', $filterKategori);
+        }
+
+        if (!empty($filterSaldo) && $filterSaldo !== 'semua') {
+            $query->where('saldo_normal', $filterSaldo);
+        }
+
+        $akuns = $query->orderBy('id_akun', 'asc')->get();
+
+        $typeKategori = DB::select("SHOW COLUMNS FROM akun WHERE Field = 'kategori'")[0]->Type;
+        preg_match('/^enum\((.*)\)$/', $typeKategori, $matchesKategori);
+        $enumKategori = array_map(function($value){ return trim($value, "'"); }, explode(',', $matchesKategori[1]));
+
+        $typeSaldo = DB::select("SHOW COLUMNS FROM akun WHERE Field = 'saldo_normal'")[0]->Type;
+        preg_match('/^enum\((.*)\)$/', $typeSaldo, $matchesSaldo);
+        $enumSaldo = array_map(function($value){ return trim($value, "'"); }, explode(',', $matchesSaldo[1]));
+
+        return inertia('Akun/Index', [
+            'akuns' => $akuns,
+            'enumKategori' => $enumKategori,
+            'enumSaldo' => $enumSaldo,
+            'filters' => $request->only(['search', 'kategori', 'saldo_normal'])
         ]);
     }
 

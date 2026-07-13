@@ -17,9 +17,14 @@ return new class extends Migration
             $table->string('id_sku');
             $table->string('nama_produk_snapshot');
             $table->integer('jumlah');
+            $table->float('harga_dasar_awal_snapshot')->default(0);
+            $table->float('total_diskon_snapshot')->default(0);
+            $table->json('rincian_diskon_snapshot')->nullable();
             $table->float('harga_satuan_snapshot');
+            $table->float('hpp_satuan_snapshot')->default(0);
             $table->string('estimasi_pengerjaan_snapshot');
             $table->float('harga_pengerjaan_snapshot')->default(0);
+            $table->float('total_berat_snapshot')->default(0);
             $table->text('file_desain')->nullable();
             $table->text('catatan')->nullable();
             $table->foreign('id_sku')->references('id_sku')->on('produk_sku');

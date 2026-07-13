@@ -23,6 +23,12 @@ class Pesan extends Model
         'tanggal_selesai',
         'status_operasional',
         'status_pembayaran',
+        'kode_voucher',
+        'diskon_voucher_nominal',
+        'ekspedisi_nama',
+        'ekspedisi_layanan',
+        'harga_ongkir',
+        'ekspedisi_estimasi',
     ];
 
     protected $casts = [

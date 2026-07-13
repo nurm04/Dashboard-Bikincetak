@@ -6,17 +6,31 @@ use App\Models\Customer;
 use App\Models\Kategori;
 use App\Models\Produk;
 use App\Models\Varian;
+use App\Models\Voucher;
 use App\Services\ProdukService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Storage;
 
 class ProdukController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return Inertia::render('Produk/Index', [
-            'produks' => Produk::with(['kategori', 'varians', 'produkSku'])->get()
+        $search = $request->query('search');
+
+        $query = Produk::with(['kategori', 'varians', 'produkSku']);
+
+        if (!empty($search)) {
+            $query->where(function($q) use ($search) {
+                $q->where('id_produk', 'like', "%{$search}%")
+                  ->orWhere('nama_produk', 'like', "%{$search}%");
+            });
+        }
+
+        return inertia('Produk/Index', [
+            'produks' => $query->latest()->get(),
+            'filters' => $request->only(['search'])
         ]);
     }
 
@@ -32,14 +46,24 @@ class ProdukController extends Controller
         $request->validate([
             'id_kategori' => 'required|exists:kategori,id_kategori',
             'nama_produk' => 'required|string',
+            'gambar'      => 'nullable|array',
+            'gambar.*'    => 'image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
         $id = ProdukService::generateId($request->id_kategori, $request->nama_produk);
+
+        $uploadedImages = [];
+        if ($request->hasFile('gambar')) {
+            foreach ($request->file('gambar') as $file) {
+                $uploadedImages[] = $file->store('produk', 'public');
+            }
+        }
 
         Produk::create([
             'id_produk' => $id,
             'id_kategori' => $request->id_kategori,
             'nama_produk' => $request->nama_produk,
+            'gambar'      => $uploadedImages,
         ]);
 
         return redirect()->route('produk.index')->with('success', 'Produk berhasil dibuat.');
@@ -58,18 +82,35 @@ class ProdukController extends Controller
         $request->validate([
             'id_kategori' => 'required|exists:kategori,id_kategori',
             'nama_produk' => 'required|string',
+            'gambar'      => 'nullable|array',
+            'gambar.*'    => 'image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
         try {
             DB::beginTransaction();
 
             $produk = Produk::with('produkSku')->findOrFail($id);
-            $namaLama = $produk->nama_produk;
             $namaBaru = $request->nama_produk;
+
+            $gambarPaths = $produk->gambar ?? [];
+
+            if ($request->hasFile('gambar')) {
+                if (!empty($produk->gambar)) {
+                    foreach ($produk->gambar as $oldPath) {
+                        Storage::disk('public')->delete($oldPath);
+                    }
+                }
+
+                $gambarPaths = [];
+                foreach ($request->file('gambar') as $file) {
+                    $gambarPaths[] = $file->store('produk', 'public');
+                }
+            }
 
             $produk->update([
                 'nama_produk' => $namaBaru,
-                'id_kategori' => $request->id_kategori
+                'id_kategori' => $request->id_kategori,
+                'gambar'      => $gambarPaths
             ]);
 
             foreach ($produk->produkSku as $sku) {
@@ -143,29 +184,22 @@ class ProdukController extends Controller
         }
     }
 
-    // Request Api / Vue
     public function katalogWeb(Request $request)
     {
         $kategoris = Kategori::all();
         $produks = Produk::where('is_active', true)->get();
+        $customers = Customer::with(['user', 'alamat', 'roleCustomer'])->get();
 
-        $customers = Customer::with(['user', 'alamat'])->get();
-
-        if ($request->wantsJson() || $request->is('api/*')) {
-            return response()->json([
-                'status' => 'success',
-                'data' => [
-                    'kategoris' => $kategoris,
-                    'produks' => $produks,
-                    'customers' => $customers
-                ]
-            ], 200);
-        }
+        $vouchers = Voucher::where('is_active', true)
+            ->where('berlaku_dari', '<=', now())
+            ->where('berlaku_sampai', '>=', now())
+            ->get();
 
         return Inertia::render('Pesan/PosKasir', [
             'kategoris' => $kategoris,
             'produks' => $produks,
-            'customers' => $customers
+            'customers' => $customers,
+            'vouchers' => $vouchers
         ]);
     }
 
@@ -178,15 +212,6 @@ class ProdukController extends Controller
             'produkSku.diskonCustomer',
             'produkSku.skuFinishing.pilihanFinishing.finishing'
         ])->where('is_active', true)->findOrFail($id_produk);
-
-        if ($request->wantsJson() || $request->is('api/*')) {
-            return response()->json([
-                'status' => 'success',
-                'data' => [
-                    'produk' => $produk
-                ]
-            ], 200);
-        }
 
         return Inertia::render('Pesan/DetailProdukKasir', [
             'produk' => $produk

@@ -1,9 +1,7 @@
 <script setup>
 import GuestLayout from '@/Layouts/GuestLayout.vue';
-import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
-import TextInput from '@/Components/TextInput.vue';
+import CustomInput from '@/Components/CustomInput.vue';
+import CustomButton from '@/Components/CustomButton.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -35,67 +33,68 @@ const submit = () => {
     <GuestLayout>
         <Head title="Reset Password" />
 
-        <form @submit.prevent="submit">
-            <div>
-                <InputLabel for="email" value="Email" />
+        <!-- Wrapper Card menyesuaikan tema sistem -->
+        <div class="w-full max-w-md p-8 mx-auto shadow-2xl sm:p-10 card bg-base-100 rounded-3xl border border-base-content/5">
 
-                <TextInput
+            <!-- Header -->
+            <div class="mb-8 text-center">
+                <h2 class="text-3xl font-black tracking-widest uppercase text-primary">Password Baru</h2>
+                <p class="mt-2 text-[10px] font-bold text-base-content/50 uppercase tracking-widest leading-relaxed">
+                    Silakan buat password baru untuk akun Anda
+                </p>
+            </div>
+
+            <form @submit.prevent="submit" class="space-y-5">
+                <!-- Input Email -->
+                <CustomInput
+                    v-model="form.email"
                     id="email"
                     type="email"
-                    class="mt-1 block w-full"
-                    v-model="form.email"
+                    label="Alamat Email"
+                    placeholder="admin@bikincetak.com"
+                    :error="form.errors.email"
                     required
                     autofocus
                     autocomplete="username"
+                    readonly
                 />
 
-                <InputError class="mt-2" :message="form.errors.email" />
-            </div>
-
-            <div class="mt-4">
-                <InputLabel for="password" value="Password" />
-
-                <TextInput
+                <!-- Input Password Baru -->
+                <CustomInput
+                    v-model="form.password"
                     id="password"
                     type="password"
-                    class="mt-1 block w-full"
-                    v-model="form.password"
+                    label="Password Baru"
+                    placeholder="••••••••"
+                    :error="form.errors.password"
                     required
                     autocomplete="new-password"
                 />
 
-                <InputError class="mt-2" :message="form.errors.password" />
-            </div>
-
-            <div class="mt-4">
-                <InputLabel
-                    for="password_confirmation"
-                    value="Confirm Password"
-                />
-
-                <TextInput
+                <!-- Input Konfirmasi Password -->
+                <CustomInput
+                    v-model="form.password_confirmation"
                     id="password_confirmation"
                     type="password"
-                    class="mt-1 block w-full"
-                    v-model="form.password_confirmation"
+                    label="Konfirmasi Password"
+                    placeholder="••••••••"
+                    :error="form.errors.password_confirmation"
                     required
                     autocomplete="new-password"
                 />
 
-                <InputError
-                    class="mt-2"
-                    :message="form.errors.password_confirmation"
-                />
-            </div>
-
-            <div class="mt-4 flex items-center justify-end">
-                <PrimaryButton
-                    :class="{ 'opacity-25': form.processing }"
-                    :disabled="form.processing"
-                >
-                    Reset Password
-                </PrimaryButton>
-            </div>
-        </form>
+                <!-- Tombol Submit -->
+                <div class="pt-4">
+                    <CustomButton
+                        type="submit"
+                        variant="primary"
+                        class="w-full h-12 shadow-lg rounded-xl shadow-primary/30 hover:shadow-primary/50"
+                        :disabled="form.processing"
+                    >
+                        {{ form.processing ? 'Memproses...' : 'Simpan Password' }}
+                    </CustomButton>
+                </div>
+            </form>
+        </div>
     </GuestLayout>
 </template>

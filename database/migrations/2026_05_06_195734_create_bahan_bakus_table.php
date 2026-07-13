@@ -15,6 +15,7 @@ return new class extends Migration
             $table->string('id_bahan_baku')->primary();
             $table->string('nama_bahan_baku');
             $table->string('satuan');
+            $table->float('berat_gram_persatuan');
             $table->float('harga_beli');
             $table->float('stok_awal');
             $table->float('stok_sekarang');

@@ -50,6 +50,14 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        if (Auth::user()->role === 'customer') {
+            Auth::logout();
+
+            throw ValidationException::withMessages([
+                'email' => 'Akses Ditolak! Akun Pelanggan tidak diizinkan masuk ke panel sistem.',
+            ]);
+        }
+
         RateLimiter::clear($this->throttleKey());
     }
 

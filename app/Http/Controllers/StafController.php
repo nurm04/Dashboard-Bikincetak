@@ -12,10 +12,36 @@ use Inertia\Inertia;
 
 class StafController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return Inertia::render('Staf/Index', [
-            'stafs' => Staf::with(['user', 'roleStaf'])->get()
+        $search = $request->query('search');
+        $filterRole = $request->query('role_id');
+
+        $query = Staf::with(['user', 'roleStaf']);
+
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('id_staf', 'like', "%{$search}%")
+                  ->orWhere('no_hp', 'like', "%{$search}%")
+                  ->orWhereHas('user', function ($qUser) use ($search) {
+                      $qUser->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        if (!empty($filterRole) && $filterRole !== 'semua') {
+            $query->where('id_role_staf', $filterRole);
+        }
+
+        $stafs = $query->latest()->get();
+
+        $roles = RoleStaf::select('id_role_staf', 'role')->get();
+
+        return inertia('Staf/Index', [
+            'stafs' => $stafs,
+            'roles' => $roles,
+            'filters' => $request->only(['search', 'role_id'])
         ]);
     }
 

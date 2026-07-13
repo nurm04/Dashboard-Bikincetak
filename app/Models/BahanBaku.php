@@ -17,6 +17,7 @@ class BahanBaku extends Model
         'id_bahan_baku',
         'nama_bahan_baku',
         'satuan',
+        'berat_gram_persatuan',
         'harga_beli',
         'stok_awal',
         'stok_sekarang',

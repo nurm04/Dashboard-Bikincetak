@@ -15,10 +15,36 @@ use Illuminate\Support\Facades\Mail;
 
 class CustomerController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $search = $request->query('search');
+        $filterRole = $request->query('id_role_customer');
+
+        $query = Customer::with(['user', 'roleCustomer']);
+
+        if (!empty($search)) {
+            $query->where(function($q) use ($search) {
+                $q->where('id_customer', 'like', "%{$search}%")
+                ->orWhere('no_hp', 'like', "%{$search}%")
+                ->orWhereHas('user', function($qUser) use ($search) {
+                    $qUser->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                });
+            });
+        }
+
+        if (!empty($filterRole) && $filterRole !== 'semua') {
+            $query->where('id_role_customer', $filterRole);
+        }
+
+        $customers = $query->latest()->get();
+
+        $roles = RoleCustomer::all();
+
         return Inertia::render('Customer/Index', [
-            'customers' => Customer::with(['user', 'roleCustomer'])->get()
+            'customers' => $customers,
+            'roles' => $roles,
+            'filters' => $request->only(['search', 'id_role_customer'])
         ]);
     }
 

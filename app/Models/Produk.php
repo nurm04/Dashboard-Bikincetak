@@ -23,6 +23,10 @@ class Produk extends Model
         'is_active',
     ];
 
+    protected $casts = [
+        'gambar' => 'array',
+    ];
+    
     public function produkSku(): HasMany
     {
         return $this->hasMany(ProdukSku::class, 'id_produk', 'id_produk');

@@ -8,7 +8,7 @@ class BukuBesarService
 {
     public function generateId(): string
     {
-        $prefix = 'BB-' . date('ym') . '-';
+        $prefix = 'BB-' . date('ymd') . '-';
 
         $latest = BukuBesar::where('id_buku_besar', 'like', $prefix . '%')
                            ->orderBy('id_buku_besar', 'desc')

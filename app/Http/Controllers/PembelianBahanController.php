@@ -13,10 +13,40 @@ use Illuminate\Support\Facades\DB;
 
 class PembelianBahanController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $search = $request->query('search');
+
+        $query = PembelianBahan::with(['staf.user', 'detailPembelian.bahanBaku']);
+
+        if (!empty($search)) {
+            $query->where(function($q) use ($search) {
+
+                $q->where('id_pembelian', 'like', "%{$search}%")
+                  ->orWhere('nama_supplier', 'like', "%{$search}%")
+                  ->orWhere('total_biaya', 'like', "%{$search}%")
+                  ->orWhere('tanggal_beli', 'like', "%{$search}%")
+
+                  ->orWhereHas('staf', function($qStaf) use ($search) {
+                      $qStaf->where('id_staf', 'like', "%{$search}%")
+                            ->orWhereHas('user', function($qUser) use ($search) {
+                                $qUser->where('name', 'like', "%{$search}%")
+                                      ->orWhere('email', 'like', "%{$search}%");
+                            });
+                  })
+
+                  ->orWhereHas('detailPembelian', function($qItem) use ($search) {
+                      $qItem->whereHas('bahanBaku', function($qBahan) use ($search) {
+                          $qBahan->where('nama_bahan_baku', 'like', "%{$search}%")
+                                 ->orWhere('id_bahan_baku', 'like', "%{$search}%");
+                      });
+                  });
+            });
+        }
+
         return inertia('PembelianBahan/Index', [
-            'pembelian' => PembelianBahan::with('staf.user')->latest()->get()
+            'pembelian' => $query->latest()->get(),
+            'filters' => $request->only(['search'])
         ]);
     }
 

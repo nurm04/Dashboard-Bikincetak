@@ -3,15 +3,18 @@
 use App\Http\Controllers\AkunController;
 use App\Http\Controllers\AlamatController;
 use App\Http\Controllers\BahanBakuController;
+use App\Http\Controllers\BukuBesarController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DiskonCustomerController;
 use App\Http\Controllers\FinishingController;
+use App\Http\Controllers\GlobalSearchController;
 use App\Http\Controllers\HakAksesController;
 use App\Http\Controllers\HargaBertingkatController;
 use App\Http\Controllers\HargaPengerjaanController;
 use App\Http\Controllers\KategoriController;
 use App\Http\Controllers\KomposisiController;
 use App\Http\Controllers\ModulController;
+use App\Http\Controllers\PembayaranController;
 use App\Http\Controllers\PembelianBahanController;
 use App\Http\Controllers\PesanController;
 use App\Http\Controllers\PilihanFinishingController;
@@ -22,9 +25,11 @@ use App\Http\Controllers\ProdukVarianController;
 use App\Http\Controllers\ProfilController;
 use App\Http\Controllers\RoleCustomerController;
 use App\Http\Controllers\RoleStafController;
+use App\Http\Controllers\ShippingController;
 use App\Http\Controllers\SkuFinishingController;
 use App\Http\Controllers\StafController;
 use App\Http\Controllers\VarianController;
+use App\Http\Controllers\VoucherController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -38,11 +43,12 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [BukuBesarController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+    Route::get('/buku-besar', [BukuBesarController::class, 'detail'])->name('buku-besar.detail');
     Route::resource('modul', ModulController::class);
     Route::get('/hak-akses', [ModulController::class, 'index'])->name('hak-akses.index');
     Route::get('/hak-akses/{id_modul}/edit', [HakAksesController::class, 'edit'])->name('hak-akses.edit');
@@ -102,14 +108,28 @@ Route::middleware('auth')->group(function () {
     Route::resource('bahan-baku', BahanBakuController::class);
     Route::resource('pembelian-bahan', PembelianBahanController::class);
 
+    Route::resource('voucher', VoucherController::class);
+
     Route::get('pesan', [PesanController::class, 'index'])->name('pesan.index');
     Route::post('pesan', [PesanController::class, 'store'])->name('pesan.store');
     Route::get('pesan/{id}/detail', [PesanController::class, 'detail'])->name('pesan.detail');
     Route::put('pesan/{id}/operasional', [PesanController::class, 'updateOperasional'])->name('pesan.updateOperasional');
-    Route::put('pesan/{id}/pembayaran', [PesanController::class, 'updatePembayaran'])->name('pesan.updatePembayaran');
+    Route::put('pesan/{id}/pembayaran', [PembayaranController::class, 'store'])->name('pesan.updatePembayaran');
+    Route::put('/pesan/{id_pesan}/resi', [PesanController::class, 'updateResi'])->name('pesan.updateResi');
+    Route::get('/pesan/{id_pesan}/cetak-label', [PesanController::class, 'cetakLabel'])->name('pesan.cetakLabel');
+
+    Route::get('/shipping/provinces', [ShippingController::class, 'getProvinces']);
+    Route::get('/shipping/cities/{provinceId}', [ShippingController::class, 'getCities']);
+    Route::get('/shipping/districts/{cityId}', [ShippingController::class, 'getDistricts']);
+    Route::post('/ongkir/calculate', [ShippingController::class, 'cekOngkir']);
 
     Route::get('/pos-kasir', [ProdukController::class, 'katalogWeb'])->name('pos.katalog');
     Route::get('/pos-kasir/produk/{id_produk}', [ProdukController::class, 'detailKatalogWeb'])->name('pos.detail');
+
+    Route::get('pembayaran', [PembayaranController::class, 'index'])->name('pembayaran.index');
+    Route::get('pembayaran/{id}/detail', [PembayaranController::class, 'detail'])->name('pembayaran.detail');
+
+    Route::get('/search', [GlobalSearchController::class, 'index'])->name('global.search');
 });
 
 require __DIR__.'/auth.php';

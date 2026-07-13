@@ -1,10 +1,8 @@
 <script setup>
-import Checkbox from '@/Components/Checkbox.vue';
+import ApplicationLogo from '@/Components/ApplicationLogo.vue';
+import CustomCheckbox from '@/Components/CustomCheckbox.vue';
+import CustomInput from '@/Components/CustomInput.vue';
 import GuestLayout from '@/Layouts/GuestLayout.vue';
-import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
-import TextInput from '@/Components/TextInput.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 
 defineProps({
@@ -33,68 +31,87 @@ const submit = () => {
     <GuestLayout>
         <Head title="Log in" />
 
-        <div v-if="status" class="mb-4 text-sm font-medium text-green-600">
-            {{ status }}
-        </div>
+        <div class="w-full max-w-md p-8 mx-auto shadow-2xl sm:p-10 card bg-base-100 rounded-3xl border border-base-content/5">
 
-        <form @submit.prevent="submit">
-            <div>
-                <InputLabel for="email" value="Email" />
-
-                <TextInput
-                    id="email"
-                    type="email"
-                    class="block w-full mt-1"
-                    v-model="form.email"
-                    required
-                    autofocus
-                    autocomplete="username"
-                />
-
-                <InputError class="mt-2" :message="form.errors.email" />
+            <div class="mb-8 text-center">
+                <div className="flex flex-col items-center mb-5">
+                    <div className="relative mb-2">
+                        <ApplicationLogo class="h-20 w-20 fill-current text-gray-500" />
+                    </div>
+                    <div className="h-1.5 w-8 bg-primary rounded-full"></div>
+                </div>
+                <p class="text-[10px] font-bold text-base-content/50 uppercase tracking-widest">
+                    Silakan login untuk mengakses sistem
+                </p>
             </div>
 
-            <div class="mt-4">
-                <InputLabel for="password" value="Password" />
-
-                <TextInput
-                    id="password"
-                    type="password"
-                    class="block w-full mt-1"
-                    v-model="form.password"
-                    required
-                    autocomplete="current-password"
-                />
-
-                <InputError class="mt-2" :message="form.errors.password" />
+            <div v-if="status" class="p-3 mb-6 text-xs font-bold border rounded-xl text-success bg-success/10 border-success/20">
+                {{ status }}
             </div>
 
-            <div class="block mt-4">
-                <label class="flex items-center">
-                    <Checkbox name="remember" v-model:checked="form.remember" />
-                    <span class="text-sm text-gray-600 ms-2"
-                        >Remember me</span
+            <form @submit.prevent="submit" class="space-y-5">
+                <div>
+                    <CustomInput
+                        label="Email"
+                        id="email"
+                        type="email"
+                        v-model="form.email"
+                        required
+                        autofocus
+                        autocomplete="username"
+                        placeholder="admin@bikincetak.com"
+                    />
+                    <p v-if="form.errors.email" class="mt-2 ml-1 text-[10px] font-bold text-error uppercase tracking-wider">
+                        {{ form.errors.email }}
+                    </p>
+                </div>
+
+                <div>
+                    <CustomInput
+                        label="Password"
+                        id="password"
+                        type="password"
+                        v-model="form.password"
+                        required
+                        autocomplete="current-password"
+                        placeholder="••••••••"
+                    />
+                    <p v-if="form.errors.password" class="mt-2 ml-1 text-[10px] font-bold text-error uppercase tracking-wider">
+                        {{ form.errors.password }}
+                    </p>
+                </div>
+
+                <div class="flex items-center justify-between mt-2">
+                    <label class="flex items-center gap-3 cursor-pointer w-fit">
+                        <CustomCheckbox
+                            label="Ingat Saya"
+                            name="remember"
+                            v-model="form.remember"
+                        />
+                    </label>
+
+                    <Link
+                        v-if="canResetPassword"
+                        :href="route('password.request')"
+                        class="text-[10px] font-black uppercase tracking-widest text-base-content/40 hover:text-primary transition-colors"
                     >
-                </label>
-            </div>
+                        Lupa Password?
+                    </Link>
+                </div>
 
-            <div class="flex items-center justify-end mt-4">
-                <Link
-                    v-if="canResetPassword"
-                    :href="route('password.request')"
-                    class="text-sm text-gray-600 underline rounded-md hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                >
-                    Forgot your password?
-                </Link>
-
-                <PrimaryButton
-                    class="ms-4"
-                    :class="{ 'opacity-25': form.processing }"
-                    :disabled="form.processing"
-                >
-                    Log in
-                </PrimaryButton>
-            </div>
-        </form>
+                <div class="pt-6">
+                    <button
+                        type="submit"
+                        class="w-full h-12 shadow-lg btn btn-primary rounded-xl shadow-primary/30 hover:shadow-primary/50"
+                        :disabled="form.processing"
+                    >
+                        <span v-if="form.processing" class="loading loading-spinner loading-sm"></span>
+                        <span class="text-xs font-black tracking-widest uppercase">
+                            {{ form.processing ? 'Memproses...' : 'Masuk Sistem' }}
+                        </span>
+                    </button>
+                </div>
+            </form>
+        </div>
     </GuestLayout>
 </template>

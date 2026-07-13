@@ -6,7 +6,8 @@ const props = defineProps({
     prefix: String,
     placeholder: String,
     error: String,
-    required: Boolean
+    required: Boolean,
+    readonly: Boolean
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -33,10 +34,10 @@ const handleBlur = (e) => {
         </label>
 
         <div
-            class="flex items-center w-full transition border rounded-lg shadow-sm bg-base-100 border-base-300 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary overflow-hidden"
+            class="flex items-center w-full overflow-hidden transition border rounded-lg shadow-sm bg-base-100 border-base-300 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary"
             style="border-style: solid !important; border-width: 1px !important;"
         >
-            <span v-if="prefix" class="pl-3 pr-1 text-sm font-bold opacity-40 select-none shrink-0">
+            <span v-if="prefix" class="pl-3 pr-1 text-sm font-bold select-none opacity-40 shrink-0">
                 {{ prefix }}
             </span>
 
@@ -46,6 +47,7 @@ const handleBlur = (e) => {
                 :min="min"
                 :placeholder="placeholder"
                 :required="required"
+                :readonly="readonly"
                 @input="handleInput"
                 @blur="handleBlur"
                 class="w-full py-2 text-sm transition bg-transparent border-none outline-none focus:ring-0 text-base-content placeholder:text-base-content/30"

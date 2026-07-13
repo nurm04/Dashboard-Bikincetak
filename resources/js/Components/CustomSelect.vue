@@ -54,7 +54,7 @@ onUnmounted(() => {
 
 <template>
     <div class="relative inline-block w-full" ref="container">
-        <label v-if="label" class="block mb-1 ml-1 text-xs font-bold text-base-content/70 uppercase">
+        <label v-if="label" class="block mb-1 ml-1 text-xs font-bold text-base-content/70">
             {{ label }}
         </label>
 
@@ -83,7 +83,7 @@ onUnmounted(() => {
         >
             <div
                 v-if="isOpen"
-                class="absolute right-0 top-full mt-2 w-full min-w-[200px] z-[999] bg-base-100 border border-base-300 shadow-2xl rounded-2xl overflow-hidden py-2"
+                class="absolute right-0 top-full mt-2 w-full min-w-50 z-999 bg-base-100 border border-base-300 shadow-2xl rounded-2xl overflow-hidden py-2"
             >
                 <ul class="py-1 overflow-y-auto max-h-60 scrollbar-hide">
                     <li v-for="opt in options" :key="opt[valueKey]"

@@ -20,7 +20,7 @@ const toggleProductDropdown = () => {
 <template>
     <aside class="fixed top-0 left-0 z-50 flex flex-col w-64 h-screen transition-colors border-r bg-base-100 border-base-300">
 
-        <div class="flex items-center shrink-0 h-16 px-6 border-b border-base-300">
+        <div class="flex items-center h-16 px-6 border-b shrink-0 border-base-300">
             <span class="text-xl italic font-black tracking-tighter text-primary drop-shadow-sm">
                 BIKIN<span class="text-base-content">CETAK</span>
             </span>
@@ -65,9 +65,9 @@ const toggleProductDropdown = () => {
                 Data Staf
             </Link>
 
-            <div v-if="$can('kategori') || $can('produk') || $can('varian') || $can('produk-sku') || $can('finishing')" class="space-y-1">
+            <div v-if="$can('kategori') || $can('produk') || $can('varian') || $can('produk-sku') || $can('finishing') || $can('voucher')" class="space-y-1">
                 <button @click="toggleProductDropdown"
-                    :class="[route().current('produk.*') || route().current('finishing.*') || route().current('kategori.*') || route().current('varian.*') || route().current('sku.*')
+                    :class="[route().current('produk.*') || route().current('finishing.*') || route().current('kategori.*') || route().current('varian.*') || route().current('voucher.*') || route().current('sku.*')
                         ? 'bg-primary text-white shadow-lg shadow-primary/30 translate-x-1'
                         : 'text-base-content/70 hover:bg-base-200 hover:text-base-content hover:translate-x-1']"
                     class="flex items-center justify-between w-full px-4 py-3 text-sm font-bold transition-all duration-300 rounded-xl group">
@@ -114,6 +114,14 @@ const toggleProductDropdown = () => {
                         class="flex items-center px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-all duration-300 rounded-lg">
                         Finishing
                     </Link>
+
+                    <Link v-if="$can('voucher')" :href="route('voucher.index')"
+                        :class="[route().current('voucher.*')
+                            ? 'bg-primary text-white shadow-lg shadow-primary/30 translate-x-1'
+                            : 'text-base-content/60 hover:bg-base-200 hover:text-base-content hover:translate-x-1']"
+                        class="flex items-center px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-all duration-300 rounded-lg">
+                        Voucher
+                    </Link>
                 </div>
             </div>
 
@@ -142,6 +150,15 @@ const toggleProductDropdown = () => {
                 class="flex items-center px-4 py-3 text-sm font-bold transition-all duration-300 rounded-xl">
                 <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
                 Pesanan
+            </Link>
+
+            <Link v-if="$can('pembayaran')" :href="route('pembayaran.index')"
+                :class="[route().current('pembayaran.*')
+                    ? 'bg-primary text-white shadow-lg shadow-primary/30 translate-x-1'
+                    : 'text-base-content/70 hover:bg-base-200 hover:text-base-content hover:translate-x-1']"
+                class="flex items-center px-4 py-3 text-sm font-bold transition-all duration-300 rounded-xl">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                Pembayaran
             </Link>
 
             <Link v-if="$can('hak-akses')" :href="route('hak-akses.index')"

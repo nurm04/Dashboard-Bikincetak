@@ -29,6 +29,8 @@ class HakAksesSeeder extends Seeder
             ['id' => 10, 'id_role_staf' => 'ROLE-STAF-ADMIN', 'modul_id' => 10, 'bisa_buka' => 1, 'bisa_tambah' => 1, 'bisa_ubah' => 1, 'bisa_hapus' => 1, 'created_at' => '2026-05-16 03:47:23', 'updated_at' => '2026-05-16 03:47:23'],
             ['id' => 11, 'id_role_staf' => 'ROLE-STAF-ADMIN', 'modul_id' => 11, 'bisa_buka' => 1, 'bisa_tambah' => 1, 'bisa_ubah' => 1, 'bisa_hapus' => 1, 'created_at' => '2026-05-16 03:47:50', 'updated_at' => '2026-05-16 03:47:50'],
             ['id' => 12, 'id_role_staf' => 'ROLE-STAF-ADMIN', 'modul_id' => 12, 'bisa_buka' => 1, 'bisa_tambah' => 1, 'bisa_ubah' => 1, 'bisa_hapus' => 1, 'created_at' => '2026-05-16 06:07:07', 'updated_at' => '2026-05-16 06:07:07'],
+            ['id' => 13, 'id_role_staf' => 'ROLE-STAF-ADMIN', 'modul_id' => 13, 'bisa_buka' => 1, 'bisa_tambah' => 1, 'bisa_ubah' => 1, 'bisa_hapus' => 1, 'created_at' => '2026-05-16 06:07:12', 'updated_at' => '2026-05-16 06:07:12'],
+            ['id' => 14, 'id_role_staf' => 'ROLE-STAF-ADMIN', 'modul_id' => 14, 'bisa_buka' => 1, 'bisa_tambah' => 1, 'bisa_ubah' => 1, 'bisa_hapus' => 1, 'created_at' => '2026-05-16 06:07:30', 'updated_at' => '2026-05-16 06:07:30'],
         ]);
     }
 }

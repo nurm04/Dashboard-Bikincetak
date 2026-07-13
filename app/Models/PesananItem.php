@@ -19,9 +19,20 @@ class PesananItem extends Model
         'id_sku',
         'nama_produk_snapshot',
         'jumlah',
+        'harga_dasar_awal_snapshot',
+        'total_diskon_snapshot',
+        'rincian_diskon_snapshot',
         'harga_satuan_snapshot',
         'estimasi_pengerjaan_snapshot',
         'harga_pengerjaan_snapshot',
+        'total_berat_snapshot',
+        'hpp_satuan_snapshot',
+        'file_desain'
+    ];
+
+    protected $casts = [
+        'rincian_diskon_snapshot' => 'array',
+        'file_desain' => 'array',
     ];
 
     public function pesananItemFinishing(): HasMany

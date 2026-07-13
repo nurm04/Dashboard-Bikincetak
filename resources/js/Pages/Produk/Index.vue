@@ -1,21 +1,47 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
+import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import StafLayout from '@/Layouts/StafLayout.vue';
 import CustomButton from '@/Components/CustomButton.vue';
 import CustomTable from '@/Components/CustomTable.vue';
-import Modal from '@/Components/Modal.vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
 import { alertStore } from '@/Utils/alertStore';
 import CustomAlertConfirm from '@/Components/CustomAlertConfirm.vue';
-import Dropdown from '@/Components/Dropdown.vue';
 import CustomTableAction from '@/Components/CustomTableAction.vue';
+import CustomInputSearch from '@/Components/CustomInputSearch.vue';
 
-const props = defineProps({ produks: Array });
+const debounce = (fn, delay) => {
+    let timeoutId;
+    return (...args) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => fn(...args), delay);
+    };
+};
+
+const props = defineProps({
+    produks: Array,
+    filters: Object
+});
+
 const headers = ['ID Produk', 'Produk / Kategori', 'Varian Aktif', 'Total SKU', 'Aksi'];
 
 const isDeleteModalOpen = ref(false);
 const selectedId = ref(null);
 const form = useForm({});
+
+const search = ref(props.filters?.search || '');
+
+watch(
+    search,
+    debounce((newSearch) => {
+        router.get(route('produk.index'), {
+            search: newSearch
+        }, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true
+        });
+    }, 300)
+);
 
 const openDeleteModal = (id) => {
     selectedId.value = id;
@@ -42,7 +68,9 @@ const doDelete = () => {
         @close="isDeleteModalOpen = false"
         @confirm="doDelete"
     />
+
     <Head title="Manajemen Produk" />
+
     <StafLayout>
         <template #header>
             <h2 class="text-xl font-bold leading-tight text-base-content">Database Produk</h2>
@@ -50,13 +78,22 @@ const doDelete = () => {
 
         <div class="min-h-screen px-4 py-12 sm:px-6 lg:px-8">
             <div class="mx-auto max-w-7xl">
-                <div class="flex items-center justify-between mb-8">
-                    <CustomButton v-if="$can('produk', 'tambah')" type="link" :href="route('produk.create')" variant="primary">
+
+                <div class="flex flex-col gap-4 mb-8 md:flex-row md:items-center md:justify-between">
+                    <CustomButton v-if="$can('produk', 'tambah')" type="link" :href="route('produk.create')" variant="primary" class="shrink-0">
                         <template #icon>
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
                         </template>
                         Produk Baru
                     </CustomButton>
+
+                    <div class="flex flex-col w-full md:w-auto">
+                        <CustomInputSearch
+                            v-model="search"
+                            class="w-full sm:w-80"
+                            placeholder="Cari ID atau Nama Produk..."
+                        />
+                    </div>
                 </div>
 
                 <CustomTable :headers="headers">
@@ -132,7 +169,9 @@ const doDelete = () => {
                                 <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                                 </svg>
-                                <p class="text-sm font-bold tracking-widest uppercase">Belum ada Master Produk</p>
+                                <p class="text-sm font-bold tracking-widest uppercase">
+                                    {{ search ? 'Pencarian Tidak Ditemukan' : 'Belum ada Master Produk' }}
+                                </p>
                             </div>
                         </td>
                     </tr>

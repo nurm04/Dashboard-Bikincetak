@@ -1,14 +1,27 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, watch, computed } from 'vue';
 import StafLayout from '@/Layouts/StafLayout.vue';
 import CustomButton from '@/Components/CustomButton.vue';
 import CustomTable from '@/Components/CustomTable.vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import CustomInputSearch from '@/Components/CustomInputSearch.vue';
+import CustomSelect from '@/Components/CustomSelect.vue';
+import { Head, Link, useForm, router } from '@inertiajs/vue3';
+import { alertStore } from '@/Utils/alertStore';
 import CustomAlertConfirm from '@/Components/CustomAlertConfirm.vue';
 import CustomTableAction from '@/Components/CustomTableAction.vue';
 
+const debounce = (fn, delay) => {
+    let timeoutId;
+    return (...args) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => fn(...args), delay);
+    };
+};
+
 const props = defineProps({
     customers: Array,
+    roles: Array,
+    filters: Object
 });
 
 const headers = ['ID Customer', 'Nama / Email', 'No. WhatsApp', 'Level Member', 'Aksi'];
@@ -16,6 +29,36 @@ const headers = ['ID Customer', 'Nama / Email', 'No. WhatsApp', 'Level Member', 
 const isDeleteModalOpen = ref(false);
 const selectedId = ref(null);
 const form = useForm({});
+
+const search = ref(props.filters?.search || '');
+const filterRole = ref(props.filters?.id_role_customer || 'semua');
+
+watch(
+    [search, filterRole],
+    debounce(([newSearch, newRole]) => {
+        router.get(route('customer.index'), {
+            search: newSearch,
+            id_role_customer: newRole
+        }, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true
+        });
+    }, 300)
+);
+
+const roleOptions = computed(() => {
+    let opts = [{ value: 'semua', label: 'SEMUA LEVEL MEMBER' }];
+    if (props.roles) {
+        props.roles.forEach(r => {
+            opts.push({
+                value: r.id_role_customer,
+                label: r.role.toUpperCase()
+            });
+        });
+    }
+    return opts;
+});
 
 const openDeleteModal = (id) => {
     selectedId.value = id;
@@ -60,13 +103,31 @@ const doDelete = () => {
         </template>
         <div class="min-h-screen px-4 py-3 sm:px-6 lg:px-8">
             <div class="mx-auto max-w-7xl">
-                <div class="flex flex-col gap-4 mb-10 md:flex-row md:items-center md:justify-between">
-                    <CustomButton v-if="$can('akun', 'tambah')" type="link" :href="route('customer.create')" variant="primary" size="md">
+
+                <div class="flex flex-col gap-4 mb-8 md:flex-row md:items-center md:justify-between">
+                    <CustomButton v-if="$can('customer', 'tambah')" type="link" :href="route('customer.create')" variant="primary" size="md" class="rounded-xl shrink-0">
                         <template #icon>
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
                         </template>
                         Registrasi Customer
                     </CustomButton>
+                </div>
+                <div class="mb-3 flex flex-col w-full gap-3 sm:flex-row sm:items-center md:w-auto">
+                    <CustomInputSearch
+                        v-model="search"
+                        class="w-full sm:w-64"
+                        placeholder="Cari ID, Nama, WA..."
+                    />
+
+                    <div class="w-full sm:w-56 md:w-64">
+                        <CustomSelect
+                            v-model="filterRole"
+                            :options="roleOptions"
+                            valueKey="value"
+                            labelKey="label"
+                            placeholder="Semua Level Member"
+                        />
+                    </div>
                 </div>
 
                 <CustomTable :headers="headers">
@@ -78,13 +139,13 @@ const doDelete = () => {
                         </td>
                         <td class="px-6 py-4 text-xs font-bold text-base-content/70">{{ cust.no_hp }}</td>
                         <td class="px-6 py-4">
-                            <span class="px-2 py-0.5 rounded-md bg-success text-[10px] font-bold uppercase tracking-tight text-base-content/70 border border-base-300">
-                                {{ cust.role_customer?.role }}
+                            <span class="px-2 py-0.5 rounded-md bg-success/10 text-success text-[10px] font-bold uppercase tracking-tight border border-success/20">
+                                {{ cust.role_customer?.role || cust.role_customer_id }}
                             </span>
                         </td>
                         <td class="px-6 py-4 text-center">
                             <CustomTableAction v-slot="{ close }">
-                                <div class="px-4 py-2 text-[10px] font-black text-base-content/20 uppercase tracking-widest border-b border-base-300/50 mb-1">
+                                <div class="px-4 py-2 text-[10px] font-black text-base-content/20 uppercase tracking-widest border-b border-b-base-content/5 mb-1">
                                     Menu Customer
                                 </div>
 
@@ -93,15 +154,15 @@ const doDelete = () => {
                                     Edit Customer
                                 </Link>
                                 <Link v-if="$can('alamat', 'ubah')" :href="route('alamat.customer', cust.id_customer)" @click="close" class="flex items-center px-4 py-2.5 text-sm font-bold text-info hover:bg-info/10 transition-colors">
-                                    <svg class="w-4 h-4 mr-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                    <svg class="w-4 h-4 mr-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                                     Alamat Customer
                                 </Link>
                                 <Link v-if="$can('customer', 'ubah')" :href="route('customer.password', cust.id_customer)" @click="close" class="flex items-center px-4 py-2.5 text-sm font-bold text-warning hover:bg-warning/10 transition-colors">
-                                    <svg class="w-4 h-4 mr-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                    <svg class="w-4 h-4 mr-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
                                     Password Customer
                                 </Link>
 
-                                <div class="my-1 border-t border-base-300/50"></div>
+                                <div class="my-1 border-t border-base-content/5"></div>
 
                                 <button v-if="$can('customer', 'hapus')" @click="openDeleteModal(cust.id_customer); close()" class="flex items-center w-full px-4 py-2.5 text-sm font-bold text-error hover:bg-error/10 transition-colors">
                                     <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -117,7 +178,9 @@ const doDelete = () => {
                                 <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                                 </svg>
-                                <p class="text-sm font-bold tracking-widest uppercase">Belum ada Master Customer</p>
+                                <p class="text-sm font-bold tracking-widest uppercase">
+                                    {{ search || filterRole !== 'semua' ? 'Pencarian tidak ditemukan' : 'Belum ada Master Customer' }}
+                                </p>
                             </div>
                         </td>
                     </tr>

@@ -3,9 +3,10 @@ import Sidebar from '@/Components/Sidebar.vue';
 import ThemeSwitcher from '@/Components/ThemeSwitcher.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import CustomAlert from '@/Components/CustomAlert.vue';
-import { usePage, Link } from '@inertiajs/vue3';
-import { watch, onMounted } from 'vue';
+import { usePage, Link, router } from '@inertiajs/vue3';
+import { watch, onMounted, ref } from 'vue';
 import { alertStore } from '@/Utils/alertStore';
+import CustomInputSearch from '@/Components/CustomInputSearch.vue';
 
 const page = usePage();
 
@@ -14,9 +15,53 @@ watch(() => page.props.flash, (flash) => {
     if (flash?.error) alertStore.show(flash.error, 'error');
 }, { deep: true });
 
+const notifikasiBanyak = ref([]);
+
+const notifSound = new Audio('/sounds/notif.mp3');
+
+const playNotificationSound = () => {
+    notifSound.currentTime = 0;
+
+    notifSound.play().catch(err => {
+        console.warn('Browser nge-blokir suara nih! Lu harus interaksi (klik apapun) di halaman ini dulu.', err);
+    });
+};
+
 onMounted(() => {
     if (page.props.flash?.success) alertStore.show(page.props.flash.success, 'success');
+
+    console.log("Status Echo:", window.Echo ? "Nyala" : "Mati");
+
+    if (window.Echo) {
+        window.Echo.channel('pesanan-channel')
+            .listen('.pesanan.baru', (e) => {
+                console.log("Sinyal masuk bro!", e);
+
+                playNotificationSound();
+
+                const idNotif = Date.now();
+                notifikasiBanyak.value.push({
+                    id: idNotif,
+                    pesan: `Ada order masuk baru: ${e.pesan.id_pesan}`,
+                });
+
+                setTimeout(() => {
+                    notifikasiBanyak.value = notifikasiBanyak.value.filter(n => n.id !== idNotif);
+                }, 5000);
+
+                router.reload();
+            });
+    } else {
+        console.error("Waduh, window.Echo belum aktif! Cek file bootstrap.js lu.");
+    }
 });
+
+const globalSearchKey = ref(new URLSearchParams(window.location.search).get('key') || '');
+
+const doGlobalSearch = () => {
+    if (!globalSearchKey.value.trim()) return;
+    router.get('/search', { key: globalSearchKey.value });
+};
 </script>
 
 <template>
@@ -29,16 +74,12 @@ onMounted(() => {
             <nav class="sticky top-0 flex items-center justify-between h-16 px-4 transition-colors border-b shadow-sm z-60 lg:px-8 bg-base-100/90 backdrop-blur-md border-base-300">
 
                 <div class="flex-1 hidden max-w-md md:block">
-                    <div class="relative group">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                            <svg class="w-4 h-4 transition-colors text-base-content/30 group-focus-within:text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                            </svg>
-                        </span>
-                        <input type="text"
-                            class="w-full py-2 pl-10 pr-4 text-sm transition border shadow-sm outline-none rounded-xl bg-base-200/50 text-base-content border-base-300 focus:ring-2 focus:ring-primary/20 focus:border-primary placeholder:text-base-content/40"
-                            placeholder="Cari data, invoice, atau customer..." />
-                    </div>
+                    <form @submit.prevent="doGlobalSearch">
+                        <CustomInputSearch
+                            v-model="globalSearchKey"
+                            placeholder="Cari data global..."
+                        />
+                    </form>
                 </div>
 
                 <div class="flex items-center ml-auto space-x-2 lg:space-x-4">
@@ -92,6 +133,15 @@ onMounted(() => {
             <main class="flex-1 px-4 pb-12 lg:px-8">
                 <slot />
             </main>
+        </div>
+        <div class="toast toast-end toast-bottom z-9999">
+            <div v-for="notif in notifikasiBanyak" :key="notif.id" class="border-l-4 shadow-lg alert bg-base-100 border-success animate-bounce">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="w-6 h-6 stroke-success shrink-0"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <div>
+                    <h3 class="text-sm font-bold">Pesanan Baru!</h3>
+                    <div class="text-xs opacity-80">{{ notif.pesan }}</div>
+                </div>
+            </div>
         </div>
     </div>
 </template>

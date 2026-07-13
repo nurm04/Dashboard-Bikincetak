@@ -22,11 +22,8 @@ defineProps({
                 </Link>
                 <div>
                     <h2 class="text-xl font-bold leading-tight text-base-content">
-                        Kustomisasi Pesanan
-                    </h2>
-                    <p class="text-xs font-bold opacity-50 uppercase tracking-widest mt-1">
                         Kategori: {{ produk.kategori?.nama_kategori || 'Umum' }}
-                    </p>
+                    </h2>
                 </div>
             </div>
         </template>

@@ -4,21 +4,48 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Produk;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 
 class ProdukController extends Controller
 {
     public function getAllItems(Request $request)
     {
-        $produks = Produk::with(['kategori'])->get();
+        $produks = Produk::with(['kategori', 'produkSku.diskonCustomer'])->get();
 
         $formattedProduks = $produks->map(function ($produk) {
+            $hargaTermurah = $produk->produkSku->min('harga');
+
+            $diskonRoles = [];
+            if ($produk->produkSku->isNotEmpty()) {
+                foreach ($produk->produkSku as $sku) {
+                    foreach ($sku->diskonCustomer as $diskon) {
+                        if ($diskon->tipe === 'persen') {
+                            $roleId = $diskon->id_role_customer;
+                            if (!isset($diskonRoles[$roleId]) || $diskon->nilai > $diskonRoles[$roleId]) {
+                                $diskonRoles[$roleId] = $diskon->nilai;
+                            }
+                        }
+                    }
+                }
+            }
+
+            $gambarUrls = [];
+            if (!empty($produk->gambar) && is_array($produk->gambar)) {
+                $gambarUrls = array_map(function ($path) {
+                    return url('storage/' . $path);
+                }, $produk->gambar);
+            }
+
             return [
                 'id_produk' => $produk->id_produk,
                 'nama_produk' => $produk->nama_produk,
                 'kategori' => $produk->kategori ? $produk->kategori->nama_kategori : null,
                 'is_active' => $produk->is_active,
-                'gambar_url' => $produk->gambar ? url('storage/' . $produk->gambar) : null,
+                'gambar_urls' => $gambarUrls,
+
+                'harga_mulai_dari' => $hargaTermurah ?? 0,
+                'diskon_roles' => $diskonRoles,
             ];
         });
 
@@ -43,13 +70,20 @@ class ProdukController extends Controller
             ->where('is_active', true)
             ->findOrFail($id);
 
+            $gambarUrls = [];
+            if (!empty($produk->gambar) && is_array($produk->gambar)) {
+                $gambarUrls = array_map(function ($path) {
+                    return url('storage/' . $path);
+                }, $produk->gambar);
+            }
+
 
             $formattedProduk = [
                 'id_produk' => $produk->id_produk,
                 'nama_produk' => $produk->nama_produk,
                 'kategori' => $produk->kategori ? $produk->kategori->nama_kategori : null,
                 'is_active' => $produk->is_active,
-                'gambar_url' => $produk->gambar ? url('storage/' . $produk->gambar) : null,
+                'gambar_urls' => $gambarUrls,
                 'varians' => $produk->varians,
 
                 'skus' => $produk->produkSku->map(function ($sku) {
@@ -84,7 +118,7 @@ class ProdukController extends Controller
                 'data' => $formattedProduk
             ], 200);
 
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Produk tidak ditemukan atau sedang tidak aktif'

@@ -22,10 +22,13 @@ class Alamat extends Model
         'nama_penerima',
         'no_hp',
 
+        'provinsi_id',
+        'kota_id',
+        'kecamatan_id',
+
         'provinsi',
         'kota',
         'kecamatan',
-        'kelurahan',
 
         'kode_pos',
 

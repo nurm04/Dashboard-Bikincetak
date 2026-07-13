@@ -1,22 +1,15 @@
 <script setup>
-import ApplicationLogo from '@/Components/ApplicationLogo.vue';
-import { Link } from '@inertiajs/vue3';
+import ThemeSwitcher from '@/Components/ThemeSwitcher.vue';
 </script>
 
 <template>
-    <div
-        class="flex min-h-screen flex-col items-center bg-gray-100 pt-6 sm:justify-center sm:pt-0"
-    >
-        <div>
-            <Link href="/">
-                <ApplicationLogo class="h-20 w-20 fill-current text-gray-500" />
-            </Link>
+    <div class="flex min-h-screen flex-col items-center bg-base-200 pt-6 sm:justify-center sm:pt-0">
+
+        <slot />
+
+        <div class="fixed bottom-10 right-0 p-1 pr-10 rounded-l-3xl z-9999 w-auto h-auto bg-primary">
+            <ThemeSwitcher />
         </div>
 
-        <div
-            class="mt-6 w-full overflow-hidden bg-white px-6 py-4 shadow-md sm:max-w-md sm:rounded-lg"
-        >
-            <slot />
-        </div>
     </div>
 </template>
