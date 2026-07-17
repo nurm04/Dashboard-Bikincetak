@@ -3,19 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Models\BahanBaku;
+use App\Models\Customer;
 use App\Models\Komposisi;
 use App\Models\Pesan;
 use App\Models\PesananItem;
 use App\Models\PesananItemFinishing;
 use App\Models\SkuFinishing;
+use App\Models\Voucher;
 use App\Services\PembayaranService;
 use App\Services\PesanService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Inertia\Inertia;
 use Illuminate\Support\Str;
+use Inertia\Inertia;
 
 class PesanController extends Controller
 {
@@ -35,6 +38,7 @@ class PesanController extends Controller
         if (!empty($search)) {
             $query->where(function($q) use ($search) {
                 $q->where('id_pesan', 'like', "%{$search}%")
+                  ->orWhere('kode_transaksi', 'like', "%{$search}%")
                   ->orWhere('kode_voucher', 'like', "%{$search}%")
                   ->orWhere('ekspedisi_nama', 'like', "%{$search}%")
                   ->orWhere('ekspedisi_layanan', 'like', "%{$search}%")
@@ -106,33 +110,51 @@ class PesanController extends Controller
     {
         $pesanan = Pesan::with([
                 'customer.user',
+                'customer.alamat',
                 'pesananItem.pesananItemFinishing',
                 'alamat',
                 'pembayaran'
             ])
             ->findOrFail($id_pesan);
 
-        $totalPesanan = 0;
-        foreach ($pesanan->pesananItem as $item) {
-            $totalFinishing = collect($item->pesananItemFinishing)->sum('harga_finishing_snapshot');
-            $totalPesanan += (($item->harga_satuan_snapshot + $totalFinishing) * $item->jumlah) + $item->harga_pengerjaan_snapshot;
-        }
+        $rincian = PesanService::kalkulasiRincianPesanan($pesanan);
 
-        $kodeUnik = PesanService::generateKodeUnik($pesanan->id_pesan);
+        $typePembayaran = DB::select("SHOW COLUMNS FROM pesan WHERE Field = 'status_pembayaran'")[0]->Type;
+        preg_match('/^enum\((.*)\)$/', $typePembayaran, $matchesPembayaran);
+        $enumPembayaran = array_map(function($value){ return trim($value, "'"); }, explode(',', $matchesPembayaran[1]));
 
-        $totalDibayar = $pesanan->pembayaran->where('status_pembayaran', 'berhasil')->sum('nominal_bayar');
-
-        // Perhitungkan Diskon Voucher di Grand Total
-        $grandTotal = $totalPesanan + $pesanan->harga_ongkir + $kodeUnik - $pesanan->diskon_voucher_nominal;
-        $sisaTagihan = max(0, $grandTotal - $totalDibayar);
+        $typeOperasional = DB::select("SHOW COLUMNS FROM pesan WHERE Field = 'status_operasional'")[0]->Type;
+        preg_match('/^enum\((.*)\)$/', $typeOperasional, $matchesOperasional);
+        $enumOperasional = array_map(function($value){ return trim($value, "'"); }, explode(',', $matchesOperasional[1]));
 
         return Inertia::render('Pesan/Detail', [
-            'pesanan' => $pesanan,
-            'total_tagihan' => $totalPesanan,
-            'kode_unik' => $kodeUnik,
-            'total_transfer' => $grandTotal,
-            'total_dibayar' => $totalDibayar,
-            'sisa_tagihan' => $sisaTagihan,
+            'pesanan'         => $pesanan,
+            'total_tagihan'   => $rincian['subtotal'],
+            'kode_unik'       => $rincian['kode_unik'],
+            'total_transfer'  => $rincian['grand_total'],
+            'total_dibayar'   => $rincian['total_dibayar'],
+            'sisa_tagihan'    => $rincian['sisa_tagihan'],
+            'enumPembayaran'  => $enumPembayaran,
+            'enumOperasional' => $enumOperasional,
+        ]);
+    }
+
+    public function posKasir()
+    {
+        $customers = Customer::with(['user', 'alamat', 'roleCustomer'])->get();
+        $vouchers = Voucher::where('is_active', true)
+            ->where('berlaku_dari', '<=', now())
+            ->where('berlaku_sampai', '>=', now())
+            ->get();
+
+        $typePembayaran = DB::select("SHOW COLUMNS FROM pesan WHERE Field = 'status_pembayaran'")[0]->Type;
+        preg_match('/^enum\((.*)\)$/', $typePembayaran, $matchesPembayaran);
+        $enumPembayaran = array_map(function($value){ return trim($value, "'"); }, explode(',', $matchesPembayaran[1]));
+
+        return Inertia::render('Pesan/POSKasir', [
+            'customers' => $customers,
+            'vouchers' => $vouchers,
+            'enumPembayaran' => $enumPembayaran,
         ]);
     }
 
@@ -159,21 +181,44 @@ class PesanController extends Controller
 
             'items.*.harga_dasar_awal_snapshot' => 'nullable|numeric',
             'items.*.total_diskon_snapshot' => 'nullable|numeric',
-            'items.*.file_desain' => 'nullable|array',
-            'items.*.file_desain.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,zip|max:204800',
+
+            'items.*.file_desain' => 'nullable',
+            'items.*.tipe_file' => 'nullable|string|in:upload,link,email',
+            'items.*.link_file' => 'nullable|string'
         ]);
 
         try {
             DB::beginTransaction();
 
             $id_pesan = PesanService::generateId();
+            $kode_transaksi = PesanService::generateKodeTransaksi();
+
+            $maxHari = 1;
+
+            if (in_array($request->status_pembayaran, ['dibayar_sebagian', 'lunas'])) {
+                foreach ($request->items as $item) {
+                    $estimasi = $item['estimasi_pengerjaan'] ?? 'Reguler';
+                    if (preg_match('/(\d+)/', $estimasi, $matches)) {
+                        $hari = (int) $matches[1];
+                        if ($hari > $maxHari) {
+                            $maxHari = $hari;
+                        }
+                    }
+                }
+            }
+
+            $waktuDeadline = in_array($request->status_pembayaran, ['dibayar_sebagian', 'lunas'])
+                ? Carbon::now()->addDays($maxHari)
+                : null;
 
             $pesanan = Pesan::create([
                 'id_pesan' => $id_pesan,
+                'kode_transaksi' => $kode_transaksi,
                 'id_customer' => $request->id_customer,
                 'id_alamat' => $request->id_alamat,
                 'status_operasional' => 'menunggu_diproses',
                 'status_pembayaran' => $request->status_pembayaran,
+                'waktu_deadline' => $waktuDeadline,
 
                 'kode_voucher' => $request->kode_voucher,
                 'diskon_voucher_nominal' => $request->diskon_voucher_nominal ?? 0,
@@ -202,15 +247,29 @@ class PesanController extends Controller
                     ->whereNull('id_pilihan_finishing')
                     ->sum('hpp');
 
-                $filePaths = [];
-                if ($request->hasFile("items.{$index}.file_desain")) {
-                    $files = $request->file("items.{$index}.file_desain");
+                $fileDesainData = null;
 
-                    foreach ($files as $fIndex => $file) {
-                        $suffix = sprintf('%03d', $fIndex + 1);
-                        $filename = "{$id_pesan}-{$suffix}." . $file->getClientOriginalExtension();
-                        $filePaths[] = $file->storeAs('desain_pesanan', $filename, 'public');
-                    }
+                if ($request->hasFile("items.{$index}.file_desain")) {
+                    $file = $request->file("items.{$index}.file_desain");
+                    if (is_array($file)) $file = $file[0];
+
+                    $filename = "{$id_pesan}-" . \Illuminate\Support\Str::random(6) . "." . $file->getClientOriginalExtension();
+                    $path = $file->storeAs('desain_pesanan', $filename, 'public');
+
+                    $fileDesainData = [
+                        'tipe' => 'upload',
+                        'nilai' => $path
+                    ];
+                } elseif (isset($item['tipe_file']) && $item['tipe_file'] === 'link') {
+                    $fileDesainData = [
+                        'tipe' => 'link',
+                        'nilai' => $item['link_file'] ?? ''
+                    ];
+                } elseif (isset($item['tipe_file']) && $item['tipe_file'] === 'email') {
+                    $fileDesainData = [
+                        'tipe' => 'email',
+                        'nilai' => 'Akan dikirim oleh customer melalui Email.'
+                    ];
                 }
 
                 $rincianDiskonArray = null;
@@ -235,7 +294,7 @@ class PesanController extends Controller
                     'estimasi_pengerjaan_snapshot' => $item['estimasi_pengerjaan'] ?? 'Reguler',
                     'harga_pengerjaan_snapshot' => $item['harga_pengerjaan_snapshot'] ?? 0,
                     'total_berat_snapshot' => $totalBeratItem,
-                    'file_desain' => !empty($filePaths) ? $filePaths : null,
+                    'file_desain' => $fileDesainData,
                     'catatan' => $item['catatan'] ?? null,
                 ]);
 
@@ -410,5 +469,216 @@ class PesanController extends Controller
         return inertia('Pesan/CetakLabel', [
             'pesanan' => $pesanan
         ]);
+    }
+
+    public function cetakLabelItem($id)
+    {
+        $item = PesananItem::with([
+            'pesananItemFinishing',
+            'pesan.customer.user',
+            'pesan.alamat'
+        ])->findOrFail($id);
+
+        return inertia('Pesan/CetakLabelItem', [
+            'item' => $item
+        ]);
+    }
+
+    public function updateAlamat(Request $request, $id_pesan)
+    {
+        $request->validate([
+            'id_alamat' => 'required|exists:alamat,id_alamat'
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $pesanan = Pesan::findOrFail($id_pesan);
+
+            $pesanan->update([
+                'id_alamat' => $request->id_alamat
+            ]);
+
+            DB::commit();
+            return back()->with('success', 'Alamat pengiriman berhasil diperbarui!');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Gagal ganti alamat pesanan: ' . $e->getMessage());
+
+            return back()->with('error', 'Gagal memperbarui alamat pengiriman.');
+        }
+    }
+
+    public function addItem(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            $this->saveItem($request);
+            DB::commit();
+            return back()->with('success', 'Item berhasil ditambahkan.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Gagal tambah item: '.$e->getMessage());
+            return back()->with('error', 'Gagal tambah item: '.$e->getMessage());
+        }
+    }
+    public function updateItem(Request $request, $id)
+    {
+        DB::beginTransaction();
+        try {
+            $item = PesananItem::findOrFail($id);
+            $this->saveItem($request, $item);
+            DB::commit();
+            return back()->with('success', 'Item berhasil diperbarui.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Gagal update item: '.$e->getMessage());
+            return back()->with('error', 'Gagal update item: '.$e->getMessage());
+        }
+    }
+    public function deleteItem($id)
+    {
+        DB::beginTransaction();
+        try {
+            $item = PesananItem::findOrFail($id);
+            $item->pesananItemFinishing()->delete();
+            $item->delete();
+
+            DB::commit();
+            return back()->with('success', 'Item berhasil dihapus.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error($e->getMessage());
+            return back()->with(
+                'error',
+                'Gagal menghapus item.'
+            );
+        }
+    }
+
+    private function saveItem(Request $request, PesananItem $item = null)
+    {
+        $request->validate([
+            'id_pesan' => 'required|exists:pesan,id_pesan',
+            'id_sku' => 'required|exists:produk_sku,id_sku',
+            'jumlah' => 'required|numeric|min:1',
+            'harga_satuan_snapshot' => 'required|numeric',
+            'harga_dasar_awal_snapshot' => 'nullable|numeric',
+            'total_diskon_snapshot' => 'nullable|numeric',
+            'estimasi_pengerjaan' => 'required',
+            'harga_pengerjaan_snapshot' => 'nullable|numeric',
+            'file' => 'nullable',
+            'tipe_file' => 'nullable|string|in:upload,link,email',
+            'link_file' => 'nullable|string',
+        ]);
+
+        $finishing = isset($request->finishing)
+            ? json_decode($request->finishing, true)
+            : [];
+
+        $selectedFinishingIds = [];
+
+        if (!empty($finishing)) {
+            foreach ($finishing as $fin) {
+                $skuFin = SkuFinishing::find($fin['id_sku_finishing']);
+
+                if ($skuFin && $skuFin->id_pilihan_finishing) {
+                    $selectedFinishingIds[] = $skuFin->id_pilihan_finishing;
+                }
+            }
+        }
+
+        $totalBeratItem = PesanService::hitungBeratTotalItem(
+            $request->id_sku,
+            $request->jumlah,
+            $selectedFinishingIds
+        );
+
+        $hppSatuan = Komposisi::where('id_sku', $request->id_sku)
+            ->whereNull('id_pilihan_finishing')
+            ->sum('hpp');
+
+        $fileDesainData = $item?->file_desain;
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+            $filename = $request->id_pesan . '-' . Str::random(6) . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs(
+                'desain_pesanan',
+                $filename,
+                'public'
+            );
+            $fileDesainData = [
+                'tipe' => 'upload',
+                'nilai' => $path,
+            ];
+        } elseif ($request->tipe_file === 'link') {
+            $fileDesainData = [
+                'tipe' => 'link',
+                'nilai' => $request->link_file ?? '',
+            ];
+        } elseif ($request->tipe_file === 'email') {
+            $fileDesainData = [
+                'tipe' => 'email',
+                'nilai' => 'Akan dikirim oleh customer melalui Email.',
+            ];
+        }
+
+        $rincianDiskonArray = null;
+        if ($request->filled('rincian_diskon_snapshot')) {
+            $rincianDiskonArray = is_string($request->rincian_diskon_snapshot)
+                ? json_decode($request->rincian_diskon_snapshot, true)
+                : $request->rincian_diskon_snapshot;
+        }
+
+        $data = [
+            'id_pesan' => $request->id_pesan,
+            'id_sku' => $request->id_sku,
+            'nama_produk_snapshot' => $request->nama_produk_snapshot,
+            'jumlah' => $request->jumlah,
+
+            'harga_dasar_awal_snapshot' => $request->harga_dasar_awal_snapshot ?? $request->harga_satuan_snapshot,
+            'total_diskon_snapshot' => $request->total_diskon_snapshot ?? 0,
+            'rincian_diskon_snapshot' => $rincianDiskonArray,
+
+            'harga_satuan_snapshot' => $request->harga_satuan_snapshot,
+            'hpp_satuan_snapshot' => $hppSatuan,
+
+            'estimasi_pengerjaan_snapshot' => $request->estimasi_pengerjaan,
+            'harga_pengerjaan_snapshot' => $request->harga_pengerjaan_snapshot ?? 0,
+
+            'total_berat_snapshot' => $totalBeratItem,
+            'file_desain' => $fileDesainData,
+
+            'catatan' => $request->catatan,
+        ];
+
+        if ($item) {
+            $item->update($data);
+        } else {
+            $item = PesananItem::create($data);
+        }
+
+        $item->pesananItemFinishing()->delete();
+        if (!empty($finishing)) {
+            foreach ($finishing as $fin) {
+                $skuFinishing = SkuFinishing::find($fin['id_sku_finishing']);
+                $idPilihanFinishing = $skuFinishing
+                    ? $skuFinishing->id_pilihan_finishing
+                    : $fin['id_sku_finishing'];
+
+                $hppFinishing = Komposisi::where('id_sku', $request->id_sku)
+                    ->where('id_pilihan_finishing', $idPilihanFinishing)
+                    ->sum('hpp');
+
+                $item->pesananItemFinishing()->create([
+                    'id_sku_finishing' => $fin['id_sku_finishing'],
+                    'nama_finishing_snapshot' => $fin['nama_finishing_snapshot'],
+                    'harga_finishing_snapshot' => $fin['harga_finishing_snapshot'],
+                    'hpp_finishing_snapshot' => $hppFinishing,
+                ]);
+            }
+        }
+
+        return $item;
     }
 }

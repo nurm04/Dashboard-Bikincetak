@@ -45,7 +45,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/cart/item/{id}', [PesanController::class, 'destroyCart']);
     Route::post('/cart/checkout', [PesanController::class, 'checkoutCart']);
     Route::get('/pesanan', [PesanController::class, 'getPesanan']);
-    Route::get('/pesanan/{id_pesan}', [PesanController::class, 'getPesananById']);
+    Route::get('/pesanan/{kode_transaksi}', [PesanController::class, 'getPesananByKodeTransaksi']);
     Route::patch('/pesanan/{id_pesan}/cancel', [PesanController::class, 'cancelPesanan']);
     Route::put('/pesanan/{id_pesan}/selesai', [PesanController::class, 'pesananDiterimaPelanggan']);
 

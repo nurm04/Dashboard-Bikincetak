@@ -43,7 +43,7 @@ const removeRow = (index) => {
                 <thead class="bg-base-200/50">
                     <tr>
                         <th v-for="(header, index) in headers" :key="header"
-                            class="px-4 py-3 text-[10px] font-black text-base-content/40 uppercase tracking-widest"
+                            class="px-3 py-2 text-[10px] font-black text-base-content/40 uppercase tracking-widest"
                             :class="{
                                 'first:rounded-tl-3xl': true,
                                 // Jika tidak bisa hapus, header terakhir dapet rounded kanan
@@ -52,7 +52,7 @@ const removeRow = (index) => {
                         >
                             {{ header }}
                         </th>
-                        <th v-if="canDelete" class="w-16 px-4 py-3 text-[10px] font-black text-base-content/40 uppercase tracking-widest last:rounded-tr-3xl text-center">
+                        <th v-if="canDelete" class="w-16 px-3 py-2 text-[10px] font-black text-base-content/40 uppercase tracking-widest last:rounded-tr-3xl text-center">
                             Aksi
                         </th>
                     </tr>
@@ -61,7 +61,7 @@ const removeRow = (index) => {
                     <tr v-for="(row, index) in modelValue" :key="index" class="transition-colors group hover:bg-base-100/50">
                         <slot name="row" :row="row" :index="index"></slot>
 
-                        <td v-if="canDelete" class="w-16 px-4 py-2 text-center border-l border-base-300/30">
+                        <td v-if="canDelete" class="w-16 px-3 py-2 text-center border-l border-base-300/30">
                             <button
                                 @click="removeRow(index)"
                                 type="button"

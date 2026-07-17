@@ -6,6 +6,7 @@ import CustomTableForm from '@/Components/CustomTableForm.vue';
 import CustomInputNumber from '@/Components/CustomInputNumber.vue';
 import CustomSelect from '@/Components/CustomSelect.vue';
 import { Head, useForm } from '@inertiajs/vue3';
+import CustomSelectSearch from '@/Components/CustomSelectSearch.vue';
 
 const props = defineProps({
     sku: Object,
@@ -95,13 +96,14 @@ const submit = () => {
                         @add="addRow"
                     >
                         <template #row="{ row, index }">
-                            <td class="px-4 py-4 w-1/3">
-                                <CustomSelect
+                            <td class="px-4 py-4 w-1/3 max-w-3">
+                                <CustomSelectSearch
                                     v-model="form.komposisi[index].id_bahan_baku"
                                     :options="bahan_baku"
                                     label-key="nama_bahan_baku"
                                     value-key="id_bahan_baku"
                                     placeholder="Cari & Pilih Bahan..."
+                                    :add-option="false"
                                 />
                             </td>
 

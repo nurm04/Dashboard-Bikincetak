@@ -16,21 +16,33 @@ watch(() => page.props.flash, (flash) => {
 }, { deep: true });
 
 const notifikasiBanyak = ref([]);
-
 const notifSound = new Audio('/sounds/notif.mp3');
+let originalTitle = '';
+
+// 1. TAMBAHKAN STATE UNTUK SIDEBAR
+// Ambil dari localStorage biar posisi sidebar konsisten saat pindah halaman
+const isSidebarCollapsed = ref(localStorage.getItem('sidebar_collapsed') === 'true');
+
+const toggleSidebar = () => {
+    isSidebarCollapsed.value = !isSidebarCollapsed.value;
+    localStorage.setItem('sidebar_collapsed', isSidebarCollapsed.value);
+};
 
 const playNotificationSound = () => {
     notifSound.currentTime = 0;
-
     notifSound.play().catch(err => {
-        console.warn('Browser nge-blokir suara nih! Lu harus interaksi (klik apapun) di halaman ini dulu.', err);
+        console.warn('Suara ke-blokir, kasir belum klik tombol logo Lonceng.', err);
     });
 };
 
 onMounted(() => {
+    originalTitle = document.title;
+
     if (page.props.flash?.success) alertStore.show(page.props.flash.success, 'success');
 
-    console.log("Status Echo:", window.Echo ? "Nyala" : "Mati");
+    window.addEventListener('focus', () => {
+        document.title = originalTitle;
+    });
 
     if (window.Echo) {
         window.Echo.channel('pesanan-channel')
@@ -39,17 +51,22 @@ onMounted(() => {
 
                 playNotificationSound();
 
+                if (document.hidden) {
+                    document.title = "(1) 🔔 Pesanan Baru Masuk!";
+                }
+
                 const idNotif = Date.now();
+                const kodePesanan = e?.pesan?.id_pesan || e?.pesanan?.id_pesan || 'Cek Dashboard';
                 notifikasiBanyak.value.push({
                     id: idNotif,
-                    pesan: `Ada order masuk baru: ${e.pesan.id_pesan}`,
+                    pesan: `Ada order masuk baru: ${kodePesanan}`,
                 });
 
                 setTimeout(() => {
                     notifikasiBanyak.value = notifikasiBanyak.value.filter(n => n.id !== idNotif);
                 }, 5000);
 
-                router.reload();
+                router.reload({ preserveScroll: true, preserveState: true });
             });
     } else {
         console.error("Waduh, window.Echo belum aktif! Cek file bootstrap.js lu.");
@@ -66,20 +83,25 @@ const doGlobalSearch = () => {
 
 <template>
     <div class="flex min-h-screen bg-base-200 text-base-content selection:bg-primary selection:text-white">
+        <Sidebar :isCollapsed="isSidebarCollapsed" />
+        <div class="flex flex-col flex-1 min-h-screen transition-all duration-300" :class="isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'">
+            <nav class="sticky top-0 flex items-center h-16 px-4 transition-colors border-b shadow-sm z-60 lg:px-8 bg-base-100/90 backdrop-blur-md border-base-300">
+                <div class="flex items-center gap-3">
+                    <button @click="toggleSidebar" class="hidden lg:flex btn btn-ghost btn-sm btn-circle hover:bg-base-200 ring-1 ring-base-300/50">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                            <path v-if="!isSidebarCollapsed" stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                            <path v-else stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M12 17.25h8.25" />
+                        </svg>
+                    </button>
 
-        <Sidebar />
-
-        <div class="flex flex-col flex-1 min-h-screen lg:ml-64">
-
-            <nav class="sticky top-0 flex items-center justify-between h-16 px-4 transition-colors border-b shadow-sm z-60 lg:px-8 bg-base-100/90 backdrop-blur-md border-base-300">
-
-                <div class="flex-1 hidden max-w-md md:block">
-                    <form @submit.prevent="doGlobalSearch">
-                        <CustomInputSearch
-                            v-model="globalSearchKey"
-                            placeholder="Cari data global..."
-                        />
-                    </form>
+                    <div class="flex-1 hidden max-w-md ml-2 md:block">
+                        <form @submit.prevent="doGlobalSearch">
+                            <CustomInputSearch
+                                v-model="globalSearchKey"
+                                placeholder="Cari data global..."
+                            />
+                        </form>
+                    </div>
                 </div>
 
                 <div class="flex items-center ml-auto space-x-2 lg:space-x-4">
@@ -134,7 +156,7 @@ const doGlobalSearch = () => {
                 <slot />
             </main>
         </div>
-        <div class="toast toast-end toast-bottom z-9999">
+        <div class="toast toast-end toast-bottom" style="z-index: 99999;">
             <div v-for="notif in notifikasiBanyak" :key="notif.id" class="border-l-4 shadow-lg alert bg-base-100 border-success animate-bounce">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="w-6 h-6 stroke-success shrink-0"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 <div>

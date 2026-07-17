@@ -18,7 +18,8 @@ const isAmbilDiToko = computed(() => {
 
 const formatTanggal = (tgl) => {
     if (!tgl) return '-';
-    return String(tgl).replace('T', ' ').substring(0, 16);
+    const d = new Date(tgl);
+    return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
 };
 
 const totalBerat = computed(() => {
@@ -28,101 +29,95 @@ const totalBerat = computed(() => {
 </script>
 
 <template>
-    <Head :title="`Cetak Label - ${pesanan.id_pesan}`" />
+    <Head :title="`Label Pengiriman - ${pesanan.kode_transaksi}`" />
 
-    <!-- Wrapper paling luar: Dibuat flex untuk menengahkan konten -->
-    <div class="flex justify-center min-h-screen p-4 font-sans text-black bg-white print:p-0 print:bg-white">
+    <div class="flex justify-center min-h-screen p-4 font-sans text-black bg-gray-100 print:p-0 print:bg-white">
 
-        <!-- Wrapper dalam: Di-set ukurannya spesifik untuk print (18cm) agar pas di tengah kertas A4 -->
-        <div class="w-full max-w-2xl print:w-[18cm] mx-auto print:mt-12 print:mb-12">
+        <!-- Standar ukuran resi logistik biasanya A6 (sekitar 105mm x 148mm) -->
+        <div class="w-full max-w-[105mm] bg-white print:w-full print:max-w-none mx-auto shadow-lg print:shadow-none print:m-0 overflow-hidden border-2 border-black print:border-none">
 
-            <!-- Kotak panduan potong -->
-            <div class="p-6 border-2 border-gray-400 border-dashed print:border-none print:p-0">
+            <div class="p-4 print:p-2">
 
-                <!-- HEADER LOGO & RESI -->
-                <div class="flex items-start justify-between pb-4 mb-4 border-b-2 border-black">
+                <!-- HEADER LOGO & JENIS NOTA -->
+                <div class="flex items-center justify-between pb-3 mb-3 border-b-4 border-black">
                     <div>
-                        <h1 class="text-3xl font-black tracking-tighter uppercase">BIKIN CETAK</h1>
-                        <p class="mt-1 text-xs font-bold">Platform Cetak Digital Terpercaya</p>
+                        <h1 class="text-2xl font-black tracking-tighter uppercase leading-none">BIKIN CETAK</h1>
+                        <p class="text-[8px] font-black tracking-widest uppercase mt-0.5">Platform Cetak Digital</p>
                     </div>
                     <div class="text-right">
-                        <p class="text-sm font-bold uppercase">{{ isAmbilDiToko ? 'NOTA AMBIL DI TOKO' : 'LABEL PENGIRIMAN' }}</p>
-                        <p class="mt-1 font-mono text-2xl font-black">{{ pesanan.nomor_resi || pesanan.id_pesan }}</p>
-                        <p class="text-[10px] font-bold">Tgl Order: {{ formatTanggal(pesanan.tanggal_pesan) }}</p>
+                        <span class="inline-block px-2 py-1 text-[10px] font-black tracking-widest text-white uppercase bg-black">
+                            {{ isAmbilDiToko ? 'AMBIL DI TOKO' : 'PENGIRIMAN' }}
+                        </span>
+                        <p class="mt-1 text-[9px] font-bold uppercase tracking-wider">TGL: {{ formatTanggal(pesanan.tanggal_pesan) }}</p>
                     </div>
                 </div>
 
-                <!-- INFO PENGIRIM & PENERIMA -->
-                <div class="grid grid-cols-2 gap-6 mb-6">
-                    <!-- PENGIRIM -->
-                    <div class="space-y-1">
-                        <p class="text-[10px] uppercase font-bold text-gray-500">PENGIRIM:</p>
-                        <p class="text-sm font-black uppercase">BIKIN CETAK</p>
-                        <p class="text-xs font-semibold">0857-8506-1834</p> <!-- Sesuai di screenshot lu -->
-                        <p class="text-xs">Surabaya, Jawa Timur</p>
-                    </div>
+                <!-- RESI / KODE TRANSAKSI SANGAT BESAR -->
+                <div class="mb-4 text-center">
+                    <p class="text-[10px] font-black uppercase tracking-widest mb-0.5">
+                        {{ pesanan.nomor_resi ? 'NOMOR RESI EKPEDISI' : 'KODE TRANSAKSI' }}
+                    </p>
+                    <p class="text-3xl font-black uppercase tracking-widest leading-none">
+                        {{ pesanan.nomor_resi || pesanan.kode_transaksi }}
+                    </p>
+                    <!-- Jika ada resi, kode transaksi jadi referensi kecil di bawahnya -->
+                    <p v-if="pesanan.nomor_resi" class="mt-1 text-[9px] font-bold uppercase tracking-widest">
+                        REF: {{ pesanan.kode_transaksi }}
+                    </p>
+                </div>
 
+                <!-- KURIR & BERAT (Dibuat mencolok) -->
+                <div v-if="!isAmbilDiToko" class="flex border-y-4 border-black">
+                    <div class="flex flex-col justify-center w-3/4 p-2 border-r-4 border-black">
+                        <p class="text-[9px] font-black uppercase tracking-widest mb-0.5">Kurir & Layanan:</p>
+                        <p class="text-xl font-black uppercase leading-tight">{{ pesanan.ekspedisi_nama }} - {{ pesanan.ekspedisi_layanan }}</p>
+                    </div>
+                    <div class="flex flex-col items-center justify-center w-1/4 p-2 text-center bg-black text-white">
+                        <p class="text-[9px] font-bold uppercase tracking-widest mb-0.5">Berat</p>
+                        <p class="text-lg font-black leading-none">{{ totalBerat }}</p>
+                        <p class="text-[9px] font-bold mt-0.5 uppercase">Gram</p>
+                    </div>
+                </div>
+
+                <!-- ALAMAT PENERIMA & PENGIRIM -->
+                <div class="flex flex-col border-b-4 border-black">
                     <!-- PENERIMA -->
-                    <div class="space-y-1">
-                        <p class="text-[10px] uppercase font-bold text-gray-500">PENERIMA:</p>
-                        <p class="text-base font-black uppercase">{{ pesanan.alamat?.nama_penerima || pesanan.customer?.user?.name || 'UMUM' }}</p>
+                    <div class="p-3">
+                        <p class="text-[10px] font-black uppercase tracking-widest mb-1 text-black bg-gray-200 inline-block px-1">KEPADA / PENERIMA:</p>
+                        <p class="text-sm font-black uppercase">{{ pesanan.alamat?.nama_penerima || pesanan.customer?.user?.name || 'Walk-in / Umum' }}</p>
                         <p class="text-xs font-black">{{ pesanan.alamat?.no_hp || '-' }}</p>
-                        <p class="text-xs max-w-62.5 leading-relaxed">
-                            {{ pesanan.alamat?.alamat_lengkap || 'Ambil di Toko' }} <br>
+                        <p class="text-[11px] font-bold leading-snug mt-1.5 uppercase">
+                            {{ pesanan.alamat?.alamat_lengkap || 'Ambil Langsung di Toko' }}
                             <template v-if="pesanan.alamat">
-                                {{ pesanan.alamat.kecamatan }}, {{ pesanan.alamat.kota }} <br>
-                                {{ pesanan.alamat.provinsi }} {{ pesanan.alamat.kode_pos }}
+                                <br>{{ pesanan.alamat.kecamatan }}, {{ pesanan.alamat.kota }}
+                                <br>{{ pesanan.alamat.provinsi }} {{ pesanan.alamat.kode_pos }}
                             </template>
                         </p>
                     </div>
                 </div>
 
-                <!-- INFO EKSPEDISI (Jika bukan ambil di toko) -->
-                <div v-if="!isAmbilDiToko" class="flex items-center justify-between p-3 mb-6 border-2 border-black">
-                    <div>
-                        <p class="text-[10px] uppercase font-bold">KURIR & LAYANAN</p>
-                        <p class="text-lg font-black uppercase">{{ pesanan.ekspedisi_nama }} - {{ pesanan.ekspedisi_layanan }}</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-[10px] uppercase font-bold">BERAT</p>
-                        <p class="text-lg font-black">{{ totalBerat }} <span class="text-sm">gr</span></p>
-                    </div>
-                </div>
-
-                <!-- RINCIAN BARANG -->
-                <div class="mt-4">
-                    <p class="text-[10px] uppercase font-bold text-gray-500 mb-2 border-b border-gray-300 pb-1">ISI PAKET ({{ pesanan.pesanan_item?.length || 0 }} ITEM):</p>
-                    <ul class="space-y-3">
+                <!-- DAFTAR ISI PAKET -->
+                <div class="pt-3">
+                    <p class="text-[10px] font-black uppercase tracking-widest border-b-2 border-black pb-1 mb-2">
+                        Isi Paket ({{ pesanan.pesanan_item?.length || 0 }} Item):
+                    </p>
+                    <ul class="space-y-2">
                         <li v-for="(item, index) in pesanan.pesanan_item" :key="item.id" class="text-xs">
-                            <div class="flex justify-between font-bold">
-                                <span>{{ index + 1 }}. {{ item.nama_produk_snapshot }}</span>
-                                <span>{{ item.jumlah }} pcs</span>
+                            <div class="flex items-start justify-between font-black uppercase leading-tight">
+                                <span class="w-[85%]">{{ index + 1 }}. {{ item.nama_produk_snapshot }}</span>
+                                <span class="w-[15%] text-right whitespace-nowrap">{{ item.jumlah }} PCS</span>
                             </div>
-                            <div v-if="item.pesanan_item_finishing?.length" class="pl-3 text-[10px] text-gray-600 mt-0.5">
-                                <span v-for="fin in item.pesanan_item_finishing" :key="fin.id" class="mr-2">
-                                    + {{ fin.nama_finishing_snapshot }}
+                            <div v-if="item.pesanan_item_finishing?.length" class="pl-4 mt-0.5 text-[9px] font-bold uppercase opacity-80 flex flex-wrap gap-x-2">
+                                <span v-for="fin in item.pesanan_item_finishing" :key="fin.id">
+                                    ▸ {{ fin.nama_finishing_snapshot }}
                                 </span>
                             </div>
-                            <div v-if="item.catatan" class="pl-3 text-[10px] font-bold mt-0.5">
+                            <div v-if="item.catatan" class="pl-4 mt-0.5 text-[9px] font-bold italic">
                                 Note: "{{ item.catatan }}"
                             </div>
                         </li>
                     </ul>
                 </div>
-
-                <!-- FOOTER -->
-                <div class="mt-8 pt-4 border-t border-gray-300 text-center text-[9px] font-bold text-gray-500">
-                    Dokumen ini dicetak otomatis oleh Sistem BikinCetak.<br>
-                    Terima kasih atas pesanan Anda.
-                </div>
-
-                <!-- Tombol Tutup -->
-                <div class="mt-8 text-center print:hidden">
-                    <button @click="() => window.close()" class="px-6 py-2 text-sm font-bold text-black bg-gray-200 border rounded-xl hover:bg-gray-300">
-                        Tutup Halaman Ini
-                    </button>
-                </div>
-
             </div>
         </div>
     </div>
@@ -130,7 +125,15 @@ const totalBerat = computed(() => {
 
 <style>
 @page {
+    /* Auto menyesuaikan dengan kertas di printer (bisa thermal A6 atau print A4 biasa) */
     size: auto;
-    margin: 0mm;
+    margin: 2mm;
+}
+
+@media print {
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
 }
 </style>

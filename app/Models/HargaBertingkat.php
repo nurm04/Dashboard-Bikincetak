@@ -17,7 +17,8 @@ class HargaBertingkat extends Model
         'id_sku',
         'min',
         'max',
-        'harga',
+        'tipe',
+        'nilai'
     ];
 
     public function produkSku(): BelongsTo

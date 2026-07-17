@@ -23,25 +23,64 @@ class ProdukSkuController extends Controller
         try {
             DB::beginTransaction();
 
-            ProdukSku::where('id_produk', $id_produk)->delete();
+            $incomingSkus = collect($request->skus ?? []);
+            $incomingIds = $incomingSkus->pluck('id_sku')->filter()->toArray();
 
-            if ($request->has('skus') && !empty($request->skus)) {
-                foreach ($request->skus as $index => $data) {
-                    $skuId = $id_produk . "-SKU-" . str_pad($index + 1, 3, '0', STR_PAD_LEFT);
+            ProdukSku::where('id_produk', $id_produk)
+                ->whereNotIn('id_sku', $incomingIds)
+                ->delete();
 
-                    $sku = ProdukSku::create([
-                        'id_sku' => $skuId,
-                        'id_produk' => $id_produk,
-                        'nama_sku' => $data['nama_sku'],
-                        'minimum_pesan' => $data['minimum_pesan'],
-                        'harga' => $data['harga']
-                    ]);
+            $lastSku = ProdukSku::where('id_produk', $id_produk)
+                ->orderByRaw('LENGTH(id_sku) DESC')
+                ->orderBy('id_sku', 'desc')
+                ->first();
 
-                    foreach ($data['pilihan_ids'] as $id_pilihan) {
-                        SkuDetailPilihan::create([
+            $lastIndex = 0;
+            if ($lastSku) {
+                $parts = explode('-SKU-', $lastSku->id_sku);
+                if (count($parts) == 2) {
+                    $lastIndex = (int) $parts[1];
+                }
+            }
+
+            if (!empty($request->skus)) {
+                foreach ($request->skus as $data) {
+
+                    if (!empty($data['id_sku'])) {
+                        $sku = ProdukSku::where('id_sku', $data['id_sku'])->first();
+                        if ($sku) {
+                            $sku->update([
+                                'nama_sku' => $data['nama_sku'],
+                                'minimum_pesan' => $data['minimum_pesan'],
+                                'harga' => $data['harga']
+                            ]);
+
+                            SkuDetailPilihan::where('id_sku', $sku->id_sku)->delete();
+                            foreach ($data['pilihan_ids'] as $id_pilihan) {
+                                SkuDetailPilihan::create([
+                                    'id_sku' => $sku->id_sku,
+                                    'id_pilihan' => $id_pilihan
+                                ]);
+                            }
+                        }
+                    } else {
+                        $lastIndex++;
+                        $skuId = $id_produk . "-SKU-" . str_pad($lastIndex, 3, '0', STR_PAD_LEFT);
+
+                        ProdukSku::create([
                             'id_sku' => $skuId,
-                            'id_pilihan' => $id_pilihan
+                            'id_produk' => $id_produk,
+                            'nama_sku' => $data['nama_sku'],
+                            'minimum_pesan' => $data['minimum_pesan'],
+                            'harga' => $data['harga']
                         ]);
+
+                        foreach ($data['pilihan_ids'] as $id_pilihan) {
+                            SkuDetailPilihan::create([
+                                'id_sku' => $skuId,
+                                'id_pilihan' => $id_pilihan
+                            ]);
+                        }
                     }
                 }
             }

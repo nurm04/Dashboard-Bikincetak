@@ -2,11 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Customer;
 use App\Models\Kategori;
 use App\Models\Produk;
 use App\Models\Varian;
-use App\Models\Voucher;
 use App\Services\ProdukService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -182,39 +180,5 @@ class ProdukController extends Controller
             DB::rollBack();
             return redirect()->back()->with('error', 'Gagal hapus: ' . $e->getMessage());
         }
-    }
-
-    public function katalogWeb(Request $request)
-    {
-        $kategoris = Kategori::all();
-        $produks = Produk::where('is_active', true)->get();
-        $customers = Customer::with(['user', 'alamat', 'roleCustomer'])->get();
-
-        $vouchers = Voucher::where('is_active', true)
-            ->where('berlaku_dari', '<=', now())
-            ->where('berlaku_sampai', '>=', now())
-            ->get();
-
-        return Inertia::render('Pesan/PosKasir', [
-            'kategoris' => $kategoris,
-            'produks' => $produks,
-            'customers' => $customers,
-            'vouchers' => $vouchers
-        ]);
-    }
-
-    public function detailKatalogWeb(Request $request, $id_produk)
-    {
-        $produk = Produk::with([
-            'kategori',
-            'produkSku.hargaPengerjaan',
-            'produkSku.hargaBertingkat',
-            'produkSku.diskonCustomer',
-            'produkSku.skuFinishing.pilihanFinishing.finishing'
-        ])->where('is_active', true)->findOrFail($id_produk);
-
-        return Inertia::render('Pesan/DetailProdukKasir', [
-            'produk' => $produk
-        ]);
     }
 }

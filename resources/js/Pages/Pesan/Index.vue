@@ -25,7 +25,7 @@ const props = defineProps({
     filters: Object
 });
 
-const headers = ['ID Pesanan', 'Customer', 'Total Tagihan', 'Pembayaran', 'Operasional', 'Aksi'];
+const headers = ['ID Pesanan', 'Kode Transaksi', 'Customer', 'Total Tagihan', 'Pembayaran', 'Operasional', 'Aksi'];
 
 const showBayarSebagianModal = ref(false);
 const selectedPesanId = ref(null);
@@ -166,11 +166,11 @@ const getAllowedOperasional = (statusSaatIni) => {
         <div class="min-h-screen px-4 py-6 mx-auto sm:px-6 lg:px-8 max-w-7xl">
 
             <div class="flex flex-col gap-4 mb-6 md:flex-row md:items-center md:justify-between">
-                <Link :href="route('pos.katalog')" class="font-black tracking-wider shadow-md btn btn-primary rounded-xl shrink-0">
+                <Link :href="route('pesan.pos-kasir')" class="font-black tracking-wider shadow-md btn btn-primary rounded-xl shrink-0">
                     + Tambah Pesanan (POS)
                 </Link>
             </div>
-            <div class="mb-3 flex flex-col w-full gap-3 sm:flex-row sm:items-center md:w-auto">
+            <div class="flex flex-col w-full gap-3 mb-3 sm:flex-row sm:items-center md:w-auto">
                 <CustomInputSearch
                     v-model="search"
                     class="w-full sm:w-64"
@@ -207,13 +207,17 @@ const getAllowedOperasional = (statusSaatIni) => {
                         {{ p.id_pesan }}
                     </td>
 
+                    <td class="px-6 py-4" :class="p.status_operasional === 'batal' ? 'opacity-40 line-through' : 'text-primary'">
+                        {{ p.kode_transaksi }}
+                    </td>
+
                     <td class="px-6 py-4" :class="p.status_operasional === 'batal' ? 'opacity-40 line-through' : ''">
                         <div class="font-bold text-base-content">{{ p.customer?.user?.name || 'Walk-in / Umum' }}</div>
                         <div class="text-[10px] opacity-40 font-mono tracking-wider">{{ p.id_customer }}</div>
                     </td>
 
                     <td class="px-6 py-4 text-sm font-black" :class="p.status_operasional === 'batal' ? 'opacity-40 line-through' : 'text-base-content'">
-                        {{ formatRupiah(p.total_transfer ?? p.total_tagihan) }}
+                        {{ formatRupiah(p.total_tagihan ?? 0) }}
                     </td>
 
                     <td class="px-6 py-4" :class="p.status_operasional === 'batal' ? 'opacity-50' : ''">
@@ -302,6 +306,7 @@ const getAllowedOperasional = (statusSaatIni) => {
                             type="number"
                             placeholder="Masukkan nominal pembayaran"
                             :error="formPembayaran.errors.nominal_bayar"
+                            :max="selectedPesan.total_tagihan - (selectedPesan.total_dibayar ?? 0)"
                         />
                     </div>
                     <div class="p-3 text-xs rounded-lg bg-base-200">

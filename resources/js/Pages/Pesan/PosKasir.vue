@@ -1,15 +1,30 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
-import StafLayout from '@/Layouts/StafLayout.vue';
-import CustomButton from '@/Components/CustomButton.vue';
-import CustomSelect from '@/Components/CustomSelect.vue';
-import CustomSelectSearch from '@/Components/CustomSelectSearch.vue'; // <-- IMPORT BARU
-import ProdukRow from '@/Components/ProdukRow.vue';
-import { alertStore } from '@/Utils/alertStore';
 import axios from 'axios';
+import StafLayout from '@/Layouts/StafLayout.vue';
+import CustomSelectSearch from '@/Components/CustomSelectSearch.vue';
+import CustomSelect from '@/Components/CustomSelect.vue';
 import CustomInputNumber from '@/Components/CustomInputNumber.vue';
+import CustomButton from '@/Components/CustomButton.vue';
+import { alertStore } from '@/Utils/alertStore';
 
+// Komponen Reusable
+import OrderItemsTable from '@/Components/OrderItemsTable.vue';
+import OrderSummary from '@/Components/OrderSummary.vue';
+import OrderFormCard from '@/Components/OrderFormCard.vue';
+
+const props = defineProps({
+    customers: Array,
+    vouchers: Array,
+    enumPembayaran: Array,
+    kategoris: Array,
+    produks: Array,
+});
+
+// ==========================================
+// 1. INDEXED_DB LOGIC
+// ==========================================
 const initDB = () => new Promise((resolve, reject) => {
     const req = indexedDB.open('POS_DB', 1);
     req.onupgradeneeded = () => req.result.createObjectStore('cart_files');
@@ -44,40 +59,11 @@ const clearAllFilesDB = async () => {
     });
 };
 
-const props = defineProps({
-    kategoris: Array,
-    produks: Array,
-    customers: Array,
-    vouchers: Array,
-});
 
-const filterKategori = ref('semua');
+// ==========================================
+// 2. STATE FORM & LOCAL STORAGE
+// ==========================================
 const cartItems = ref([]);
-
-const pembayaranOptions = [
-    { id: 'belum_lunas', nama: 'Belum Lunas' },
-    { id: 'dibayar_sebagian', nama: 'Dibayar Sebagian (DP)' },
-    { id: 'lunas', nama: 'Lunas (Bayar Penuh)' },
-];
-
-const ekspedisiOptions = [
-    { id: 'Ambil di Toko', nama: 'Ambil di Toko (Ongkir Rp 0)' },
-    { id: 'Kurir Toko', nama: 'Kurir Toko / Lokal / Instan' },
-    { id: 'jne', nama: 'JNE' },
-    { id: 'sicepat', nama: 'SiCepat' },
-    { id: 'jnt', nama: 'J&T' },
-    { id: 'pos', nama: 'POS Indonesia' },
-];
-
-const manualLayananOptions = [
-    { id: 'Gojek / Grab (Instan)', nama: 'Gojek / Grab (Instan)' },
-    { id: 'Lalamove / Deliveree', nama: 'Lalamove / Deliveree' },
-    { id: 'Kurir Toko (Motor)', nama: 'Kurir Toko (Motor)' },
-    { id: 'Kurir Toko (Mobil)', nama: 'Kurir Toko (Mobil)' },
-    { id: 'Titip Travel / Bus', nama: 'Titip Travel / Bus' },
-    { id: 'Lainnya', nama: 'Lainnya' },
-];
-
 const savedState = JSON.parse(localStorage.getItem('pos_form_state')) || {};
 
 const form = useForm({
@@ -88,9 +74,8 @@ const form = useForm({
     kode_voucher: savedState.kode_voucher || '',
     diskon_voucher_nominal: savedState.diskon_voucher_nominal || 0,
     ekspedisi_nama: savedState.ekspedisi_nama || 'Ambil di Toko',
-    ekspedisi_layanan: savedState.ekspedisi_layanan || '',
+    ekspedisi_layanan: savedState.ekspedisi_layanan || 'Ambil Sendiri',
     harga_ongkir: savedState.harga_ongkir || 0,
-    items: [],
 });
 
 watch(() => form, (newForm) => {
@@ -107,18 +92,22 @@ watch(() => form, (newForm) => {
     }));
 }, { deep: true });
 
+onMounted(() => {
+    cartItems.value = JSON.parse(localStorage.getItem('pos_cart')) || [];
+});
+
+watch(cartItems, (newCart) => {
+    localStorage.setItem('pos_cart', JSON.stringify(newCart));
+}, { deep: true });
+
+
+// ==========================================
+// 3. PELANGGAN, ALAMAT & HITUNG ULANG OTOMATIS
+// ==========================================
 const customerOptions = computed(() => {
     return props.customers.map(c => ({
         id_customer: c.id_customer,
         nama_tampilan: `${c.user?.name || 'Walk-In'} (${c.id_customer})`
-    }));
-});
-
-const voucherOptions = computed(() => {
-    if (!props.vouchers) return [];
-    return props.vouchers.map(v => ({
-        value: v.kode_voucher,
-        label: `${v.kode_voucher} - Diskon ${v.persentase_diskon}%`
     }));
 });
 
@@ -129,40 +118,128 @@ const alamatOptions = computed(() => {
 
     return selectedCust.alamat.map(a => ({
         id_alamat: a.id_alamat,
-        alamat_lengkap: a.alamat_lengkap || a.alamat || a.id_alamat
+        alamat_lengkap: `${a.label || 'Alamat'} - ${a.alamat_lengkap} (${a.kota})`
     }));
 });
 
-watch(() => form.id_customer, (newCustomerId, oldCustomerId) => {
-    if (newCustomerId) {
-        const selectedCust = props.customers.find(c => c.id_customer === newCustomerId);
-        if (selectedCust) {
-            localStorage.setItem('pos_active_customer', JSON.stringify(selectedCust));
-        }
+// Fungsi Hitung Ulang Keranjang (Triggered saat ganti Customer)
+const recalculateCartItems = (selectedCust) => {
+    if (cartItems.value.length === 0) return;
 
-        if (oldCustomerId !== undefined && oldCustomerId !== newCustomerId) {
-            const listAlamat = alamatOptions.value;
-            if (listAlamat.length > 0) {
-                form.id_alamat = listAlamat[0].id_alamat;
-            } else {
-                form.id_alamat = '';
-                alertStore.show('Customer ini belum mendaftarkan alamat pengiriman!', 'info');
+    const roleId = selectedCust?.id_role_customer;
+    const roleName = selectedCust?.role_customer?.nama_role || 'Member';
+    let hasUpdates = false;
+
+    cartItems.value = cartItems.value.map(item => {
+        if (!item.master_diskon_customer) return item;
+        hasUpdates = true;
+
+        let diskonMember = 0;
+        let namaDiskonMember = '';
+        if (roleId) {
+            const d = item.master_diskon_customer.find(x => String(x.id_role_customer) === String(roleId));
+            if (d) {
+                diskonMember = d.tipe === 'persen' ? item.harga_dasar_awal_snapshot * (Number(d.nilai) / 100) : Number(d.nilai);
+                namaDiskonMember = d.tipe === 'persen' ? `Diskon ${roleName} (${d.nilai}%)` : `Diskon ${roleName} (Nominal)`;
             }
         }
-    } else {
-        localStorage.removeItem('pos_active_customer');
-        form.id_alamat = '';
+
+        let diskonGrosir = 0;
+        let namaDiskonGrosir = '';
+        const tier = [...(item.master_harga_bertingkat || [])]
+            .sort((a, b) => b.min - a.min)
+            .find(t => item.jumlah >= t.min && (t.max === 0 || t.max === null || item.jumlah <= t.max));
+
+        if (tier) {
+            diskonGrosir = tier.tipe === 'persen' ? item.harga_dasar_awal_snapshot * (Number(tier.nilai) / 100) : Number(tier.nilai);
+            namaDiskonGrosir = tier.tipe === 'persen' ? `Harga Grosir Qty ${item.jumlah} (${tier.nilai}%)` : `Harga Grosir Qty ${item.jumlah}`;
+        }
+
+        const rincianDiskon = [];
+        if (diskonGrosir > 0) rincianDiskon.push({ nama: namaDiskonGrosir, nominal: diskonGrosir });
+        if (diskonMember > 0) rincianDiskon.push({ nama: namaDiskonMember, nominal: diskonMember });
+
+        const totalDiskonSatuan = diskonGrosir + diskonMember;
+        item.total_diskon_snapshot = totalDiskonSatuan;
+        item.rincian_diskon_snapshot = rincianDiskon;
+        item.harga_satuan_snapshot = Math.max(0, item.harga_dasar_awal_snapshot - totalDiskonSatuan);
+
+        const totalFinishing = item.pesanan_item_finishing?.reduce((sum, f) => sum + (Number(f.harga_finishing_snapshot) || 0), 0) || 0;
+        const newTotalProduk = (item.harga_satuan_snapshot + totalFinishing) * item.jumlah;
+
+        if (item.master_harga_pengerjaan) {
+            const p = item.master_harga_pengerjaan.find(o => o.pengerjaan === item.estimasi_pengerjaan_snapshot);
+            if (p) {
+                item.harga_pengerjaan_snapshot = p.tipe === 'persen' ? newTotalProduk * (Number(p.nilai) / 100) : Number(p.nilai);
+            }
+        }
+
+        item.total_produk = newTotalProduk;
+        item.total_sla = item.harga_pengerjaan_snapshot;
+        item.subtotal = newTotalProduk + item.total_sla;
+
+        return item;
+    });
+
+    cartItems.value = [...cartItems.value];
+
+    if (hasUpdates) {
+        alertStore.show('Harga disesuaikan dengan Diskon Pelanggan.', 'info');
     }
-});
+};
+
+// Watcher Customer Baru
+watch(() => form.id_customer, (newId, oldId) => {
+    const selectedCust = props.customers.find(c => c.id_customer === newId);
+    localStorage.setItem('pos_active_customer', JSON.stringify(selectedCust || null));
+
+    if (oldId !== undefined && newId !== oldId) {
+        const list = alamatOptions.value;
+        if (list.length > 0) {
+            form.id_alamat = list[0].id_alamat;
+        } else {
+            form.id_alamat = '';
+            if (newId) alertStore.show('Customer ini belum mendaftarkan alamat!', 'info');
+        }
+
+        recalculateCartItems(selectedCust);
+    }
+}, { immediate: true });
+
+
+// ==========================================
+// 4. LOGIKA PENGIRIMAN & ONGKIR
+// ==========================================
+const ekspedisiOptions = [
+    { id: 'Ambil di Toko', nama: 'Ambil di Toko (Rp 0)' },
+    { id: 'Kurir Toko', nama: 'Kurir Lokal / Instan' },
+    { id: 'jne', nama: 'JNE' },
+    { id: 'sicepat', nama: 'SiCepat' },
+    { id: 'jnt', nama: 'J&T' },
+    { id: 'pos', nama: 'POS Indonesia' },
+];
+
+const manualLayananOptions = [
+    { id: 'Gojek / Grab (Instan)', nama: 'Gojek / Grab (Instan)' },
+    { id: 'Lalamove / Deliveree', nama: 'Lalamove / Deliveree' },
+    { id: 'Kurir Toko (Motor)', nama: 'Kurir Toko (Motor)' },
+    { id: 'Kurir Toko (Mobil)', nama: 'Kurir Toko (Mobil)' },
+    { id: 'Titip Travel / Bus', nama: 'Titip Travel / Bus' },
+    { id: 'Lainnya', nama: 'Lainnya' },
+];
 
 const layananOptions = ref([]);
 const isLoadingOngkir = ref(false);
 
-const isManualEkspedisi = computed(() => {
-    return ['Ambil di Toko', 'Kurir Toko'].includes(form.ekspedisi_nama);
-});
+const isManualEkspedisi = computed(() => ['Ambil di Toko', 'Kurir Toko'].includes(form.ekspedisi_nama));
+
+const formatRupiah = (angka) => {
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(angka || 0);
+};
 
 const fetchOngkir = async () => {
+    if (!form.id_alamat || cartItems.value.length === 0 || isManualEkspedisi.value) return;
+
     isLoadingOngkir.value = true;
     layananOptions.value = [];
     form.ekspedisi_layanan = '';
@@ -179,33 +256,34 @@ const fetchOngkir = async () => {
         let costs = [];
 
         if (data?.data && Array.isArray(data.data)) {
-            costs = data.data.map(item => ({
-                id: item.service,
-                nama: `${item.service} (${item.etd || item.estimation || '-'} Hari) - Rp ${formatRupiah(item.cost)}`,
-                cost: item.cost
-            }));
+            costs = data.data.map(i => ({ id: i.service, nama: `${i.service} (${i.etd || '-'} Hari) - Rp ${formatRupiah(i.cost)}`, cost: i.cost }));
         } else if (data?.rajaongkir?.results?.[0]?.costs) {
-            costs = data.rajaongkir.results[0].costs.map(srv => ({
-                id: srv.service,
-                nama: `${srv.service} (${srv.cost[0]?.etd || '-'} Hari) - Rp ${formatRupiah(srv.cost[0]?.value)}`,
-                cost: srv.cost[0]?.value
-            }));
+            costs = data.rajaongkir.results[0].costs.map(s => ({ id: s.service, nama: `${s.service} (${s.cost[0]?.etd || '-'} Hari) - Rp ${formatRupiah(s.cost[0]?.value)}`, cost: s.cost[0]?.value }));
         }
 
         if (costs.length > 0) {
             layananOptions.value = costs;
+            alertStore.show('Tarif Ongkir berhasil dihitung ulang!', 'success');
         } else {
-            alertStore.show('Layanan kurir ini tidak tersedia untuk rute tersebut.', 'error');
+            alertStore.show('Layanan kurir tidak tersedia untuk rute tersebut.', 'error');
             form.ekspedisi_nama = 'Kurir Toko';
         }
     } catch (error) {
-        console.error(error);
         alertStore.show('Gagal menghubungi server ongkir.', 'error');
         form.ekspedisi_nama = 'Kurir Toko';
     } finally {
         isLoadingOngkir.value = false;
     }
 };
+
+// Hitung Ongkir Otomatis Jika Alamat Berubah
+watch(() => form.id_alamat, (newAlamat, oldAlamat) => {
+    if (oldAlamat !== undefined && newAlamat !== oldAlamat) {
+        if (cartItems.value.length > 0 && !isManualEkspedisi.value) {
+            fetchOngkir();
+        }
+    }
+});
 
 watch(() => form.ekspedisi_nama, async (newCourier) => {
     if (newCourier === 'Ambil di Toko') {
@@ -234,86 +312,98 @@ watch(() => form.ekspedisi_nama, async (newCourier) => {
 watch(() => form.ekspedisi_layanan, (newLayanan) => {
     if (!isManualEkspedisi.value && newLayanan) {
         const selected = layananOptions.value.find(l => l.id === newLayanan);
-        if (selected) {
-            form.harga_ongkir = selected.cost;
-        }
+        if (selected) form.harga_ongkir = selected.cost;
     }
 });
 
-const loadCart = () => {
-    cartItems.value = JSON.parse(localStorage.getItem('pos_cart')) || [];
-};
 
-onMounted(() => loadCart());
+// ==========================================
+// 5. MANAJEMEN KERANJANG & FORM ITEM
+// ==========================================
+const showOrderForm = ref(false);
+const itemToEdit = ref(null);
 
-const hapusItem = async (index) => {
-    const itemId = cartItems.value[index].cart_item_id;
-    cartItems.value.splice(index, 1);
-    localStorage.setItem('pos_cart', JSON.stringify(cartItems.value));
+const handleRequestAdd = () => { itemToEdit.value = null; showOrderForm.value = true; };
+const handleRequestEdit = (item) => { itemToEdit.value = { ...item }; showOrderForm.value = true; };
+const handleCancelForm = () => { itemToEdit.value = null; showOrderForm.value = false; };
 
-    await deleteFilesFromDB(itemId);
+const handleFormSubmit = async (payload) => {
+    const cartId = itemToEdit.value ? itemToEdit.value.cart_id : 'cart_' + Date.now();
 
-    alertStore.show('Item berhasil dihapus', 'success');
-};
-
-const resetFormDanKeranjang = async () => {
-    cartItems.value = [];
-    localStorage.removeItem('pos_cart');
-    localStorage.removeItem('pos_form_state');
-    localStorage.removeItem('pos_active_customer');
-    await clearAllFilesDB();
-    form.reset();
-    form.id_customer = '';
-    form.id_alamat = '';
-    form.kode_voucher = '';
-    form.diskon_voucher_nominal = 0;
-    form.ekspedisi_nama = 'Ambil di Toko';
-    form.ekspedisi_layanan = 'Ambil Sendiri';
-    form.harga_ongkir = 0;
-    form.status_pembayaran = 'belum_lunas';
-    form.nominal_bayar = 0;
-};
-
-const kosongkanKeranjang = () => {
-    if (confirm('Yakin ingin membersihkan semua isi keranjang belanja dan form pelanggan?')) {
-        resetFormDanKeranjang();
-        alertStore.show('Sesi kasir dibersihkan', 'success');
+    if (payload.tipe_file === 'upload' && payload.file instanceof File) {
+        try {
+            const db = await initDB();
+            const tx = db.transaction('cart_files', 'readwrite');
+            tx.objectStore('cart_files').put([payload.file], cartId);
+        } catch (error) {
+            console.error('Gagal simpan file ke IndexedDB:', error);
+            alertStore.show('Gagal memproses file desain!', 'error');
+            return;
+        }
     }
+
+    const dataToSave = {
+        ...payload,
+        cart_id: cartId,
+        pesanan_item_finishing: payload.finishing,
+        estimasi_pengerjaan_snapshot: payload.estimasi_pengerjaan
+    };
+
+    if (dataToSave.file instanceof File) {
+        dataToSave.file = {
+            name: dataToSave.file.name,
+            size: dataToSave.file.size,
+            type: dataToSave.file.type
+        };
+    }
+
+    if (itemToEdit.value) {
+        const idx = cartItems.value.findIndex(c => c.cart_id === itemToEdit.value.cart_id);
+        if (idx !== -1) cartItems.value[idx] = dataToSave;
+    } else {
+        cartItems.value.push(dataToSave);
+    }
+
+    handleCancelForm();
+    alertStore.show('Item tersimpan di keranjang!', 'success');
 };
 
+const hapusItem = async (cartId) => {
+    cartItems.value = cartItems.value.filter(c => c.cart_id !== cartId);
+    await deleteFilesFromDB(cartId);
+    alertStore.show('Item dihapus', 'info');
+};
+
+
+// ==========================================
+// 6. KALKULASI TOTAL & VOUCHER
+// ==========================================
 const hitungTotalFinishing = (item) => {
-    return (item.finishings || []).reduce((sum, f) => sum + (Number(f.harga_finishing_snapshot) || 0), 0);
-};
-
-const hitungHargaDasar = (item) => {
-    return Number(item.harga_satuan_snapshot) - hitungTotalFinishing(item);
+    const listFinishing = item.pesanan_item_finishing || [];
+    return listFinishing.reduce((sum, f) => sum + (Number(f.harga_finishing_snapshot) || 0), 0);
 };
 
 const hitungTotalItem = (item) => {
+    const hargaDasarNet = Number(item.harga_satuan_snapshot) || 0;
+    const totalFinishing = hitungTotalFinishing(item);
     const qty = Number(item.jumlah) || 1;
-    const sla = Number(item.harga_pengerjaan_snapshot) || 0;
-    const hargaIncludeFinishing = Number(item.harga_satuan_snapshot) || 0;
-    return (hargaIncludeFinishing * qty) + sla;
+    const slaTotal = Number(item.harga_pengerjaan_snapshot) || 0;
+    return ((hargaDasarNet + totalFinishing) * qty) + slaTotal;
 };
 
+const totalProduk = computed(() => cartItems.value.reduce((total, item) => total + hitungTotalItem(item), 0));
+
+const voucherOptions = computed(() => (props.vouchers || []).map(v => ({ value: v.kode_voucher, label: `${v.kode_voucher} - Diskon ${v.persentase_diskon}%` })));
+
 watch([() => form.kode_voucher, cartItems], ([newKode, newItems]) => {
-    if (!newKode) {
-        form.diskon_voucher_nominal = 0;
-        return;
-    }
-
+    if (!newKode) { form.diskon_voucher_nominal = 0; return; }
     const voucher = props.vouchers?.find(v => v.kode_voucher === newKode);
-
-    if (!voucher) {
-        form.diskon_voucher_nominal = 0;
-        return;
-    }
+    if (!voucher) { form.diskon_voucher_nominal = 0; return; }
 
     const subtotal = newItems.reduce((total, item) => total + hitungTotalItem(item), 0);
-
     if (subtotal < Number(voucher.minimal_transaksi_rupiah)) {
         form.diskon_voucher_nominal = 0;
-        alertStore.show(`Minimal transaksi untuk voucher ini adalah Rp ${formatRupiah(voucher.minimal_transaksi_rupiah)}`, 'warning');
+        alertStore.show(`Minimal transaksi voucher: Rp ${formatRupiah(voucher.minimal_transaksi_rupiah)}`, 'warning');
         return;
     }
 
@@ -323,74 +413,50 @@ watch([() => form.kode_voucher, cartItems], ([newKode, newItems]) => {
     if (voucher.tipe_target === 'semua_pesanan') {
         kalkulasiDiskon = (subtotal * persen) / 100;
     } else if (voucher.tipe_target === 'produk_tertentu') {
-        const totalProdukTarget = newItems
-            .filter(item => item.id_sku === voucher.id_sku_target)
-            .reduce((sum, item) => sum + hitungTotalItem(item), 0);
-
+        const totalProdukTarget = newItems.filter(i => i.id_sku === voucher.id_sku_target).reduce((s, i) => s + hitungTotalItem(i), 0);
         kalkulasiDiskon = (totalProdukTarget * persen) / 100;
     }
 
     const maksPotongan = Number(voucher.maksimal_potongan_rupiah);
-    if (maksPotongan > 0 && kalkulasiDiskon > maksPotongan) {
-        kalkulasiDiskon = maksPotongan;
-    }
-
-    form.diskon_voucher_nominal = Math.round(kalkulasiDiskon);
+    form.diskon_voucher_nominal = Math.round((maksPotongan > 0 && kalkulasiDiskon > maksPotongan) ? maksPotongan : kalkulasiDiskon);
 }, { deep: true });
 
-const grandTotal = computed(() => {
-    const totalProduk = cartItems.value.reduce((total, item) => total + hitungTotalItem(item), 0);
-    const ongkir = Number(form.harga_ongkir) || 0;
-    const diskonVoucher = Number(form.diskon_voucher_nominal) || 0;
+const grandTotal = computed(() => Math.max(0, (totalProduk.value + (Number(form.harga_ongkir) || 0)) - (Number(form.diskon_voucher_nominal) || 0)));
 
-    const totalAkhir = (totalProduk + ongkir) - diskonVoucher;
-    return totalAkhir > 0 ? totalAkhir : 0;
+const totalDibayar = computed(() => {
+    if (form.status_pembayaran === 'lunas') return grandTotal.value;
+    if (form.status_pembayaran === 'dibayar_sebagian') return Number(form.nominal_bayar) || 0;
+    return 0;
+});
+const sisaTagihan = computed(() => Math.max(0, grandTotal.value - totalDibayar.value));
+
+watch(() => form.status_pembayaran, (newStatus) => {
+    if (newStatus !== 'dibayar_sebagian') form.nominal_bayar = 0;
 });
 
-watch([() => form.status_pembayaran, grandTotal], ([newStatus, newTotal]) => {
-    if (newStatus === 'lunas') {
-        form.nominal_bayar = newTotal;
-    } else if (newStatus === 'belum_lunas') {
-        form.nominal_bayar = 0;
-    }
-});
 
-const groupedProduks = computed(() => {
-    const groups = {};
-    props.produks.forEach(prod => {
-        const idKat = prod.id_kategori;
-        const kat = props.kategoris.find(k => k.id_kategori === idKat);
-        const namaKat = kat ? kat.nama_kategori : 'Lainnya';
-
-        if (!groups[idKat]) {
-            groups[idKat] = { id_kategori: idKat, nama_kategori: namaKat, data: [] };
-        }
-        groups[idKat].data.push(prod);
-    });
-    return Object.values(groups);
-});
-
-const filteredGroupedProduks = computed(() => {
-    if (filterKategori.value === 'semua') return groupedProduks.value;
-    return groupedProduks.value.filter(g => g.id_kategori === filterKategori.value);
-});
-
-const formatRupiah = (angka) => {
-    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(angka || 0);
+// ==========================================
+// 7. CHECKOUT & SUBMIT
+// ==========================================
+const resetFormDanKeranjang = async () => {
+    cartItems.value = [];
+    localStorage.removeItem('pos_cart');
+    localStorage.removeItem('pos_form_state');
+    localStorage.removeItem('pos_active_customer');
+    await clearAllFilesDB();
+    form.reset();
 };
 
 const submitCheckout = async () => {
     if (cartItems.value.length === 0) return alertStore.show('Keranjang kosong!', 'error');
     if (!form.id_customer) return alertStore.show('Pilih pelanggan dulu!', 'error');
-    if (!form.id_alamat) return alertStore.show('Pilih alamat dulu!', 'error');
     if (form.ekspedisi_nama !== 'Ambil di Toko' && !form.ekspedisi_layanan) return alertStore.show('Layanan Ekspedisi wajib dipilih!', 'error');
 
     const formData = new FormData();
     formData.append('id_customer', form.id_customer);
-    formData.append('id_alamat', form.id_alamat);
+    formData.append('id_alamat', form.id_alamat || 'Alamat Toko');
     formData.append('status_pembayaran', form.status_pembayaran);
-    formData.append('nominal_bayar', form.nominal_bayar || 0);
-
+    formData.append('nominal_bayar', totalDibayar.value);
     formData.append('kode_voucher', form.kode_voucher || '');
     formData.append('diskon_voucher_nominal', form.diskon_voucher_nominal || 0);
 
@@ -404,224 +470,199 @@ const submitCheckout = async () => {
         formData.append(`items[${index}][id_sku]`, item.id_sku);
         formData.append(`items[${index}][jumlah]`, item.jumlah);
         formData.append(`items[${index}][nama_produk_snapshot]`, item.nama_produk_snapshot);
-        formData.append(`items[${index}][harga_satuan_snapshot]`, hitungHargaDasar(item));
-        formData.append(`items[${index}][estimasi_pengerjaan]`, item.estimasi_pengerjaan || 'Reguler');
+        formData.append(`items[${index}][harga_satuan_snapshot]`, item.harga_satuan_snapshot);
+        formData.append(`items[${index}][estimasi_pengerjaan]`, item.estimasi_pengerjaan_snapshot || 'Reguler');
         formData.append(`items[${index}][harga_pengerjaan_snapshot]`, item.harga_pengerjaan_snapshot || 0);
         formData.append(`items[${index}][catatan]`, item.catatan || '');
+        formData.append(`items[${index}][tipe_file]`, item.tipe_file || 'upload');
+        formData.append(`items[${index}][link_file]`, item.link_file || '');
 
         formData.append(`items[${index}][harga_dasar_awal_snapshot]`, item.harga_dasar_awal_snapshot || item.harga_satuan_snapshot);
         formData.append(`items[${index}][total_diskon_snapshot]`, item.total_diskon_snapshot || 0);
+        formData.append(`items[${index}][rincian_diskon_snapshot]`, JSON.stringify(item.rincian_diskon_snapshot || []));
 
-        const rincianData = Array.isArray(item.rincian_diskon_snapshot) ? item.rincian_diskon_snapshot : [];
-        formData.append(`items[${index}][rincian_diskon_snapshot]`, JSON.stringify(rincianData));
+        formData.append(`items[${index}][finishing]`, JSON.stringify(item.pesanan_item_finishing || []));
 
-        const filesToUpload = await getFilesFromDB(item.cart_item_id);
-        if (filesToUpload && filesToUpload.length > 0) {
-            filesToUpload.forEach((file) => {
-                formData.append(`items[${index}][file_desain][]`, file);
-            });
+        if (item.tipe_file === 'upload') {
+            const filesToUpload = await getFilesFromDB(item.cart_id);
+            if (filesToUpload && filesToUpload.length > 0) {
+                filesToUpload.forEach(file => formData.append(`items[${index}][file_desain][]`, file));
+            }
         }
-
-        const finishingData = Array.isArray(item.finishings) ? item.finishings : [];
-        formData.append(`items[${index}][finishing]`, JSON.stringify(finishingData));
     }
 
     router.post(route('pesan.store'), formData, {
         forceFormData: true,
         onSuccess: () => {
-            alertStore.show('Transaksi Berhasil!', 'success');
+            alertStore.show('Pesanan Berhasil Dibuat!', 'success');
             resetFormDanKeranjang();
         },
-        onError: (errors) => {
-            console.error('Error dari Backend:', errors);
-            const errorList = Object.values(errors);
-            const firstError = errorList.length > 0 ? errorList[0] : 'Gagal checkout, periksa log backend!';
-            alertStore.show(firstError, 'error');
-        }
+        onError: () => alertStore.show('Gagal checkout, periksa form input!', 'error')
     });
 };
+
+const pembayaranOptionsForm = [
+    { value: 'belum_lunas', label: 'Belum Lunas (Piutang)' },
+    { value: 'dibayar_sebagian', label: 'Dibayar Sebagian (DP)' },
+    { value: 'lunas', label: 'Bayar Lunas' }
+];
 </script>
 
 <template>
-    <Head title="POS Kasir Utama" />
+    <Head title="Sistem POS Kasir" />
 
     <StafLayout>
         <template #header>
-            <h2 class="text-xl font-bold leading-tight text-base-content">
-                Sistem Kasir (Point of Sale)
-            </h2>
+            <div class="flex items-center justify-between w-full">
+                <h2 class="text-xl font-bold leading-tight text-base-content flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6 text-primary"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.015a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 1.189a3 3 0 01-.621 4.72m-13.5 8.65h3.75a.75.75 0 00.75-.75V13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75v3.75c0 .415.336.75.75.75z" /></svg>
+                    Point of Sale (POS)
+                </h2>
+                <button v-if="cartItems.length > 0" @click="resetFormDanKeranjang" class="btn btn-sm btn-error btn-outline rounded-xl text-[10px] font-black uppercase tracking-widest">
+                    ✕ Reset Kasir
+                </button>
+            </div>
         </template>
 
-        <div class="px-4 py-6 mx-auto space-y-6 max-w-7xl sm:px-6 lg:px-8">
-            <div class="p-6 border shadow-sm rounded-3xl bg-base-100 border-base-300">
-                <h3 class="pb-2 mb-4 text-xs font-black tracking-widest uppercase border-b opacity-50">Informasi Nota Transaksi</h3>
+        <div class="px-4 py-6 mx-auto max-w-350">
+            <div class="grid items-start grid-cols-1 gap-6 lg:grid-cols-12">
 
-                <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-                    <div>
-                        <CustomSelectSearch
-                            v-model="form.id_customer"
-                            :options="customerOptions"
-                            labelKey="nama_tampilan"
-                            valueKey="id_customer"
-                            label="PELANGGAN / CUSTOMER"
-                            placeholder="Ketik Nama Pelanggan..."
-                        />
-                    </div>
+                <!-- KOLOM KIRI: FORM & TABEL -->
+                <div class="space-y-6 lg:col-span-8 xl:col-span-9">
 
-                    <div>
-                        <label class="text-[10px] font-bold uppercase opacity-70 ml-1 block mb-1">Alamat Pengiriman</label>
-                        <CustomSelect v-model="form.id_alamat" :options="alamatOptions" labelKey="alamat_lengkap" valueKey="id_alamat" :placeholder="form.id_customer ? 'Pilih Alamat...' : 'Pilih customer dulu'" :disabled="!form.id_customer || alamatOptions.length === 0" />
-                    </div>
+                    <!-- CARD: INFORMASI PEMESAN & PENGIRIMAN -->
+                    <div class="p-6 bg-base-100 border border-base-200/80 shadow-sm rounded-3xl">
+                        <div class="flex items-center gap-2 mb-4 pb-3 border-b border-base-200/50">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 text-primary opacity-80"><path d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41 1.412A9.957 9.957 0 0010 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 00-13.074.003z" /></svg>
+                            <h3 class="text-[10px] font-black tracking-widest uppercase opacity-50">Informasi Pemesan & Pengiriman</h3>
+                        </div>
 
-                    <div>
-                        <label class="text-[10px] font-bold uppercase opacity-70 ml-1 block mb-1">Status Pembayaran</label>
-                        <CustomSelect v-model="form.status_pembayaran" :options="pembayaranOptions" labelKey="nama" valueKey="id" />
-                    </div>
+                        <!-- GRID PELANGGAN -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <CustomSelectSearch
+                                v-model="form.id_customer"
+                                label="Pilih Pelanggan"
+                                :options="customerOptions"
+                                valueKey="id_customer" labelKey="nama_tampilan"
+                                placeholder="Ketik Nama Pelanggan..."
+                            />
 
-                    <div v-if="form.status_pembayaran !== 'belum_lunas'">
-                        <label class="text-[10px] font-bold uppercase opacity-70 ml-1 block mb-1">Nominal Uang Masuk</label>
-                        <CustomInputNumber v-model="form.nominal_bayar" placeholder="Rp 0" :readonly="form.status_pembayaran === 'lunas'" />
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 gap-6 pt-6 mt-6 border-t md:grid-cols-3 border-base-200">
-                    <div>
-                        <label class="text-[10px] font-bold uppercase opacity-70 ml-1 block mb-1">Kurir / Ekspedisi</label>
-                        <CustomSelect v-model="form.ekspedisi_nama" :options="ekspedisiOptions" labelKey="nama" valueKey="id" />
-                    </div>
-
-                    <div v-if="form.ekspedisi_nama !== 'Ambil di Toko'">
-                        <label class="text-[10px] font-bold uppercase opacity-70 ml-1 block mb-1">Layanan Pengiriman</label>
-                        <CustomSelect
-                            v-if="isManualEkspedisi"
-                            v-model="form.ekspedisi_layanan"
-                            :options="manualLayananOptions"
-                            labelKey="nama" valueKey="id"
-                            placeholder="Pilih Layanan Lokal/Instan..."
-                        />
-                        <div v-else>
-                            <div v-if="isLoadingOngkir" class="flex items-center gap-2 px-2 py-3 text-xs font-bold text-primary">
-                                <span class="loading loading-spinner loading-xs"></span> Mengambil Tarif...
-                            </div>
                             <CustomSelect
-                                v-else
-                                v-model="form.ekspedisi_layanan"
-                                :options="layananOptions"
-                                labelKey="nama" valueKey="id"
-                                placeholder="Pilih Layanan Ekspedisi..."
+                                v-model="form.id_alamat"
+                                label="Alamat Tujuan"
+                                :options="alamatOptions"
+                                valueKey="id_alamat" labelKey="alamat_lengkap"
+                                placeholder="-- Alamat Toko / Walk-in --"
+                                :disabled="!form.id_customer || alamatOptions.length === 0"
                             />
                         </div>
+
+                        <!-- GRID KURIR & ONGKIR -->
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 pt-6 border-t border-dashed border-base-200/80">
+                            <div class="md:col-span-4">
+                                <CustomSelect v-model="form.ekspedisi_nama" label="Kurir / Ekspedisi" :options="ekspedisiOptions" valueKey="id" labelKey="nama" />
+                            </div>
+
+                            <div class="md:col-span-4" v-if="form.ekspedisi_nama !== 'Ambil di Toko'">
+                                <template v-if="isManualEkspedisi">
+                                    <CustomSelect v-model="form.ekspedisi_layanan" label="Layanan Lokal" :options="manualLayananOptions" valueKey="id" labelKey="nama" placeholder="Pilih Instan/Lokal..." />
+                                </template>
+                                <template v-else>
+                                    <div v-if="isLoadingOngkir" class="flex flex-col gap-1">
+                                        <label class="text-[10px] font-bold uppercase opacity-70 ml-1 block">Layanan Ongkir</label>
+                                        <div class="flex items-center gap-2 h-11 px-3 border border-base-300 bg-base-200/50 rounded-xl text-xs font-bold text-primary animate-pulse">
+                                            <span class="loading loading-spinner loading-xs"></span> Mengambil Tarif...
+                                        </div>
+                                    </div>
+                                    <CustomSelect v-else v-model="form.ekspedisi_layanan" label="Layanan Ongkir" :options="layananOptions" valueKey="id" labelKey="nama" placeholder="Pilih Layanan Ekspedisi..." />
+                                </template>
+                            </div>
+
+                            <div class="md:col-span-4" v-if="form.ekspedisi_nama !== 'Ambil di Toko'">
+                                <CustomInputNumber v-model="form.harga_ongkir" label="Biaya Ongkir (Rp)" placeholder="Rp 0" :readonly="!isManualEkspedisi" />
+                            </div>
+                        </div>
                     </div>
 
-                    <div v-if="form.ekspedisi_nama !== 'Ambil di Toko'">
-                        <label class="text-[10px] font-bold uppercase opacity-70 ml-1 block mb-1">Biaya Ongkos Kirim</label>
-                        <CustomInputNumber v-model="form.harga_ongkir" placeholder="Rp 0" :readonly="!isManualEkspedisi" />
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 gap-6 pt-6 mt-6 border-t md:grid-cols-2 border-base-200">
-                    <div>
-                        <CustomSelectSearch
-                            v-model="form.kode_voucher"
-                            :options="voucherOptions"
-                            labelKey="label"
-                            valueKey="value"
-                            label="KODE VOUCHER PROMO"
-                            placeholder="Cari Voucher Tersedia..."
+                    <!-- FORM TAMBAH ITEM -->
+                    <div v-show="showOrderForm" class="transition-all duration-300">
+                        <OrderFormCard
+                            v-if="showOrderForm"
+                            :isPosMode="true"
+                            :editData="itemToEdit"
+                            @cancel="handleCancelForm"
+                            @submit="handleFormSubmit"
                         />
                     </div>
+
+                    <!-- TABEL KERANJANG -->
+                    <OrderItemsTable
+                        :items="cartItems"
+                        @requestEdit="handleRequestEdit"
+                        @deleteItem="hapusItem"
+                        @addItem="handleRequestAdd"
+                    />
+
                 </div>
 
-            </div>
+                <!-- KOLOM KANAN: SUMMARY & BAYAR -->
+                <div class="lg:col-span-4 xl:col-span-3">
+                    <div class="sticky top-24 space-y-6">
 
-            <div class="grid items-start grid-cols-1 gap-6 lg:grid-cols-12">
-                <div class="p-6 space-y-6 border shadow-sm lg:col-span-7 rounded-3xl bg-base-100 border-base-300">
-                    <div class="flex gap-2 pb-3 overflow-x-auto border-b border-base-200 scrollbar-hide">
-                        <button @click="filterKategori = 'semua'" class="px-6 font-bold border-none btn btn-sm rounded-xl" :class="filterKategori === 'semua' ? 'bg-primary text-primary-content' : 'bg-base-200 text-base-content hover:bg-base-300'">Semua</button>
-                        <button v-for="kat in kategoris" :key="kat.id_kategori" @click="filterKategori = kat.id_kategori" class="px-6 font-bold border-none btn btn-sm rounded-xl" :class="filterKategori === kat.id_kategori ? 'bg-primary text-primary-content' : 'bg-base-200 text-base-content hover:bg-base-300'">{{ kat.nama_kategori }}</button>
-                    </div>
-                    <div class="pr-2 overflow-y-auto max-h-125 scrollbar-hide">
-                        <ProdukRow v-for="group in filteredGroupedProduks" :key="group.id_kategori" :title="group.nama_kategori" :data="group.data" />
-                    </div>
-                </div>
+                        <!-- Pilihan Status Pembayaran -->
+                        <div class="p-5 bg-base-100 border border-base-200/80 shadow-sm rounded-3xl">
+                            <h3 class="text-[10px] font-black tracking-widest uppercase opacity-40 mb-3 border-b border-base-200/50 pb-2">Opsi Pembayaran</h3>
 
-                <div class="lg:col-span-5 border rounded-3xl shadow-sm bg-base-100 border-base-300 overflow-hidden flex flex-col max-h-147.5">
-                    <div class="flex items-center justify-between p-5 border-b border-base-200 bg-base-200/40">
-                        <div>
-                            <h3 class="text-sm font-black tracking-widest uppercase text-base-content">Struk Keranjang</h3>
-                            <span class="text-[10px] font-bold opacity-50 uppercase tracking-wider">Total Item: {{ cartItems.length }}</span>
-                        </div>
-                        <button v-if="cartItems.length > 0" @click="kosongkanKeranjang" type="button" class="text-[10px] font-black uppercase text-error hover:underline">✕ Kosongkan Form & Keranjang</button>
-                    </div>
-
-                    <div class="flex-1 overflow-y-auto p-4 space-y-3 bg-base-200/20 min-h-62.5">
-                        <div v-for="(item, idx) in cartItems" :key="idx" class="relative flex flex-col gap-1 p-4 border shadow-sm bg-base-100 rounded-2xl border-base-300 group">
-                            <div class="absolute flex items-center transition-opacity opacity-0 top-3 right-3 group-hover:opacity-100">
-                                <button @click="hapusItem(idx)" type="button" class="text-white btn btn-xs btn-circle btn-error">✕</button>
+                            <div class="flex flex-col gap-2.5 mt-4">
+                                <label v-for="opt in pembayaranOptionsForm" :key="opt.value"
+                                       class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-all duration-200"
+                                       :class="form.status_pembayaran === opt.value ? 'border-primary bg-primary/5' : 'border-base-200 hover:border-base-300'">
+                                    <input type="radio" v-model="form.status_pembayaran" :value="opt.value" class="radio radio-primary radio-sm" />
+                                    <span class="text-[11px] font-black uppercase">{{ opt.label }}</span>
+                                </label>
                             </div>
 
-                            <span class="text-[9px] font-black uppercase tracking-wider text-warning">
-                                ⏳ {{ item.estimasi_pengerjaan }}
-                            </span>
+                            <div v-if="form.status_pembayaran === 'dibayar_sebagian'" class="mt-4 pt-4 border-t border-dashed border-base-200/80">
+                                <CustomInputNumber
+                                    v-model="form.nominal_bayar"
+                                    label="Nominal DP Sekarang"
+                                    placeholder="Rp ..."
+                                    :max="grandTotal"
+                                />
+                            </div>
 
-                            <h4 class="pr-10 text-sm font-black truncate text-base-content">{{ item.nama_produk_snapshot }}</h4>
-
-                            <div class="flex items-end justify-between pt-3 mt-3 border-t border-base-200">
-                                <div class="text-[10px] font-bold opacity-60 flex flex-col gap-0.5">
-
-                                    <span v-if="item.total_diskon_snapshot > 0">
-                                        Harga Dasar:
-                                        <span class="mr-1 line-through text-error">{{ formatRupiah(item.harga_dasar_awal_snapshot) }}</span>
-                                        {{ formatRupiah(hitungHargaDasar(item)) }}
-                                    </span>
-                                    <span v-else>Harga Dasar: {{ formatRupiah(hitungHargaDasar(item)) }}</span>
-
-                                    <div v-if="item.rincian_diskon_snapshot && item.rincian_diskon_snapshot.length > 0" class="flex flex-col gap-1 mt-0.5">
-                                        <span v-for="(diskon, dIdx) in item.rincian_diskon_snapshot" :key="dIdx" class="text-[9px] text-success bg-success/10 px-1 py-0.5 rounded w-fit uppercase font-bold">
-                                            ✨ {{ diskon.nama }}: -{{ formatRupiah(diskon.nominal) }}
-                                        </span>
-                                    </div>
-
-                                    <span v-if="item.finishings?.length" class="mt-1">Finishing: + {{ formatRupiah(hitungTotalFinishing(item)) }}</span>
-                                    <span class="mt-1 text-primary">QTY: {{ item.jumlah }} pcs</span>
-                                </div>
-                                <div class="text-right">
-                                    <span v-if="item.harga_pengerjaan_snapshot > 0" class="block text-[9px] opacity-50 uppercase tracking-widest font-black mb-1">
-                                        + SLA {{ formatRupiah(item.harga_pengerjaan_snapshot) }}
-                                    </span>
-                                    <span class="text-sm font-black text-base-content">
-                                        {{ formatRupiah(hitungTotalItem(item)) }}
-                                    </span>
-                                </div>
+                            <div class="mt-4 pt-4 border-t border-dashed border-base-200/80">
+                                <CustomSelectSearch
+                                    v-model="form.kode_voucher"
+                                    :options="voucherOptions"
+                                    labelKey="label" valueKey="value"
+                                    label="KODE VOUCHER PROMO"
+                                    placeholder="Cari Voucher Tersedia..."
+                                />
                             </div>
                         </div>
 
-                        <div v-if="cartItems.length === 0" class="flex flex-col items-center justify-center gap-2 py-20 opacity-30">
-                            <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
-                            <p class="text-xs font-black tracking-widest uppercase">Belum Ada Item Terpilih</p>
-                        </div>
-                    </div>
+                        <!-- Ringkasan Tagihan (Reusable Component) -->
+                        <OrderSummary
+                            :total_tagihan="totalProduk"
+                            :harga_ongkir="form.ekspedisi_nama === 'Ambil di Toko' ? 0 : form.harga_ongkir"
+                            :diskon_voucher_nominal="form.diskon_voucher_nominal"
+                            :kode_voucher="form.kode_voucher"
+                            :kode_unik="0"
+                            :total_transfer="grandTotal"
+                            :total_dibayar="totalDibayar"
+                            :sisa_tagihan="sisaTagihan"
+                        />
 
-                    <div class="p-5 space-y-3 border-t border-base-200 bg-base-100">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold opacity-60">Ongkos Kirim</span>
-                            <span class="text-sm font-black" :class="form.harga_ongkir > 0 ? 'text-success' : ''">
-                                + {{ formatRupiah(form.ekspedisi_nama === 'Ambil di Toko' ? 0 : form.harga_ongkir) }}
-                            </span>
-                        </div>
-                        <div v-if="form.diskon_voucher_nominal > 0" class="flex items-center justify-between mt-2">
-                            <span class="text-xs font-bold text-error opacity-80">Voucher Promo</span>
-                            <span class="text-sm font-black text-error">
-                                - {{ formatRupiah(form.diskon_voucher_nominal) }}
-                            </span>
-                        </div>
-                        <div class="flex items-center justify-between pt-3 border-t border-base-200">
-                            <span class="text-xs font-black tracking-widest uppercase opacity-60">Grand Total Nota</span>
-                            <span class="text-2xl font-black text-primary">{{ formatRupiah(grandTotal) }}</span>
-                        </div>
-
-                        <CustomButton @click="submitCheckout" :disabled="form.processing || cartItems.length === 0" variant="primary" class="w-full py-4 mt-2 font-black tracking-widest text-center rounded-2xl">
-                            {{ form.processing ? 'MEMPROSES...' : 'SIMPAN & CETAK NOTA' }}
+                        <!-- Tombol Eksekusi -->
+                        <CustomButton
+                            variant="primary"
+                            class="w-full h-14 rounded-2xl shadow-xl shadow-primary/20 text-sm tracking-widest font-black uppercase"
+                            @click="submitCheckout"
+                            :disabled="form.processing || cartItems.length === 0"
+                        >
+                            <span v-if="form.processing" class="loading loading-spinner loading-md"></span>
+                            <span v-else>Proses & Buat Pesanan</span>
                         </CustomButton>
                     </div>
                 </div>

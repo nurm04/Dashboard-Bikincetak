@@ -22,8 +22,8 @@ class StafSeeder extends Seeder
                 'user_id' => 1,
                 'no_hp' => '085785061834',
                 'id_role_staf' => 'ROLE-STAF-ADMIN',
-                'created_at' => null,
-                'updated_at' => null,
+                'created_at' => '2026-05-16 06:21:47',
+                'updated_at' => '2026-05-16 06:21:47',
             ],
             [
                 'id_staf' => 'STAF-20260516-002',

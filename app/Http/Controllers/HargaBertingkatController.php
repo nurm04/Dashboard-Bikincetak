@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\HargaBertingkat;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\DB;
 
 class HargaBertingkatController extends Controller
 {
@@ -14,11 +15,12 @@ class HargaBertingkatController extends Controller
             'hargas' => 'present|array',
             'hargas.*.min' => 'required|integer|min:1',
             'hargas.*.max' => 'required|integer|gt:hargas.*.min',
-            'hargas.*.harga' => 'required|numeric|min:0',
+            'hargas.*.tipe' => 'required|in:nominal,persen',
+            'hargas.*.nilai' => 'required|numeric|min:0',
         ]);
 
         try {
-            \DB::beginTransaction();
+            DB::beginTransaction();
 
             HargaBertingkat::where('id_sku', $id_sku)->delete();
 
@@ -27,16 +29,17 @@ class HargaBertingkatController extends Controller
                     'id_sku' => $id_sku,
                     'min' => $item['min'],
                     'max' => $item['max'],
-                    'harga' => $item['harga'],
+                    'tipe' => $item['tipe'],
+                    'nilai' => $item['nilai'],
                 ]);
             }
 
-            \DB::commit();
+            DB::commit();
             return Redirect::route('produk.detailSku', $request->id_produk)
-                ->with('success', 'Harga grosir berhasil diperbarui.');
+                ->with('success', 'Harga grosir bertingkat berhasil diperbarui.');
         } catch (\Exception $e) {
-            \DB::rollBack();
-            return Redirect::back()->with('error', 'Gagal menyimpan harga.');
+            DB::rollBack();
+            return Redirect::back()->with('error', 'Gagal menyimpan harga bertingkat: ' . $e->getMessage());
         }
     }
 }

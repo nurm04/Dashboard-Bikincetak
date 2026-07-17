@@ -11,6 +11,7 @@ const props = defineProps({ produk: Object });
 
 const form = useForm({
     skus: props.produk.produk_sku?.map(s => ({
+        id_sku: s.id_sku,
         nama_sku: s.nama_sku,
         minimum_pesan: s.minimum_pesan,
         harga: s.harga,
@@ -37,24 +38,49 @@ const toggleSelectAll = (varian) => {
 };
 
 const addManualSku = () => {
-    const ids = [];
-    const names = [];
-    props.produk.varians.forEach(v => {
-        const selectedIds = selectedPilihans.value[v.id_varian] || [];
-        selectedIds.forEach(pId => {
-            const pObj = v.pilihan_varian.find(p => p.id_pilihan === pId);
+    const keys = Object.keys(selectedPilihans.value).filter(k => selectedPilihans.value[k].length > 0);
+
+    if (keys.length === 0) return alert('Pilih minimal satu pilihan varian!');
+
+    const combinations = [];
+
+    const combine = (index, currentIds, currentNames) => {
+        if (index === keys.length) {
+            combinations.push({
+                id_sku: null,
+                nama_sku: `${props.produk.id_produk}-${props.produk.nama_produk}-${currentNames.join('-')}`,
+                minimum_pesan: 1,
+                harga: 0,
+                pilihan_ids: [...currentIds]
+            });
+            return;
+        }
+
+        const varianId = keys[index];
+        selectedPilihans.value[varianId].forEach(pId => {
+            const pObj = props.produk.varians
+                .find(v => v.id_varian === varianId)
+                .pilihan_varian.find(p => p.id_pilihan === pId);
+
             if (pObj) {
-                ids.push(pId);
-                names.push(pObj.nama_pilihan);
+                combine(index + 1, [...currentIds, pId], [...currentNames, pObj.nama_pilihan]);
             }
         });
+    };
+
+    combine(0, [], []);
+
+    let addedCount = 0;
+    combinations.forEach(newSku => {
+        if (!form.skus.find(s => s.nama_sku === newSku.nama_sku)) {
+            form.skus.push(newSku);
+            addedCount++;
+        }
     });
 
-    if (ids.length === 0) return alert('Pilih minimal satu pilihan varian!');
-    const namaSku = `${props.produk.id_produk}-${props.produk.nama_produk}-${names.join('-')}`;
-    if (form.skus.find(s => s.nama_sku === namaSku)) return alert('Kombinasi ini sudah ada!');
-
-    form.skus.push({ nama_sku: namaSku, minimum_pesan: 1, harga: 0, pilihan_ids: ids });
+    if (addedCount === 0) {
+        alert('Kombinasi pilihan ini sudah ada di tabel!');
+    }
 };
 
 const generateAllCombinations = () => {
@@ -65,6 +91,7 @@ const generateAllCombinations = () => {
     const combine = (index, currentIds, currentNames) => {
         if (index === keys.length) {
             combinations.push({
+                id_sku: null,
                 nama_sku: `${props.produk.id_produk}-${props.produk.nama_produk}-${currentNames.join('-')}`,
                 minimum_pesan: 1,
                 harga: 0,

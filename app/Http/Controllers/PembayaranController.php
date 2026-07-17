@@ -147,7 +147,6 @@ class PembayaranController extends Controller
                     ]);
                 }
 
-                // Kalkulasi ulang status pembayaran setelah data masuk
                 $totalDibayarBaru = Pembayaran::where('id_pesan', $pesan->id_pesan)->sum('nominal_bayar');
                 $pesan->status_pembayaran = $totalDibayarBaru >= $totalTagihan ? 'lunas' : 'dibayar_sebagian';
             }
@@ -156,9 +155,23 @@ class PembayaranController extends Controller
                 $pesan->status_pembayaran = 'belum_lunas';
             }
 
+            if (in_array($pesan->status_pembayaran, ['dibayar_sebagian', 'lunas']) && is_null($pesan->waktu_deadline)) {
+                $maxHari = 1;
+
+                foreach ($pesan->pesananItem as $item) {
+                    if (preg_match('/(\d+)/', $item->estimasi_pengerjaan_snapshot, $matches)) {
+                        $hari = (int) $matches[1];
+                        if ($hari > $maxHari) {
+                            $maxHari = $hari;
+                        }
+                    }
+                }
+
+                $pesan->waktu_deadline = \Carbon\Carbon::now()->addDays($maxHari);
+            }
+
             $pesan->save();
 
-            // CATAT JURNAL HANYA JIKA ADA UANG MASUK (nominal > 0)
             if ($nominalDibayar > 0 && $idPembayaran) {
                 $akunKas        = BukuBesarController::getAkunId('Kas Bank (BCA/Mandiri/dll)');
                 $akunPendapatan = BukuBesarController::getAkunId('Pendapatan Jasa Percetakan');
@@ -183,9 +196,7 @@ class PembayaranController extends Controller
             }
 
             DB::commit();
-
             return back()->with('success', 'Pembayaran berhasil dicatat & masuk ke Buku Besar.');
-
         } catch (\Throwable $e) {
             DB::rollBack();
             return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());

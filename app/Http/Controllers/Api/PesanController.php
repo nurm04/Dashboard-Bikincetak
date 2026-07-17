@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\PesananBaruEvent;
 use App\Http\Controllers\Controller;
 use App\Models\Komposisi;
 use App\Models\Pesan;
@@ -9,11 +10,11 @@ use App\Models\PesananItem;
 use App\Models\PesananItemFinishing;
 use App\Models\SkuFinishing;
 use App\Services\PesanService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use App\Events\PesananBaruEvent;
 
 class PesanController extends Controller
 {
@@ -66,8 +67,10 @@ class PesanController extends Controller
             'items.*.harga_dasar_awal_snapshot' => 'nullable|numeric',
             'items.*.total_diskon_snapshot' => 'nullable|numeric',
             'items.*.rincian_diskon_snapshot' => 'nullable|array',
-            'items.*.file_desain' => 'nullable|array',
-            'items.*.file_desain.*' => 'file|mimes:jpg,jpeg,png,pdf,zip|max:20480',
+
+            'items.*.file_desain' => 'nullable',
+            'items.*.tipe_file' => 'nullable|string|in:upload,link,email',
+            'items.*.link_file' => 'nullable|string'
         ]);
 
         try {
@@ -80,6 +83,7 @@ class PesanController extends Controller
             if (!$pesanan) {
                 $pesanan = Pesan::create([
                     'id_pesan' => PesanService::generateId(),
+                    'kode_transaksi' => PesanService::generateKodeTransaksi(),
                     'id_customer' => $customerId,
                     'id_alamat' => $request->id_alamat,
                     'status_operasional' => 'keranjang',
@@ -88,7 +92,7 @@ class PesanController extends Controller
             }
 
             $id_pesan = $pesanan->id_pesan;
-            $fileCounter = 1;
+            $kode_transaksi = $pesanan->kode_transaksi;
 
             foreach ($request->items as $index => $item) {
                 $finishings = $item['finishings'] ?? [];
@@ -99,80 +103,34 @@ class PesanController extends Controller
 
                 $totalBeratItem = PesanService::hitungBeratTotalItem($item['id_sku'], $item['jumlah'], $selectedFinishingIds);
 
-                $filePaths = [];
+                $fileDesainData = null;
+
                 if ($request->hasFile("items.{$index}.file_desain")) {
-                    $files = $request->file("items.{$index}.file_desain");
-                    
-                    if (!is_array($files)) {
-                        $files = [$files];
-                    }
+                    $file = $request->file("items.{$index}.file_desain");
+                    if (is_array($file)) $file = $file[0];
 
-                    foreach ($files as $file) {
-                        $suffix = sprintf('%03d', $fileCounter++);
-                        $filename = "{$id_pesan}-{$suffix}." . $file->getClientOriginalExtension();
-                        $filePaths[] = $file->storeAs('desain_pesanan', $filename, 'public');
-                    }
-                }
+                    $filename = "{$id_pesan}-" . \Illuminate\Support\Str::random(6) . "." . $file->getClientOriginalExtension();
+                    $path = $file->storeAs('desain_pesanan', $filename, 'public');
 
-                $newFinishingIds = collect($finishings)
-                    ->pluck('id_sku_finishing')
-                    ->sort()
-                    ->values()
-                    ->toArray();
-
-                $existingItems = PesananItem::with('pesananItemFinishing')
-                    ->where('id_pesan', $id_pesan)
-                    ->where('id_sku', $item['id_sku'])
-                    ->get();
-
-                $matchedItem = null;
-
-                foreach ($existingItems as $existingItem) {
-                    $existingFinishingIds = $existingItem
-                        ->pesananItemFinishing
-                        ->pluck('id_sku_finishing')
-                        ->sort()
-                        ->values()
-                        ->toArray();
-
-                    if ($existingFinishingIds == $newFinishingIds) {
-                        $matchedItem = $existingItem;
-                        break;
-                    }
-                }
-
-                if ($matchedItem) {
-                    $currentFiles = $matchedItem->file_desain ?? [];
-                    if (is_string($currentFiles)) {
-                        $currentFiles = json_decode($currentFiles, true) ?? [];
-                    }
-
-                    if (!empty($filePaths)) {
-                        $currentFiles = array_merge($currentFiles, $filePaths);
-                    }
-
-                    $selectedFinishingIds = [];
-                    foreach ($matchedItem->pesananItemFinishing as $fin) {
-                        $skuFinishing = \App\Models\SkuFinishing::find($fin->id_sku_finishing);
-                        if ($skuFinishing && $skuFinishing->id_pilihan_finishing) {
-                            $selectedFinishingIds[] = $skuFinishing->id_pilihan_finishing;
-                        }
-                    }
-
-                    $totalJumlahBaru = $matchedItem->jumlah + $item['jumlah'];
-                    $beratBaru = PesanService::hitungBeratTotalItem($matchedItem->id_sku, $totalJumlahBaru, $selectedFinishingIds);
-
-                    $matchedItem->update([
-                        'jumlah' => $totalJumlahBaru,
-                        'file_desain' => !empty($currentFiles) ? $currentFiles : null,
-                        'total_berat_snapshot' => $beratBaru
-                    ]);
-
-                    continue;
+                    $fileDesainData = [
+                        'tipe' => 'upload',
+                        'nilai' => $path
+                    ];
+                } elseif (isset($item['tipe_file']) && $item['tipe_file'] === 'link') {
+                    $fileDesainData = [
+                        'tipe' => 'link',
+                        'nilai' => $item['link_file'] ?? ''
+                    ];
+                } elseif (isset($item['tipe_file']) && $item['tipe_file'] === 'email') {
+                    $fileDesainData = [
+                        'tipe' => 'email',
+                        'nilai' => 'Akan dikirim oleh customer melalui Email.'
+                    ];
                 }
 
                 $pesananItem = PesananItem::create([
                     'id_pesan' => $id_pesan,
+                    'kode_transaksi' => $kode_transaksi,
                     'id_sku' => $item['id_sku'],
                     'nama_produk_snapshot' => $item['nama_produk_snapshot'],
                     'jumlah' => $item['jumlah'],
@@ -186,7 +144,7 @@ class PesanController extends Controller
                     'harga_pengerjaan_snapshot' => $item['harga_pengerjaan_snapshot'] ?? 0,
                     'total_berat_snapshot' => $totalBeratItem,
 
-                    'file_desain' => !empty($filePaths) ? $filePaths : null, 
+                    'file_desain' => $fileDesainData,
                     'catatan' => $item['catatan'] ?? null,
                 ]);
 
@@ -194,15 +152,17 @@ class PesanController extends Controller
                     foreach ($finishings as $finishing) {
                         $skuFinishing = SkuFinishing::with('pilihanFinishing.finishing')->find($finishing['id_sku_finishing']);
 
-                        $namaFinishing = strtoupper($skuFinishing->pilihanFinishing->finishing->nama_finishing);
-                        $namaPilihan = $skuFinishing->pilihanFinishing->nama_pilihan;
+                        if ($skuFinishing) {
+                            $namaFinishing = strtoupper($skuFinishing->pilihanFinishing->finishing->nama_finishing);
+                            $namaPilihan = $skuFinishing->pilihanFinishing->nama_pilihan;
 
-                        PesananItemFinishing::create([
-                            'id_pesanan_item' => $pesananItem->id,
-                            'id_sku_finishing' => $finishing['id_sku_finishing'],
-                            'nama_finishing_snapshot' => $namaFinishing . ': ' . $namaPilihan,
-                            'harga_finishing_snapshot' => $finishing['harga_finishing_snapshot'],
-                        ]);
+                            PesananItemFinishing::create([
+                                'id_pesanan_item' => $pesananItem->id,
+                                'id_sku_finishing' => $finishing['id_sku_finishing'],
+                                'nama_finishing_snapshot' => $namaFinishing . ': ' . $namaPilihan,
+                                'harga_finishing_snapshot' => $finishing['harga_finishing_snapshot'],
+                            ]);
+                        }
                     }
                 }
             }
@@ -247,7 +207,7 @@ class PesanController extends Controller
 
             foreach ($item->pesananItemFinishing as $fin) {
                 $skuFinishing = SkuFinishing::find($fin->id_sku_finishing);
-                
+
                 if ($skuFinishing) {
                     if ($skuFinishing->id_pilihan_finishing) {
                         $selectedFinishingIds[] = $skuFinishing->id_pilihan_finishing;
@@ -342,6 +302,7 @@ class PesanController extends Controller
 
             $newPesan = Pesan::create([
                 'id_pesan' => PesanService::generateId(),
+                'kode_transaksi' => PesanService::generateKodeTransaksi(),
                 'id_customer' => $customerId,
                 'id_alamat' => $request->id_alamat,
                 'status_operasional' => 'menunggu_diproses',
@@ -426,7 +387,8 @@ class PesanController extends Controller
                 'success' => true,
                 'message' => 'Checkout berhasil.',
                 'data' => [
-                    'id_pesan' => $newPesan->id_pesan
+                    'id_pesan' => $newPesan->id_pesan,
+                    'kode_transaksi' => $newPesan->kode_transaksi,
                 ]
             ]);
 
@@ -451,7 +413,6 @@ class PesanController extends Controller
             ->latest()
             ->get()
             ->map(function ($pesan) {
-                // Suntik hasil hitungan kalkulator pusat ke tiap item list
                 $rincian = PesanService::kalkulasiRincianPesanan($pesan);
                 $pesan->total_tagihan = $rincian['grand_total'];
                 $pesan->total_dibayar = $rincian['total_dibayar'];
@@ -465,13 +426,13 @@ class PesanController extends Controller
         ]);
     }
 
-    public function getPesananById(Request $request, string $id_pesan)
+    public function getPesananByKodeTransaksi(Request $request, string $kode_transaksi)
     {
         $customerId = $request->user()?->customer?->id_customer;
 
         $pesanan = Pesan::with(['alamat', 'pesananItem.pesananItemFinishing', 'pembayaran'])
             ->where('id_customer', $customerId)
-            ->where('id_pesan', $id_pesan)
+            ->where('kode_transaksi', $kode_transaksi)
             ->first();
 
         if (!$pesanan) {
@@ -481,8 +442,8 @@ class PesanController extends Controller
             ], 404);
         }
 
-        // Suntik hasil hitungan kalkulator pusat
         $rincian = PesanService::kalkulasiRincianPesanan($pesanan);
+        $pesanan->kode_unik = $rincian['kode_unik'];
         $pesanan->total_tagihan = $rincian['grand_total'];
         $pesanan->total_dibayar = $rincian['total_dibayar'];
         $pesanan->sisa_tagihan  = $rincian['sisa_tagihan'];

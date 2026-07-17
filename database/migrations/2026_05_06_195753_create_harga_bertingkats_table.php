@@ -16,7 +16,8 @@ return new class extends Migration
             $table->string('id_sku');
             $table->integer('min');
             $table->integer('max');
-            $table->float('harga');
+            $table->enum('tipe', ['nominal', 'persen'])->default('nominal');
+            $table->float('nilai');
             $table->foreign('id_sku')->references('id_sku')->on('produk_sku')->onDelete('cascade');
             $table->timestamps();
         });

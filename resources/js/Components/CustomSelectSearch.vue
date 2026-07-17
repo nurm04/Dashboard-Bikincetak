@@ -8,7 +8,8 @@ const props = defineProps({
     options: { type: Array, default: () => [] },
     labelKey: { type: String, default: 'label' },
     valueKey: { type: String, default: 'value' },
-    placeholder: { type: String, default: 'Pilih data...' }
+    placeholder: { type: String, default: 'Pilih data...' },
+    addOption: { type: Boolean, default: true }
 });
 
 const emit = defineEmits(['update:modelValue', 'onCreate']);
@@ -94,7 +95,8 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside));
                 </li>
             </ul>
 
-            <div @click="handleCreate" class="p-2 border-t bg-base-200 border-base-300">
+            <!-- DIBUNGKUS v-if="addOption" -->
+            <div v-if="addOption" @click="handleCreate" class="p-2 border-t bg-base-200 border-base-300">
                 <button type="button" class="flex items-center justify-center w-full gap-2 py-2 text-xs font-black transition-all rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white">
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
                     TAMBAH {{ label?.toUpperCase() }} BARU

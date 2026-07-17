@@ -3,6 +3,7 @@ import StafLayout from '@/Layouts/StafLayout.vue';
 import CustomTableForm from '@/Components/CustomTableForm.vue';
 import CustomButton from '@/Components/CustomButton.vue';
 import CustomInputNumber from '@/Components/CustomInputNumber.vue';
+import CustomSelect from '@/Components/CustomSelect.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -12,17 +13,22 @@ const props = defineProps({
 const form = useForm({
     id_produk: props.sku.id_produk,
     pengerjaans: props.sku.harga_pengerjaan?.length > 0
-        ? props.sku.harga_pengerjaan.map(p => ({ pengerjaan: p.pengerjaan, harga: p.harga }))
-        : [{ pengerjaan: '1 Hari (Express)', harga: 0 }],
+        ? props.sku.harga_pengerjaan.map(p => ({ pengerjaan: p.pengerjaan, tipe: p.tipe ?? 'nominal', nilai: p.nilai ?? 0 }))
+        : [{ pengerjaan: '1 Hari', tipe: 'nominal', nilai: 0 }],
 });
 
 const addRow = () => {
-    form.pengerjaans.push({ pengerjaan: '', harga: 0 });
+    form.pengerjaans.push({ pengerjaan: '', tipe: 'nominal', nilai: 0 });
 };
 
 const submit = () => {
     form.post(route('sku.syncHargaPengerjaan', props.sku.id_sku));
 };
+
+const tipeOptions = [
+    { label: 'Rupiah (Rp)', value: 'nominal' },
+    { label: 'Persen (%)', value: 'persen' }
+];
 </script>
 
 <template>
@@ -36,12 +42,12 @@ const submit = () => {
         </template>
 
         <div class="py-12">
-            <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+            <div class="max-w-5xl mx-auto sm:px-6 lg:px-8">
                 <div class="p-10 border rounded-lg shadow-xl bg-base-100 border-base-300">
 
                     <div class="p-4 mb-8 border border-primary/20 bg-primary/5 rounded-2xl">
                         <p class="text-[10px] font-black uppercase tracking-widest text-primary opacity-70">Manajemen Service Level</p>
-                        <p class="text-sm font-medium text-base-content/60">Tambahkan opsi durasi pengerjaan. Contoh: "Selesai 3 Jam", "1 Hari Kerja", atau "Reguler (3-5 Hari)".</p>
+                        <p class="text-sm font-medium text-base-content/60">Tambahkan opsi durasi pengerjaan. Pilih apakah biaya tambahannya berupa Nominal Pasti (Rp) atau Persentase Tambahan (%).</p>
                     </div>
 
                     <form @submit.prevent="submit" class="space-y-8">
@@ -49,11 +55,11 @@ const submit = () => {
                         <CustomTableForm
                             v-model="form.pengerjaans"
                             label="Daftar Opsi Pengerjaan"
-                            :headers="['Estimasi Waktu / Nama Layanan', 'Tambahan Biaya (Rp)']"
+                            :headers="['Estimasi Waktu / Nama Layanan', 'Tipe Biaya', 'Nilai Biaya']"
                             @add="addRow"
                         >
                             <template #row="{ row, index }">
-                                <td class="px-4 py-4">
+                                <td class="px-4 py-4 w-1/2">
                                     <input
                                         v-model="form.pengerjaans[index].pengerjaan"
                                         type="text"
@@ -61,11 +67,21 @@ const submit = () => {
                                         class="w-full text-sm font-bold bg-transparent border-none focus:ring-0 text-base-content"
                                     />
                                 </td>
-                                <td class="px-4 py-4 border-l border-base-300/30 min-w-50">
+                                <td class="px-2 py-4 border-l border-base-300/30 w-48">
+                                    <CustomSelect
+                                        v-model="form.pengerjaans[index].tipe"
+                                        :options="tipeOptions"
+                                        label-key="label"
+                                        value-key="value"
+                                    />
+                                </td>
+                                <td class="px-4 py-4 border-l border-base-300/30 min-w-45">
                                     <CustomInputNumber
-                                        v-model="form.pengerjaans[index].harga"
-                                        prefix="Rp"
+                                        v-model="form.pengerjaans[index].nilai"
+                                        :prefix="form.pengerjaans[index].tipe === 'nominal' ? 'Rp' : ''"
+                                        :suffix="form.pengerjaans[index].tipe === 'persen' ? '%' : ''"
                                         :min="0"
+                                        :max="form.pengerjaans[index].tipe === 'persen' ? 100 : undefined"
                                     />
                                 </td>
                             </template>

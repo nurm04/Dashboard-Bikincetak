@@ -21,6 +21,6 @@ class KategoriService
             $nextNumber = '001';
         }
 
-        return 'CAT-' . $nextNumber;
+        return 'KAT-' . $nextNumber;
     }
 }

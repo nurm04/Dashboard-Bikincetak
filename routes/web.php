@@ -117,14 +117,17 @@ Route::middleware('auth')->group(function () {
     Route::put('pesan/{id}/pembayaran', [PembayaranController::class, 'store'])->name('pesan.updatePembayaran');
     Route::put('/pesan/{id_pesan}/resi', [PesanController::class, 'updateResi'])->name('pesan.updateResi');
     Route::get('/pesan/{id_pesan}/cetak-label', [PesanController::class, 'cetakLabel'])->name('pesan.cetakLabel');
+    Route::get('/pesan/item/{id}/cetak-label', [PesanController::class, 'cetakLabelItem'])->name('pesan.cetakLabelItem');
+    Route::put('/pesan/{id_pesan}/update-alamat', [PesanController::class, 'updateAlamat'])->name('pesan.updateAlamat');
+    Route::post('/pesan/add-item/store', [PesanController::class, 'addItem'])->name('pesan.addItem');
+    Route::put('/pesan/update-item/{id}', [PesanController::class, 'updateItem'])->name('pesan.updateItem');
+    Route::delete('/pesan/delete-item/{id}', [PesanController::class, 'deleteItem'])->name('pesan.deleteItem');
+    Route::get('/pesan/pos-kasir', [PesanController::class, 'posKasir'])->name('pesan.pos-kasir');
 
     Route::get('/shipping/provinces', [ShippingController::class, 'getProvinces']);
     Route::get('/shipping/cities/{provinceId}', [ShippingController::class, 'getCities']);
     Route::get('/shipping/districts/{cityId}', [ShippingController::class, 'getDistricts']);
     Route::post('/ongkir/calculate', [ShippingController::class, 'cekOngkir']);
-
-    Route::get('/pos-kasir', [ProdukController::class, 'katalogWeb'])->name('pos.katalog');
-    Route::get('/pos-kasir/produk/{id_produk}', [ProdukController::class, 'detailKatalogWeb'])->name('pos.detail');
 
     Route::get('pembayaran', [PembayaranController::class, 'index'])->name('pembayaran.index');
     Route::get('pembayaran/{id}/detail', [PembayaranController::class, 'detail'])->name('pembayaran.detail');

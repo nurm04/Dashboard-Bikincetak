@@ -16,7 +16,8 @@ class HargaPengerjaan extends Model
     protected $fillable = [
         'id_sku',
         'pengerjaan',
-        'harga',
+        'tipe',
+        'nilai'
     ];
 
     public function produkSku(): BelongsTo

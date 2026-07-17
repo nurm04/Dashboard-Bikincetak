@@ -21,6 +21,8 @@ class DatabaseSeeder extends Seeder
             ModulSeeder::class,
             StafSeeder::class,
             HakAksesSeeder::class,
+            ProdukSeeder::class,
+            BahanBakuSeeder::class
         ]);
     }
 }

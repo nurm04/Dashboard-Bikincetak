@@ -298,7 +298,7 @@ const tambahKeKeranjang = async () => {
         <div class="grid grid-cols-1 gap-8 p-6 border shadow-sm lg:grid-cols-12 bg-base-100 border-base-300 rounded-2xl">
             <div class="flex justify-center lg:col-span-4 lg:justify-start">
                 <div class="relative w-full max-w-md overflow-hidden border shadow-sm aspect-square bg-base-100 rounded-2xl border-base-200">
-                    <img :src="produk.gambar || '/favicon.ico'" :alt="produk.nama_produk" class="object-cover w-full h-full" />
+                    <img :src="produk.gambar?.[0] || '/favicon.ico'" :alt="produk.nama_produk" class="object-cover w-full h-full" />
                 </div>
             </div>
 

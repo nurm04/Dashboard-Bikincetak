@@ -13,7 +13,7 @@ class PesanService
 {
     public static function generateId(): string
     {
-        $prefix = 'PSN-' . date('ymd') . '-';
+        $prefix = 'SO-' . date('ymd') . '-';
 
         $latest = Pesan::where('id_pesan','like',$prefix . '%')
             ->orderBy('id_pesan', 'desc')
@@ -22,6 +22,24 @@ class PesanService
         $number = $latest ? (int) substr($latest->id_pesan, -4) + 1 : 1;
 
         return $prefix . str_pad($number,4,'0',STR_PAD_LEFT);
+    }
+
+    public static function generateKodeTransaksi($length = 8)
+    {
+        $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $charLength = strlen($characters);
+
+        do {
+            $randomString = '';
+            for ($i = 0; $i < $length; $i++) {
+                $randomString .= $characters[rand(0, $charLength - 1)];
+            }
+
+            $exists = Pesan::where('kode_transaksi', $randomString)->exists();
+
+        } while ($exists);
+
+        return $randomString;
     }
 
     public static function generateKodeUnik(string $idPesan): int
@@ -33,18 +51,21 @@ class PesanService
 
     public static function kalkulasiRincianPesanan(Pesan $pesan): array
     {
-        $totalProduk = 0;
+        $totalProdukKotor = 0;
+        $totalDiskonItem = 0;
         $totalSla = 0;
 
         foreach ($pesan->pesananItem as $item) {
             $totalFinishing = $item->pesananItemFinishing->sum('harga_finishing_snapshot');
-
-            $totalProduk += ($item->harga_satuan_snapshot + $totalFinishing) * $item->jumlah;
-
-            $totalSla += $item->harga_pengerjaan_snapshot;
+            $hargaDasarAwal = $item->harga_dasar_awal_snapshot ?? $item->harga_satuan_snapshot;
+            $totalProdukKotor += ($hargaDasarAwal + $totalFinishing) * $item->jumlah;
+            $diskonPerItem = $item->total_diskon_snapshot ?? 0;
+            $totalDiskonItem += $diskonPerItem * $item->jumlah;
+            $totalSla += $item->harga_pengerjaan_snapshot ?? 0;
         }
 
-        $subtotal = $totalProduk + $totalSla;
+        $totalProdukBersih = $totalProdukKotor - $totalDiskonItem;
+        $subtotal = $totalProdukBersih + $totalSla;
 
         $ongkir = (int) $pesan->harga_ongkir;
         $diskonVoucher = (int) $pesan->diskon_voucher_nominal;
@@ -61,15 +82,17 @@ class PesanService
         $sisaTagihan = max(0, $grandTotal - $totalDibayar);
 
         return [
-            'total_produk'   => (int) $totalProduk,
-            'total_sla'      => (int) $totalSla,
-            'subtotal'       => (int) $subtotal,
-            'ongkir'         => $ongkir,
-            'diskon_voucher' => $diskonVoucher,
-            'kode_unik'      => $kodeUnik,
-            'grand_total'    => (int) $grandTotal,
-            'total_dibayar'  => (int) $totalDibayar,
-            'sisa_tagihan'   => (int) $sisaTagihan,
+            'total_produk_kotor' => (int) $totalProdukKotor,
+            'total_diskon_item'  => (int) $totalDiskonItem,
+            'total_produk'       => (int) $totalProdukBersih,
+            'total_sla'          => (int) $totalSla,
+            'subtotal'           => (int) $subtotal,
+            'ongkir'             => $ongkir,
+            'diskon_voucher'     => $diskonVoucher,
+            'kode_unik'          => $kodeUnik,
+            'grand_total'        => (int) $grandTotal,
+            'total_dibayar'      => (int) $totalDibayar,
+            'sisa_tagihan'       => (int) $sisaTagihan,
         ];
     }
 
@@ -121,9 +144,9 @@ class PesanService
 
 Halo {$nama},
 
-Pesanan Anda dengan ID:
+Pesanan Anda dengan Kode Transaksi:
 
-{$pesan->id_pesan}
+{$pesan->kode_transaksi}
 
 Saat ini sedang masuk tahap pengerjaan.
 
@@ -136,9 +159,9 @@ Terima kasih.",
 
 Halo {$nama},
 
-Pesanan Anda dengan ID:
+Pesanan Anda dengan Kode Transaksi:
 
-{$pesan->id_pesan}
+{$pesan->kode_transaksi}
 
 Saat ini sedang dalam proses pengantaran{$teksEkspedisi}.
 
@@ -151,9 +174,9 @@ Terima kasih.",
 
 Halo {$nama},
 
-Pesanan dengan ID:
+Pesanan dengan Kode Transaksi:
 
-{$pesan->id_pesan}
+{$pesan->kode_transaksi}
 
 Telah selesai.
 
@@ -166,9 +189,9 @@ Kami tunggu pesanan berikutnya 🙏",
 
 Halo {$nama},
 
-Pesanan dengan ID:
+Pesanan dengan Kode Transaksi:
 
-{$pesan->id_pesan}
+{$pesan->kode_transaksi}
 
 Telah dibatalkan.
 
@@ -187,19 +210,7 @@ Terima kasih.",
 
             if (!$message) return;
 
-            /*
-            |--------------------------------------------------------------------------
-            | WHATSAPP
-            |--------------------------------------------------------------------------
-            */
-
             self::sendWhatsapp($pesan->customer->no_hp, $message);
-
-            /*
-            |--------------------------------------------------------------------------
-            | EMAIL
-            |--------------------------------------------------------------------------
-            */
 
             Mail::raw(
                 $message,
@@ -272,8 +283,8 @@ Terima kasih.",
         return
 "🛒 PESANAN BERHASIL DIBUAT
 
-ID Pesanan:
-{$pesan->id_pesan}
+Kode Transaksi:
+{$pesan->kode_transaksi}
 
 Total Pesanan:
 Rp " . number_format($totalPesanan,0,',','.') . "
@@ -301,12 +312,6 @@ Terima kasih.";
         try {
 
             $totalTransfer = $totalPesanan + $kodeUnik;
-
-            /*
-            |--------------------------------------------------------------------------
-            | EMAIL
-            |--------------------------------------------------------------------------
-            */
 
             try {
 
@@ -349,12 +354,6 @@ Terima kasih.";
                     ]
                 );
             }
-
-            /*
-            |--------------------------------------------------------------------------
-            | WHATSAPP
-            |--------------------------------------------------------------------------
-            */
 
             $message =
                 self::buildCheckoutMessage(

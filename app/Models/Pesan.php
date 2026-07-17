@@ -17,12 +17,14 @@ class Pesan extends Model
 
     protected $fillable = [
         'id_pesan',
+        'kode_transaksi',
         'id_customer',
         'id_alamat',
         'tanggal_pesan',
         'tanggal_selesai',
         'status_operasional',
         'status_pembayaran',
+        'waktu_deadline',
         'kode_voucher',
         'diskon_voucher_nominal',
         'ekspedisi_nama',
