@@ -467,20 +467,25 @@ const submitCheckout = async () => {
 
     for (let index = 0; index < cartItems.value.length; index++) {
         const item = cartItems.value[index];
+
         formData.append(`items[${index}][id_sku]`, item.id_sku);
-        formData.append(`items[${index}][jumlah]`, item.jumlah);
+        // Memaksa menjadi Number agar aman, berikan fallback default
+        formData.append(`items[${index}][jumlah]`, Number(item.jumlah) || 1);
         formData.append(`items[${index}][nama_produk_snapshot]`, item.nama_produk_snapshot);
-        formData.append(`items[${index}][harga_satuan_snapshot]`, item.harga_satuan_snapshot);
+
+        formData.append(`items[${index}][harga_satuan_snapshot]`, Number(item.harga_satuan_snapshot) || 0);
+
         formData.append(`items[${index}][estimasi_pengerjaan]`, item.estimasi_pengerjaan_snapshot || 'Reguler');
-        formData.append(`items[${index}][harga_pengerjaan_snapshot]`, item.harga_pengerjaan_snapshot || 0);
+        formData.append(`items[${index}][harga_pengerjaan_snapshot]`, Number(item.harga_pengerjaan_snapshot) || 0);
         formData.append(`items[${index}][catatan]`, item.catatan || '');
         formData.append(`items[${index}][tipe_file]`, item.tipe_file || 'upload');
         formData.append(`items[${index}][link_file]`, item.link_file || '');
 
-        formData.append(`items[${index}][harga_dasar_awal_snapshot]`, item.harga_dasar_awal_snapshot || item.harga_satuan_snapshot);
-        formData.append(`items[${index}][total_diskon_snapshot]`, item.total_diskon_snapshot || 0);
-        formData.append(`items[${index}][rincian_diskon_snapshot]`, JSON.stringify(item.rincian_diskon_snapshot || []));
+        const hargaDasarAwal = Number(item.harga_dasar_awal_snapshot) || Number(item.harga_satuan_snapshot) || 0;
+        formData.append(`items[${index}][harga_dasar_awal_snapshot]`, hargaDasarAwal);
+        formData.append(`items[${index}][total_diskon_snapshot]`, Number(item.total_diskon_snapshot) || 0);
 
+        formData.append(`items[${index}][rincian_diskon_snapshot]`, JSON.stringify(item.rincian_diskon_snapshot || []));
         formData.append(`items[${index}][finishing]`, JSON.stringify(item.pesanan_item_finishing || []));
 
         if (item.tipe_file === 'upload') {
@@ -497,7 +502,14 @@ const submitCheckout = async () => {
             alertStore.show('Pesanan Berhasil Dibuat!', 'success');
             resetFormDanKeranjang();
         },
-        onError: () => alertStore.show('Gagal checkout, periksa form input!', 'error')
+        onError: (errors) => {
+            // 1. Cetak seluruh data error ke Console browser (Tekan F12)
+            console.error("Detail Error Validasi Laravel:", errors);
+
+            // 2. Ambil baris pesan error pertama dari Laravel dan jadikan alert
+            const firstError = Object.values(errors)[0];
+            alertStore.show(firstError || 'Gagal checkout, periksa form input!', 'error');
+        }
     });
 };
 

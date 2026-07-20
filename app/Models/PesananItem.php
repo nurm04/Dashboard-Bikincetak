@@ -47,4 +47,8 @@ class PesananItem extends Model
     {
         return $this->belongsTo(produkSku::class, 'id_sku', 'id_sku');
     }
+    public function produksiSchedules(): HasMany
+    {
+        return $this->hasMany(PesananItemProduksi::class, 'id_pesanan_item', 'id');
+    }
 }
