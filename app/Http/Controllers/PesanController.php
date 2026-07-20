@@ -151,7 +151,7 @@ class PesanController extends Controller
         preg_match('/^enum\((.*)\)$/', $typePembayaran, $matchesPembayaran);
         $enumPembayaran = array_map(function($value){ return trim($value, "'"); }, explode(',', $matchesPembayaran[1]));
 
-        return Inertia::render('Pesan/POSKasir', [
+        return Inertia::render('Pesan/PosKasir', [
             'customers' => $customers,
             'vouchers' => $vouchers,
             'enumPembayaran' => $enumPembayaran,

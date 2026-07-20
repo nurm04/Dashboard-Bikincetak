@@ -132,6 +132,14 @@ Route::middleware('auth')->group(function () {
     Route::get('pembayaran', [PembayaranController::class, 'index'])->name('pembayaran.index');
     Route::get('pembayaran/{id}/detail', [PembayaranController::class, 'detail'])->name('pembayaran.detail');
 
+
+    Route::get('produksi', [ProduksiController::class, 'index'])->name('produksi.index');
+    Route::post('produksi/{id_pesan}/alokasi', [ProduksiController::class, 'alokasiProduksi'])->name('produksi.alokasi');
+    Route::post('produksi/item/{id_item_produksi}/selesai', [ProduksiController::class, 'selesaikanItemProduksi'])->name('produksi.item_selesai');
+    Route::post('produksi/{id_pesan}/kirim', [ProduksiController::class, 'kirimPesanan'])->name('produksi.kirim');
+
+    Route::resource('vendor', VendorController::class)->except(['create', 'show', 'edit']);
+    
     Route::get('/search', [GlobalSearchController::class, 'index'])->name('global.search');
 });
 
