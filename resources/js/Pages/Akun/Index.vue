@@ -1,10 +1,10 @@
 <script setup>
 import { ref, watch, computed } from 'vue';
 import StafLayout from '@/Layouts/StafLayout.vue';
-import CustomButton from '@/Components/CustomButton.vue';
+import CustomButton from '@/Components/Form/CustomButton.vue';
 import CustomTable from '@/Components/CustomTable.vue';
-import CustomInputSearch from '@/Components/CustomInputSearch.vue';
-import CustomSelect from '@/Components/CustomSelect.vue';
+import CustomInputSearch from '@/Components/Form/CustomInputSearch.vue';
+import CustomSelect from '@/Components/Form/CustomSelect.vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { alertStore } from '@/Utils/alertStore';
 import CustomAlertConfirm from '@/Components/CustomAlertConfirm.vue';

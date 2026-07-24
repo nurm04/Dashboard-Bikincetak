@@ -18,6 +18,11 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
         ]);
 
+        $middleware->alias([
+            'block.vendor' => \App\Http\Middleware\BlockVendor::class,
+            'akses' => \App\Http\Middleware\CheckAccess::class,
+        ]);
+
         //
     })
     ->withExceptions(function (Exceptions $exceptions): void {

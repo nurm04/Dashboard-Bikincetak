@@ -1,0 +1,283 @@
+<?php
+
+namespace App\Http\Controllers\Web;
+
+use App\Http\Controllers\Controller;
+use App\Models\BahanBaku;
+use App\Models\Komposisi;
+use App\Models\Pesan;
+use App\Models\PesananItem;
+use App\Models\PesananItemProduksi;
+use App\Models\Vendor;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Inertia\Inertia;
+
+class ProduksiController extends Controller
+{
+    /**
+     * FASE 1: Menampilkan Halaman Dashboard Produksi
+     * Mengurutkan data berdasarkan deadline paling mepet (Revisi 9)
+     */
+    public function index(Request $request)
+    {
+        $user = auth()->user();
+        $vendorId = null;
+
+        if ($user->role === 'vendor') {
+            $vendorId = Vendor::where('user_id', $user->id)->value('id_vendor');
+        }
+
+        $query = Pesan::query()
+            ->whereIn('status_operasional', ['menunggu_diproses', 'proses_pengerjaan'])
+            ->where(function ($q) {
+                $q->whereNotNull('waktu_deadline')
+                  ->orWhereIn('status_pembayaran', ['dibayar_sebagian', 'lunas']);
+            });
+
+        if ($user->role === 'vendor') {
+            $query->whereHas('pesananItem.pesananItemProduksi', function ($q) use ($vendorId) {
+                $q->where('id_vendor', $vendorId);
+            });
+
+            $query->with([
+                'customer.user',
+                'pesananItem' => function ($q) use ($vendorId) {
+                    $q->whereHas('pesananItemProduksi', function ($q2) use ($vendorId) {
+                        $q2->where('id_vendor', $vendorId);
+                    })->with([
+                        'pesananItemProduksi' => function ($q3) use ($vendorId) {
+                            $q3->where('id_vendor', $vendorId)->with('vendor');
+                        },
+                        'pesananItemFinishing'
+                    ]);
+                }
+            ]);
+        } else {
+            $query->with([
+                'customer.user',
+                'pesananItem.pesananItemProduksi.vendor',
+                'pesananItem.pesananItemFinishing'
+            ]);
+        }
+
+        $pesananProduksi = $query->orderBy('waktu_deadline', 'asc')->get();
+        $vendors = Vendor::where('is_active', true)->get();
+
+        return Inertia::render('Produksi/Index', [
+            'pesananProduksi' => $pesananProduksi,
+            'vendors' => $vendors,
+            'currentVendorId' => $vendorId
+        ]);
+    }
+
+    /**
+     * FASE 2: Aksi Ubah ke Proses Pengerjaan & Alokasi Tugas Multi-Vendor
+     */
+    public function alokasiProduksi(Request $request, $id_pesan)
+    {
+        $request->validate([
+            'alokasi' => 'required|array|min:1',
+            'alokasi.*.id_pesanan_item' => 'required|exists:pesanan_item,id',
+            'alokasi.*.skema' => 'required|array|min:1',
+            'alokasi.*.skema.*.tipe_pengerjaan' => 'required|in:sendiri,vendor',
+            'alokasi.*.skema.*.id_vendor' => 'nullable|required_if:alokasi.*.skema.*.tipe_pengerjaan,vendor|exists:vendor,id_vendor',
+            'alokasi.*.skema.*.qty_dikerjakan' => 'required|numeric|min:1',
+            'alokasi.*.skema.*.instruksi_pengerjaan' => 'nullable|string'
+        ]);
+
+        $pesanan = Pesan::findOrFail($id_pesan);
+
+        try {
+            DB::beginTransaction();
+
+            foreach ($request->alokasi as $itemAlokasi) {
+                $item = PesananItem::findOrFail($itemAlokasi['id_pesanan_item']);
+
+                $totalQtyInput = collect($itemAlokasi['skema'])->sum('qty_dikerjakan');
+                if ($totalQtyInput != $item->jumlah) {
+                    throw new \Exception("Total alokasi Qty untuk produk {$item->nama_produk_snapshot} ({$totalQtyInput}) tidak sama dengan total order ({$item->jumlah}).");
+                }
+
+                PesananItemProduksi::where('id_pesanan_item', $item->id)->delete();
+
+                foreach ($itemAlokasi['skema'] as $skema) {
+                    PesananItemProduksi::create([
+                        'id_pesanan_item' => $item->id,
+                        'tipe_pengerjaan' => $skema['tipe_pengerjaan'],
+                        'id_vendor' => $skema['id_vendor'] ?? null,
+                        'qty_dikerjakan' => $skema['qty_dikerjakan'],
+                        'status_pengerjaan' => 'menunggu',
+                        'instruksi_pengerjaan' => $skema['instruksi_pengerjaan'] ?? null,
+                        'deskripsi_pengerjaan' => null
+                    ]);
+                }
+            }
+
+            if ($pesanan->status_operasional === 'menunggu_diproses') {
+                $pesanan->status_operasional = 'proses_pengerjaan';
+                $pesanan->save();
+            }
+
+            DB::commit();
+            return back()->with('success', 'Alokasi produksi berhasil disimpan dan status diubah ke Proses Pengerjaan.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Gagal Alokasi Produksi: ' . $e->getMessage());
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * FASE 3: Aksi Ketika Vendor atau In-house Menyelesaikan Tugasnya
+     */
+    public function selesaikanItemProduksi(Request $request, $id_item_produksi)
+    {
+        $request->validate([
+            'deskripsi_pengerjaan' => 'required|string',
+            'total_tagihan_vendor' => 'nullable|numeric|min:0',
+            'file_nota' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048'
+        ]);
+
+        $schedule = PesananItemProduksi::with('pesananItem.pesananItemFinishing.skuFinishing')->findOrFail($id_item_produksi);
+
+        $user = auth()->user();
+        $isAdmin = in_array($user->role, ['admin', 'administrator']);
+        $vendorId = Vendor::where('user_id', $user->id)->value('id_vendor');
+
+        if ($schedule->tipe_pengerjaan === 'vendor') {
+            if (!$isAdmin && $vendorId !== $schedule->id_vendor) {
+                return back()->with('error', 'Akses ditolak! Hanya Admin atau Vendor terkait yang berhak mengubah data ini.');
+            }
+        } else {
+            if ($schedule->status_pengerjaan === 'selesai' && !$isAdmin) {
+                return back()->with('error', 'Akses ditolak! Data yang telah diselesaikan hanya dapat diedit oleh Admin.');
+            }
+        }
+
+        try {
+            DB::beginTransaction();
+
+            if ($schedule->tipe_pengerjaan === 'sendiri' && $schedule->status_pengerjaan !== 'selesai') {
+                $item = $schedule->pesananItem;
+
+                $finishingTerpilih = collect($item->pesananItemFinishing ?? [])
+                    ->map(fn($f) => $f->skuFinishing->id_pilihan_finishing ?? null)
+                    ->filter()
+                    ->toArray();
+
+                $semuaKomposisi = Komposisi::where('id_sku', $item->id_sku)->get();
+
+                foreach ($semuaKomposisi as $komp) {
+                    if (is_null($komp->id_pilihan_finishing) || in_array($komp->id_pilihan_finishing, $finishingTerpilih)) {
+                        $bahan = BahanBaku::lockForUpdate()->findOrFail($komp->id_bahan_baku);
+
+                        $qty_dipakai = $komp->jumlah_pakai * (float) $schedule->qty_dikerjakan;
+
+                        $bahan->stok_sekarang -= $qty_dipakai;
+                        $bahan->save();
+                    }
+                }
+            }
+
+            $pathNota = $schedule->file_nota;
+            if ($request->hasFile('file_nota')) {
+                $file = $request->file('file_nota');
+                $filename = "NOTA-VND-" . time() . "-" . uniqid() . "." . $file->getClientOriginalExtension();
+                $pathNota = $file->storeAs('nota_vendor', $filename, 'public');
+            }
+
+            $schedule->update([
+                'status_pengerjaan' => 'selesai',
+                'deskripsi_pengerjaan' => $request->deskripsi_pengerjaan,
+                'total_tagihan_vendor' => $schedule->tipe_pengerjaan === 'vendor' ? $request->total_tagihan_vendor : null,
+                'file_nota' => $pathNota
+            ]);
+
+            DB::commit();
+            return back()->with('success', 'Progress item produksi berhasil diperbarui.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Gagal menyelesaikan item produksi: ' . $e->getMessage());
+            return back()->with('error', 'Gagal memproses data: ' . $e->getMessage());
+        }
+    }
+
+    public function kirimPesanan($id_pesan)
+    {
+        $pesanan = Pesan::with('pesananItem.pesananItemProduksi')->findOrFail($id_pesan);
+
+        $allSchedules = $pesanan->pesananItem->flatMap(function($item) {
+            return $item->pesananItemProduksi;
+        });
+
+        if ($allSchedules->isEmpty()) {
+            return back()->with('error', 'Pesanan ini belum dialokasikan ke jadwal produksi manapun.');
+        }
+
+        $belumSelesai = $allSchedules->contains(function($value) {
+            return $value->status_pengerjaan !== 'selesai';
+        });
+
+        if ($belumSelesai) {
+            return back()->with('error', 'Gagal! Masih ada item produksi yang belum selesai dikerjakan.');
+        }
+
+
+        $pesanan->status_operasional = 'proses_pengantaran';
+
+        $pesanan->save();
+
+        return back()->with('success', 'Status pesanan berhasil diubah ke Proses Pengantaran!');
+    }
+
+    public function histori(Request $request)
+    {
+        $user = auth()->user();
+        $vendorId = null;
+
+        if ($user->role === 'vendor') {
+            $vendorId = Vendor::where('user_id', $user->id)->value('id_vendor');
+        }
+
+        $query = Pesan::query()
+            ->whereIn('status_operasional', ['proses_pengantaran', 'selesai', 'diambil']);
+
+        if ($user->role === 'vendor') {
+            $query->whereHas('pesananItem.pesananItemProduksi', function ($q) use ($vendorId) {
+                $q->where('id_vendor', $vendorId);
+            });
+
+            $query->with([
+                'customer.user',
+                'pesananItem' => function ($q) use ($vendorId) {
+                    $q->whereHas('pesananItemProduksi', function ($q2) use ($vendorId) {
+                        $q2->where('id_vendor', $vendorId);
+                    })->with([
+                        'pesananItemProduksi' => function ($q3) use ($vendorId) {
+                            $q3->where('id_vendor', $vendorId)->with(['vendor', 'tagihanVendor']);
+                        },
+                        'pesananItemFinishing'
+                    ]);
+                }
+            ]);
+        } else {
+            $query->with([
+                'customer.user',
+                'pesananItem.pesananItemProduksi.vendor',
+                'pesananItem.pesananItemProduksi.tagihanVendor',
+                'pesananItem.pesananItemFinishing'
+            ]);
+        }
+
+        $pesananHistori = $query->orderBy('updated_at', 'desc')->paginate(10);
+
+        return Inertia::render('Produksi/History', [
+            'pesananHistori' => $pesananHistori,
+            'currentVendorId' => $vendorId
+        ]);
+    }
+}

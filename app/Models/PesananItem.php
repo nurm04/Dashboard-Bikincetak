@@ -39,6 +39,10 @@ class PesananItem extends Model
     {
         return $this->hasMany(PesananItemFinishing::class, 'id_pesanan_item', 'id');
     }
+    public function pesananItemProduksi(): HasMany
+    {
+        return $this->hasMany(PesananItemProduksi::class, 'id_pesanan_item', 'id');
+    }
     public function pesan(): BelongsTo
     {
         return $this->belongsTo(Pesan::class, 'id_pesan', 'id_pesan');
@@ -46,9 +50,5 @@ class PesananItem extends Model
     public function produkSku(): BelongsTo
     {
         return $this->belongsTo(produkSku::class, 'id_sku', 'id_sku');
-    }
-    public function produksiSchedules(): HasMany
-    {
-        return $this->hasMany(PesananItemProduksi::class, 'id_pesanan_item', 'id');
     }
 }

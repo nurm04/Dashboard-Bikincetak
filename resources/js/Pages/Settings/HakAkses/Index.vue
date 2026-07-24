@@ -1,9 +1,9 @@
 <script setup>
 import StafLayout from '@/Layouts/StafLayout.vue';
 import CustomTableForm from '@/Components/CustomTableForm.vue';
-import CustomButton from '@/Components/CustomButton.vue';
+import CustomButton from '@/Components/Form/CustomButton.vue';
+import CustomCheckbox from '@/Components/Form/CustomCheckbox.vue';
 import { Head, useForm } from '@inertiajs/vue3';
-import CustomCheckbox from '@/Components/CustomCheckbox.vue';
 
 const props = defineProps({
     modul: Object,

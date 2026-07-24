@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('id_akun');
             $table->dateTime('tanggal_transaksi');
             $table->string('id_referensi');
-            $table->enum('tipe_referensi', ['penjualan', 'pembelian']);
+            $table->enum('tipe_referensi', ['pendapatan', 'pengeluaran']);
             $table->text('keterangan');
             $table->float('debit')->default(0);
             $table->float('kredit')->default(0);

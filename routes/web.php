@@ -1,35 +1,38 @@
 <?php
-
-use App\Http\Controllers\AkunController;
-use App\Http\Controllers\AlamatController;
-use App\Http\Controllers\BahanBakuController;
-use App\Http\Controllers\BukuBesarController;
-use App\Http\Controllers\CustomerController;
-use App\Http\Controllers\DiskonCustomerController;
-use App\Http\Controllers\FinishingController;
-use App\Http\Controllers\GlobalSearchController;
-use App\Http\Controllers\HakAksesController;
-use App\Http\Controllers\HargaBertingkatController;
-use App\Http\Controllers\HargaPengerjaanController;
-use App\Http\Controllers\KategoriController;
-use App\Http\Controllers\KomposisiController;
-use App\Http\Controllers\ModulController;
-use App\Http\Controllers\PembayaranController;
-use App\Http\Controllers\PembelianBahanController;
-use App\Http\Controllers\PesanController;
-use App\Http\Controllers\PilihanFinishingController;
-use App\Http\Controllers\PilihanVarianController;
-use App\Http\Controllers\ProdukController;
-use App\Http\Controllers\ProdukSkuController;
-use App\Http\Controllers\ProdukVarianController;
-use App\Http\Controllers\ProfilController;
-use App\Http\Controllers\RoleCustomerController;
-use App\Http\Controllers\RoleStafController;
-use App\Http\Controllers\ShippingController;
-use App\Http\Controllers\SkuFinishingController;
-use App\Http\Controllers\StafController;
-use App\Http\Controllers\VarianController;
-use App\Http\Controllers\VoucherController;
+use App\Http\Controllers\Web\AkunController;
+use App\Http\Controllers\Web\BahanBakuController;
+use App\Http\Controllers\Web\BukuBesarController;
+use App\Http\Controllers\Web\DashboardController;
+use App\Http\Controllers\Web\GlobalSearchController;
+use App\Http\Controllers\Web\HakAksesController;
+use App\Http\Controllers\Web\ModulController;
+use App\Http\Controllers\Web\PembayaranController;
+use App\Http\Controllers\Web\PembelianBahanController;
+use App\Http\Controllers\Web\PesanController;
+use App\Http\Controllers\Web\ProduksiController;
+use App\Http\Controllers\Web\ProfilController;
+use App\Http\Controllers\Web\ShippingController;
+use App\Http\Controllers\Web\TagihanVendorController;
+use App\Http\Controllers\Web\Produk\DiskonCustomerController;
+use App\Http\Controllers\Web\Produk\FinishingController;
+use App\Http\Controllers\Web\Produk\HargaBertingkatController;
+use App\Http\Controllers\Web\Produk\HargaPengerjaanController;
+use App\Http\Controllers\Web\Produk\KategoriController;
+use App\Http\Controllers\Web\Produk\KomposisiController;
+use App\Http\Controllers\Web\Produk\PilihanFinishingController;
+use App\Http\Controllers\Web\Produk\PilihanVarianController;
+use App\Http\Controllers\Web\Produk\ProdukController;
+use App\Http\Controllers\Web\Produk\ProdukSkuController;
+use App\Http\Controllers\Web\Produk\ProdukVarianController;
+use App\Http\Controllers\Web\Produk\SkuFinishingController;
+use App\Http\Controllers\Web\Produk\VarianController;
+use App\Http\Controllers\Web\User\AlamatController;
+use App\Http\Controllers\Web\User\CustomerController;
+use App\Http\Controllers\Web\User\RoleCustomerController;
+use App\Http\Controllers\Web\User\RoleStafController;
+use App\Http\Controllers\Web\User\StafController;
+use App\Http\Controllers\Web\User\VendorController;
+use App\Http\Controllers\Web\VoucherController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -43,104 +46,112 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get('/dashboard', [BukuBesarController::class, 'index'])
-    ->middleware(['auth', 'verified'])
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified', 'block.vendor'])
     ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/buku-besar', [BukuBesarController::class, 'detail'])->name('buku-besar.detail');
-    Route::resource('modul', ModulController::class);
-    Route::get('/hak-akses', [ModulController::class, 'index'])->name('hak-akses.index');
-    Route::get('/hak-akses/{id_modul}/edit', [HakAksesController::class, 'edit'])->name('hak-akses.edit');
-    Route::post('/hak-akses/{id_modul}/sync', [HakAksesController::class, 'sync'])->name('hak-akses.sync');
-
-    Route::get('/profil', [ProfilController::class, 'edit'])->name('profil.edit');
-    Route::patch('/profil', [ProfilController::class, 'update'])->name('profil.update');
-    Route::delete('/profil', [ProfilController::class, 'destroy'])->name('profil.destroy');
-
-    Route::resource('akun', AkunController::class);
-
-    Route::resource('customer', CustomerController::class);
-    Route::post('/role-customer', [RoleCustomerController::class, 'store'])->name('role-customer.store');
-    Route::get('/customer/{id_customer}/password', [CustomerController::class, 'editPassword'])->name('customer.password');
-    Route::put('/customer/{id_customer}/password', [CustomerController::class, 'updatePassword'])->name('customer.password.update');
-
-    Route::get('/customer/{id_customer}/alamat',[AlamatController::class, 'index'])->name('alamat.customer');
-    Route::post('/customer/{id_customer}/alamat',[AlamatController::class, 'store'])->name('alamat.store');
-    Route::put('/alamat/{id_alamat}',[AlamatController::class, 'update'])->name('alamat.update');
-    Route::delete('/alamat/{id_alamat}',[AlamatController::class, 'destroy'])->name('alamat.destroy');
-
-    Route::resource('staf', StafController::class);
-    Route::post('/role-staf', [RoleStafController::class, 'store'])->name('role-staf.store');
-
-    Route::resource('kategori', KategoriController::class);
-
-    Route::resource('produk', ProdukController::class);
-
-    Route::get('produk/{id}/varian', [ProdukController::class, 'varian'])->name('produk.varian');
-    Route::post('produk/{id}/varian', [ProdukVarianController::class, 'syncVarian'])->name('produk.syncVarian');
-
-    Route::get('produk/{id}/sku', [ProdukController::class, 'sku'])->name('produk.sku');
-    Route::post('produk/{id}/sku', [ProdukSkuController::class, 'syncSku'])->name('produk.syncSku');
-    Route::get('/produk/{id}/detail-sku', [ProdukController::class, 'detailSku'])->name('produk.detailSku');
-    Route::get('/sku/{id_sku}/finishing', [ProdukSkuController::class, 'finishing'])->name('sku.finishing');
-    Route::post('/sku/{id_sku}/finishing/sync', [SkuFinishingController::class, 'sync'])->name('sku.syncFinishing');
-    Route::get('/sku/{id_sku}/harga-bertingkat', [ProdukSkuController::class, 'hargaBertingkat'])->name('sku.hargaBertingkat');
-    Route::post('/sku/{id_sku}/harga-bertingkat/sync', [HargaBertingkatController::class, 'sync'])->name('sku.syncHargaBertingkat');
-    Route::get('/sku/{id_sku}/harga-pengerjaan', [ProdukSkuController::class, 'hargaPengerjaan'])->name('sku.hargaPengerjaan');
-    Route::post('/sku/{id_sku}/harga-pengerjaan/sync', [HargaPengerjaanController::class, 'sync'])->name('sku.syncHargaPengerjaan');
-    Route::get('/sku/{id_sku}/diskon-customer', [ProdukSkuController::class, 'diskonCustomer'])->name('sku.diskonCustomer');
-    Route::post('/sku/{id_sku}/diskon-customer/sync', [DiskonCustomerController::class, 'sync'])->name('sku.syncdiskonCustomer');
-    Route::get('/sku/{id_sku}/komposisi', [ProdukSkuController::class, 'komposisi'])->name('sku.komposisi');
-    Route::post('/sku/{id_sku}/komposisi/sync', [KomposisiController::class, 'sync'])->name('sku.syncKomposisi');
-    Route::delete('/sku/{id_sku}', [ProdukSkuController::class, 'destroy'])->name('sku.destroy');
-
-    Route::resource('varian', VarianController::class);
-    Route::post('/pilihan-varian', [PilihanVarianController::class, 'store'])->name('pilihan-varian.store');
-    Route::put('/pilihan-varian/{id}', [PilihanVarianController::class, 'update'])->name('pilihan-varian.update');
-    Route::delete('/pilihan-varian/{id}', [PilihanVarianController::class, 'destroy'])->name('pilihan-varian.destroy');
-
-    Route::resource('finishing', FinishingController::class);
-    Route::post('/pilihan-finishing', [PilihanFinishingController::class, 'store'])->name('pilihan-finishing.store');
-    Route::put('/pilihan-finishing/{id}', [PilihanFinishingController::class, 'update'])->name('pilihan-finishing.update');
-    Route::delete('/pilihan-finishing/{id}', [PilihanFinishingController::class, 'destroy'])->name('pilihan-finishing.destroy');
-
-    Route::resource('bahan-baku', BahanBakuController::class);
-    Route::resource('pembelian-bahan', PembelianBahanController::class);
-
-    Route::resource('voucher', VoucherController::class);
-
-    Route::get('pesan', [PesanController::class, 'index'])->name('pesan.index');
-    Route::post('pesan', [PesanController::class, 'store'])->name('pesan.store');
-    Route::get('pesan/{id}/detail', [PesanController::class, 'detail'])->name('pesan.detail');
-    Route::put('pesan/{id}/operasional', [PesanController::class, 'updateOperasional'])->name('pesan.updateOperasional');
-    Route::put('pesan/{id}/pembayaran', [PembayaranController::class, 'store'])->name('pesan.updatePembayaran');
-    Route::put('/pesan/{id_pesan}/resi', [PesanController::class, 'updateResi'])->name('pesan.updateResi');
-    Route::get('/pesan/{id_pesan}/cetak-label', [PesanController::class, 'cetakLabel'])->name('pesan.cetakLabel');
-    Route::get('/pesan/item/{id}/cetak-label', [PesanController::class, 'cetakLabelItem'])->name('pesan.cetakLabelItem');
-    Route::put('/pesan/{id_pesan}/update-alamat', [PesanController::class, 'updateAlamat'])->name('pesan.updateAlamat');
-    Route::post('/pesan/add-item/store', [PesanController::class, 'addItem'])->name('pesan.addItem');
-    Route::put('/pesan/update-item/{id}', [PesanController::class, 'updateItem'])->name('pesan.updateItem');
-    Route::delete('/pesan/delete-item/{id}', [PesanController::class, 'deleteItem'])->name('pesan.deleteItem');
-    Route::get('/pesan/pos-kasir', [PesanController::class, 'posKasir'])->name('pesan.pos-kasir');
 
     Route::get('/shipping/provinces', [ShippingController::class, 'getProvinces']);
     Route::get('/shipping/cities/{provinceId}', [ShippingController::class, 'getCities']);
     Route::get('/shipping/districts/{cityId}', [ShippingController::class, 'getDistricts']);
     Route::post('/ongkir/calculate', [ShippingController::class, 'cekOngkir']);
 
-    Route::get('pembayaran', [PembayaranController::class, 'index'])->name('pembayaran.index');
-    Route::get('pembayaran/{id}/detail', [PembayaranController::class, 'detail'])->name('pembayaran.detail');
+    Route::get('/profil', [ProfilController::class, 'edit'])->name('profil.edit');
+    Route::patch('/profil', [ProfilController::class, 'update'])->name('profil.update');
+    Route::delete('/profil', [ProfilController::class, 'destroy'])->name('profil.destroy');
 
+    Route::get('produksi', [ProduksiController::class, 'index'])->middleware('akses:produksi')->name('produksi.index');
+    Route::post('produksi/item/{id_item_produksi}/selesai', [ProduksiController::class, 'selesaikanItemProduksi'])->middleware('akses:produksi,ubah')->name('produksi.selesaikan');
+    Route::get('produksi/histori', [ProduksiController::class, 'histori'])->middleware('akses:produksi')->name('produksi.histori');
 
-    Route::get('produksi', [ProduksiController::class, 'index'])->name('produksi.index');
-    Route::post('produksi/{id_pesan}/alokasi', [ProduksiController::class, 'alokasiProduksi'])->name('produksi.alokasi');
-    Route::post('produksi/item/{id_item_produksi}/selesai', [ProduksiController::class, 'selesaikanItemProduksi'])->name('produksi.item_selesai');
-    Route::post('produksi/{id_pesan}/kirim', [ProduksiController::class, 'kirimPesanan'])->name('produksi.kirim');
+    Route::middleware('block.vendor')->group(function () {
+        Route::post('produksi/{id_pesan}/alokasi', [ProduksiController::class, 'alokasiProduksi'])->middleware('akses:produksi,ubah')->name('produksi.alokasi');
+        Route::post('produksi/{id_pesan}/kirim', [ProduksiController::class, 'kirimPesanan'])->middleware('akses:produksi,ubah')->name('produksi.kirim');
+        Route::get('/buku-besar', [BukuBesarController::class, 'index'])->name('buku-besar.index');
+        Route::middleware('akses:customer')->group(function () {
+            Route::resource('modul', ModulController::class)->middleware('akses:hak-akses');
+            Route::get('/hak-akses', [ModulController::class, 'index'])->name('hak-akses.index');
+            Route::get('/hak-akses/{id_modul}/edit', [HakAksesController::class, 'edit'])->name('hak-akses.edit');
+            Route::post('/hak-akses/{id_modul}/sync', [HakAksesController::class, 'sync'])->middleware('akses:hak-akses,ubah')->name('hak-akses.sync');
+        });
+        Route::resource('akun', AkunController::class)->middleware('akses:akun');
+        Route::middleware('akses:customer')->group(function () {
+            Route::resource('customer', CustomerController::class);
+            Route::post('/role-customer', [RoleCustomerController::class, 'store'])->name('role-customer.store');
+            Route::get('/customer/{id_customer}/alamat', [AlamatController::class, 'index'])->name('alamat.customer');
+            Route::post('/customer/{id_customer}/alamat', [AlamatController::class, 'store'])->name('alamat.store');
+            Route::put('/alamat/{id_alamat}', [AlamatController::class, 'update'])->name('alamat.update');
+            Route::delete('/alamat/{id_alamat}', [AlamatController::class, 'destroy'])->name('alamat.destroy');
 
-    Route::resource('vendor', VendorController::class)->except(['create', 'show', 'edit']);
-    
-    Route::get('/search', [GlobalSearchController::class, 'index'])->name('global.search');
+            Route::get('/customer/{id_customer}/password', [CustomerController::class, 'editPassword'])->middleware('akses:customer,ubah')->name('customer.password');
+            Route::put('/customer/{id_customer}/password', [CustomerController::class, 'updatePassword'])->middleware('akses:customer,ubah')->name('customer.password.update');
+        });
+        Route::middleware('akses:staf')->group(function () {
+            Route::resource('staf', StafController::class);
+            Route::post('/role-staf', [RoleStafController::class, 'store'])->name('role-staf.store');
+        });
+        Route::resource('kategori', KategoriController::class)->middleware('akses:kategori');
+        Route::middleware('akses:produk')->group(function () {
+            Route::resource('produk', ProdukController::class);
+            Route::get('produk/{id}/varian', [ProdukController::class, 'varian'])->middleware('akses:produk,ubah')->name('produk.varian');
+            Route::post('produk/{id}/varian', [ProdukVarianController::class, 'syncVarian'])->middleware('akses:produk,ubah')->name('produk.syncVarian');
+        });
+        Route::middleware('akses:produk-sku')->group(function () {
+            Route::get('produk/{id}/sku', [ProdukController::class, 'sku'])->middleware('akses:produk-sku,ubah')->name('produk.sku');
+            Route::post('produk/{id}/sku', [ProdukSkuController::class, 'syncSku'])->middleware('akses:produk-sku,ubah')->name('produk.syncSku');
+            Route::get('/produk/{id}/detail-sku', [ProdukController::class, 'detailSku'])->name('produk.detailSku');
+            Route::get('/sku/{id_sku}/finishing', [ProdukSkuController::class, 'finishing'])->name('sku.finishing');
+            Route::post('/sku/{id_sku}/finishing/sync', [SkuFinishingController::class, 'sync'])->middleware('akses:produk-sku,ubah')->name('sku.syncFinishing');
+            Route::get('/sku/{id_sku}/harga-bertingkat', [ProdukSkuController::class, 'hargaBertingkat'])->name('sku.hargaBertingkat');
+            Route::post('/sku/{id_sku}/harga-bertingkat/sync', [HargaBertingkatController::class, 'sync'])->middleware('akses:produk-sku,ubah')->name('sku.syncHargaBertingkat');
+            Route::get('/sku/{id_sku}/harga-pengerjaan', [ProdukSkuController::class, 'hargaPengerjaan'])->name('sku.hargaPengerjaan');
+            Route::post('/sku/{id_sku}/harga-pengerjaan/sync', [HargaPengerjaanController::class, 'sync'])->middleware('akses:produk-sku,ubah')->name('sku.syncHargaPengerjaan');
+            Route::get('/sku/{id_sku}/diskon-customer', [ProdukSkuController::class, 'diskonCustomer'])->name('sku.diskonCustomer');
+            Route::post('/sku/{id_sku}/diskon-customer/sync', [DiskonCustomerController::class, 'sync'])->middleware('akses:produk-sku,ubah')->name('sku.syncdiskonCustomer');
+            Route::get('/sku/{id_sku}/komposisi', [ProdukSkuController::class, 'komposisi'])->name('sku.komposisi');
+            Route::post('/sku/{id_sku}/komposisi/sync', [KomposisiController::class, 'sync'])->middleware('akses:produk-sku,ubah')->name('sku.syncKomposisi');
+            Route::delete('/sku/{id_sku}', [ProdukSkuController::class, 'destroy'])->middleware('akses:produk-sku,hapus')->name('sku.destroy');
+        });
+        Route::middleware('akses:varian')->group(function () {
+            Route::resource('varian', VarianController::class);
+            Route::post('/pilihan-varian', [PilihanVarianController::class, 'store'])->name('pilihan-varian.store');
+            Route::put('/pilihan-varian/{id}', [PilihanVarianController::class, 'update'])->name('pilihan-varian.update');
+            Route::delete('/pilihan-varian/{id}', [PilihanVarianController::class, 'destroy'])->name('pilihan-varian.destroy');
+        });
+        Route::middleware('akses:finishing')->group(function () {
+            Route::resource('finishing', FinishingController::class);
+            Route::post('/pilihan-finishing', [PilihanFinishingController::class, 'store'])->name('pilihan-finishing.store');
+            Route::put('/pilihan-finishing/{id}', [PilihanFinishingController::class, 'update'])->name('pilihan-finishing.update');
+            Route::delete('/pilihan-finishing/{id}', [PilihanFinishingController::class, 'destroy'])->name('pilihan-finishing.destroy');
+        });
+        Route::resource('bahan-baku', BahanBakuController::class)->middleware('akses:bahan-baku');
+        Route::resource('pembelian-bahan', PembelianBahanController::class)->middleware('akses:pembelian-bahan');
+        Route::resource('voucher', VoucherController::class)->middleware('akses:voucher');
+        Route::middleware('akses:pesan')->group(function () {
+            Route::get('pesan', [PesanController::class, 'index'])->name('pesan.index');
+            Route::post('pesan', [PesanController::class, 'store'])->name('pesan.store');
+            Route::get('pesan/{id}/detail', [PesanController::class, 'detail'])->name('pesan.detail');
+            Route::put('pesan/{id}/operasional', [PesanController::class, 'updateOperasional'])->middleware('akses:pesan,ubah')->name('pesan.updateOperasional');
+            Route::put('pesan/{id}/pembayaran', [PembayaranController::class, 'store'])->name('pesan.updatePembayaran');
+            Route::put('/pesan/{id_pesan}/resi', [PesanController::class, 'updateResi'])->middleware('akses:pesan,ubah')->name('pesan.updateResi');
+            Route::get('/pesan/{id_pesan}/cetak-label', [PesanController::class, 'cetakLabel'])->name('pesan.cetakLabel');
+            Route::get('/pesan/item/{id}/cetak-label', [PesanController::class, 'cetakLabelItem'])->name('pesan.cetakLabelItem');
+            Route::put('/pesan/{id_pesan}/update-alamat', [PesanController::class, 'updateAlamat'])->middleware('akses:pesan,ubah')->name('pesan.updateAlamat');
+            Route::post('/pesan/add-item/store', [PesanController::class, 'addItem'])->middleware('akses:pesan,tambah')->name('pesan.addItem');
+            Route::put('/pesan/update-item/{id}', [PesanController::class, 'updateItem'])->middleware('akses:pesan,ubah')->name('pesan.updateItem');
+            Route::delete('/pesan/delete-item/{id}', [PesanController::class, 'deleteItem'])->middleware('akses:pesan,hapus')->name('pesan.deleteItem');
+            Route::get('/pesan/pos-kasir', [PesanController::class, 'posKasir'])->middleware('akses:pesan,tambah')->name('pesan.pos-kasir');
+        });
+        Route::middleware('akses:pembayaran')->group(function () {
+            Route::get('pembayaran', [PembayaranController::class, 'index'])->name('pembayaran.index');
+            Route::get('pembayaran/{id}/detail', [PembayaranController::class, 'detail'])->name('pembayaran.detail');
+        });
+        Route::resource('vendor', VendorController::class)->middleware('akses:vendor');
+        Route::resource('tagihan-vendor', TagihanVendorController::class)->middleware('akses:tagihan-vendor');
+        Route::get('/search', [GlobalSearchController::class, 'index'])->name('global.search');
+    });
+
 });
 
 require __DIR__.'/auth.php';

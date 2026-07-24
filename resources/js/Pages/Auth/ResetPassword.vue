@@ -1,7 +1,7 @@
 <script setup>
 import GuestLayout from '@/Layouts/GuestLayout.vue';
-import CustomInput from '@/Components/CustomInput.vue';
-import CustomButton from '@/Components/CustomButton.vue';
+import CustomInput from '@/Components/Form/CustomInput.vue';
+import CustomButton from '@/Components/Form/CustomButton.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 
 const props = defineProps({

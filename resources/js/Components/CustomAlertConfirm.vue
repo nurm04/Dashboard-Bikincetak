@@ -1,6 +1,6 @@
 <script setup>
 import Modal from '@/Components/Modal.vue';
-import CustomButton from '@/Components/CustomButton.vue';
+import CustomButton from '@/Components/Form/CustomButton.vue';
 
 const props = defineProps({
     show: Boolean,

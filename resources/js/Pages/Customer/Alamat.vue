@@ -3,10 +3,10 @@ import { ref, onMounted } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { alertStore } from '@/Utils/alertStore';
 import StafLayout from '@/Layouts/StafLayout.vue';
-import CustomInput from '@/Components/CustomInput.vue';
-import CustomButton from '@/Components/CustomButton.vue';
-import CustomSelect from '@/Components/CustomSelect.vue';
-import CustomCheckbox from '@/Components/CustomCheckbox.vue';
+import CustomInput from '@/Components/Form/CustomInput.vue';
+import CustomButton from '@/Components/Form/CustomButton.vue';
+import CustomSelect from '@/Components/Form/CustomSelect.vue';
+import CustomCheckbox from '@/Components/Form/CustomCheckbox.vue';
 
 const props = defineProps({
     customer: Object

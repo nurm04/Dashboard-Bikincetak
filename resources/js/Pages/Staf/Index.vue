@@ -1,13 +1,13 @@
 <script setup>
 import { ref, watch, computed } from 'vue';
+import { alertStore } from '@/Utils/alertStore';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import StafLayout from '@/Layouts/StafLayout.vue';
-import CustomButton from '@/Components/CustomButton.vue';
+import CustomButton from '@/Components/Form/CustomButton.vue';
+import CustomSelect from '@/Components/Form/CustomSelect.vue';
+import CustomInputSearch from '@/Components/Form/CustomInputSearch.vue';
 import CustomTable from '@/Components/CustomTable.vue';
 import CustomAlertConfirm from '@/Components/CustomAlertConfirm.vue';
-import CustomInputSearch from '@/Components/CustomInputSearch.vue';
-import CustomSelect from '@/Components/CustomSelect.vue';
-import { alertStore } from '@/Utils/alertStore';
 
 const debounce = (fn, delay) => {
     let timeoutId;
@@ -136,7 +136,7 @@ const doDelete = () => {
                         <td class="px-6 py-4">
                             <span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-tight border"
                                 :class="
-                                    staf.role_staf?.role === 'Administrator' ? 'bg-error/20 text-error border-error/30' :
+                                    staf.role_staf?.role === 'Admin' ? 'bg-primary/20 text-primary border-primary/30' :
                                     staf.role_staf?.role === 'Kasir' ? 'bg-info/20 text-info border-info/30' :
                                     'bg-success/20 text-success border-success/30'
                                 "

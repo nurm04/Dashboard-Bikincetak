@@ -1,9 +1,7 @@
 <script setup>
 import StafLayout from '@/Layouts/StafLayout.vue';
-import CustomInput from '@/Components/CustomInput.vue';
-import CustomSelect from '@/Components/CustomSelect.vue';
-import CustomRadioButton from '@/Components/CustomRadioButton.vue';
-import CustomButton from '@/Components/CustomButton.vue';
+import CustomInput from '@/Components/Form/CustomInput.vue';
+import CustomButton from '@/Components/Form/CustomButton.vue';
 import { Head, useForm, Link } from '@inertiajs/vue3';
 
 const props = defineProps({

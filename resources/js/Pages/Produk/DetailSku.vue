@@ -1,10 +1,9 @@
 <script setup>
 import { ref } from 'vue';
-import StafLayout from '@/Layouts/StafLayout.vue';
-import CustomButton from '@/Components/CustomButton.vue';
-import CustomTable from '@/Components/CustomTable.vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
 import { alertStore } from '@/Utils/alertStore';
+import { Head, Link, useForm } from '@inertiajs/vue3';
+import StafLayout from '@/Layouts/StafLayout.vue';
+import CustomTable from '@/Components/CustomTable.vue';
 import CustomAlertConfirm from '@/Components/CustomAlertConfirm.vue';
 import CustomTableAction from '@/Components/CustomTableAction.vue';
 

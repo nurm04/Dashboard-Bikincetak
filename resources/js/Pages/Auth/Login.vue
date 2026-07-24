@@ -1,7 +1,7 @@
 <script setup>
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
-import CustomCheckbox from '@/Components/CustomCheckbox.vue';
-import CustomInput from '@/Components/CustomInput.vue';
+import CustomCheckbox from '@/Components/Form/CustomCheckbox.vue';
+import CustomInput from '@/Components/Form/CustomInput.vue';
 import GuestLayout from '@/Layouts/GuestLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 

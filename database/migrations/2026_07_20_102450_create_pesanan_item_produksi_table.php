@@ -16,14 +16,16 @@ return new class extends Migration
             $table->foreignId('id_pesanan_item')->constrained('pesanan_item')->cascadeOnDelete();
             $table->enum('tipe_pengerjaan', ['sendiri', 'vendor']);
             $table->string('id_vendor', 50)->nullable();
+            $table->unsignedBigInteger('id_tagihan_vendor')->nullable();
             $table->integer('qty_dikerjakan');
             $table->enum('status_pengerjaan', ['menunggu', 'sedang_diproses', 'selesai'])->default('menunggu');
+            $table->text('instruksi_pengerjaan')->nullable();
             $table->text('deskripsi_pengerjaan')->nullable();
             $table->decimal('total_tagihan_vendor', 15, 2)->nullable();
             $table->string('file_nota', 255)->nullable();
             $table->timestamps();
-
             $table->foreign('id_vendor')->references('id_vendor')->on('vendor')->nullOnDelete();
+            $table->foreign('id_tagihan_vendor')->references('id')->on('tagihan_vendor')->nullOnDelete();
         });
     }
 

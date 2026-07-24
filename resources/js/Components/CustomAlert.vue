@@ -11,7 +11,7 @@ import { alertStore } from '@/Utils/alertStore';
         leave-from-class="translate-x-0 opacity-100"
         leave-to-class="translate-x-4 opacity-0"
     >
-        <div v-if="alertStore.visible" class="toast toast-top toast-end z-[9999] mt-20">
+        <div v-if="alertStore.visible" class="toast toast-top toast-end z-9999 mt-20">
             <div :class="[
                 'alert shadow-2xl font-bold border-none flex items-center gap-3',
                 { 'alert-success text-success-content': alertStore.type === 'success' },

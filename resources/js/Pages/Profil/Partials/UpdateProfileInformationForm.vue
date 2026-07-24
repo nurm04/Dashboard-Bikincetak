@@ -1,6 +1,6 @@
 <script setup>
-import CustomInput from '@/Components/CustomInput.vue';
-import CustomButton from '@/Components/CustomButton.vue';
+import CustomInput from '@/Components/Form/CustomInput.vue';
+import CustomButton from '@/Components/Form/CustomButton.vue';
 import { Link, useForm, usePage } from '@inertiajs/vue3';
 
 defineProps({

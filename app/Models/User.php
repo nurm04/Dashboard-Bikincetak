@@ -33,6 +33,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Relasi ke profil Customer
+     */
+    public function vendor(): HasOne
+    {
+        return $this->hasOne(Vendor::class, 'user_id', 'id');
+    }
+
+    /**
      * Get the attributes that should be cast.
      */
     protected function casts(): array

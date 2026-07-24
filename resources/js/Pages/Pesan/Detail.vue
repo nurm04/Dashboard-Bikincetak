@@ -2,13 +2,13 @@
 import { ref } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import StafLayout from '@/Layouts/StafLayout.vue';
-import CustomInput from '@/Components/CustomInput.vue';
+import CustomInput from '@/Components/Form/CustomInput.vue';
 import { alertStore } from '@/Utils/alertStore';
 
-import OrderInfoCards from '@/Components/OrderInfoCards.vue';
-import OrderItemsTable from '@/Components/OrderItemsTable.vue';
-import OrderSummary from '@/Components/OrderSummary.vue';
-import OrderFormCard from '@/Components/OrderFormCard.vue';
+import OrderInfoCards from './Partials/OrderInfoCards.vue';
+import OrderItemsTable from './Partials/OrderItemsTable.vue';
+import OrderSummary from './Partials/OrderSummary.vue';
+import OrderFormCard from './Partials/OrderFormCard.vue';
 
 const props = defineProps({
     pesanan: Object,
@@ -174,6 +174,7 @@ const handlePrintLabel = (itemId) => {
 
                     <OrderItemsTable
                         :items="pesanan.pesanan_item"
+                        :statusOperasional="pesanan.status_operasional"
                         @requestEdit="handleRequestEdit"
                         @deleteItem="handleDeleteItem"
                         @addItem="handleTambahItem"

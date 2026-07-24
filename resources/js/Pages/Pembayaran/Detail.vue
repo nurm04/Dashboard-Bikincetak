@@ -1,6 +1,5 @@
 <script setup>
 import StafLayout from '@/Layouts/StafLayout.vue';
-import CustomButton from '@/Components/CustomButton.vue';
 import { Head } from '@inertiajs/vue3';
 
 const props = defineProps({

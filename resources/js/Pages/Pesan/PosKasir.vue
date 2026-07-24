@@ -1,18 +1,18 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
+import { alertStore } from '@/Utils/alertStore';
 import axios from 'axios';
 import StafLayout from '@/Layouts/StafLayout.vue';
-import CustomSelectSearch from '@/Components/CustomSelectSearch.vue';
-import CustomSelect from '@/Components/CustomSelect.vue';
-import CustomInputNumber from '@/Components/CustomInputNumber.vue';
-import CustomButton from '@/Components/CustomButton.vue';
-import { alertStore } from '@/Utils/alertStore';
+import CustomSelectSearch from '@/Components/Form/CustomSelectSearch.vue';
+import CustomSelect from '@/Components/Form/CustomSelect.vue';
+import CustomInputNumber from '@/Components/Form/CustomInputNumber.vue';
+import CustomButton from '@/Components/Form/CustomButton.vue';
 
 // Komponen Reusable
-import OrderItemsTable from '@/Components/OrderItemsTable.vue';
-import OrderSummary from '@/Components/OrderSummary.vue';
-import OrderFormCard from '@/Components/OrderFormCard.vue';
+import OrderItemsTable from './Partials/OrderItemsTable.vue';
+import OrderSummary from './Partials/OrderSummary.vue';
+import OrderFormCard from './Partials/OrderFormCard.vue';
 
 const props = defineProps({
     customers: Array,

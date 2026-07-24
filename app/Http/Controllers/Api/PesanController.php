@@ -99,7 +99,16 @@ class PesanController extends Controller
                 if (is_string($finishings)) {
                     $finishings = json_decode($finishings, true);
                 }
-                $selectedFinishingIds = collect($finishings)->pluck('id_pilihan_finishing')->toArray();
+
+                $selectedFinishingIds = [];
+                if (!empty($finishings) && is_array($finishings)) {
+                    foreach ($finishings as $fin) {
+                        $skuFin = SkuFinishing::find($fin['id_sku_finishing']);
+                        if ($skuFin && $skuFin->id_pilihan_finishing) {
+                            $selectedFinishingIds[] = $skuFin->id_pilihan_finishing;
+                        }
+                    }
+                }
 
                 $totalBeratItem = PesanService::hitungBeratTotalItem($item['id_sku'], $item['jumlah'], $selectedFinishingIds);
 

@@ -1,9 +1,9 @@
 <script setup>
 import { ref } from 'vue';
 import StafLayout from '@/Layouts/StafLayout.vue';
-import CustomInput from '@/Components/CustomInput.vue';
-import CustomSelect from '@/Components/CustomSelect.vue';
-import CustomButton from '@/Components/CustomButton.vue';
+import CustomInput from '@/Components/Form/CustomInput.vue';
+import CustomSelect from '@/Components/Form/CustomSelect.vue';
+import CustomButton from '@/Components/Form/CustomButton.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 
 const props = defineProps({ produk: Object, kategoris: Array });
@@ -12,7 +12,7 @@ const isEdit = !!props.produk;
 const form = useForm({
     nama_produk: props.produk?.nama_produk ?? '',
     id_kategori: props.produk?.id_kategori ?? '',
-    gambar: null, 
+    gambar: null,
 });
 
 const imagePreviews = ref([]);
@@ -20,7 +20,7 @@ const fileInput = ref(null);
 
 const handleFileChange = (e) => {
     const files = e.target.files;
-    
+
     if (files && files.length > 0) {
         const newFiles = Array.from(files);
 
@@ -29,7 +29,7 @@ const handleFileChange = (e) => {
         } else {
             form.gambar = [...newFiles];
         }
-        
+
         const newPreviews = newFiles.map(file => URL.createObjectURL(file));
         imagePreviews.value = [...imagePreviews.value, ...newPreviews];
         e.target.value = '';
@@ -75,20 +75,20 @@ const submit = () => {
             <div class="max-w-2xl mx-auto sm:px-6 lg:px-8">
                 <div class="p-10 border shadow-2xl rounded-2xl bg-base-100 border-base-300">
                     <form @submit.prevent="submit" class="space-y-6">
-                        
+
                         <CustomInput v-model="form.nama_produk" label="Nama Produk" placeholder="Contoh: Print A0 Hot" :error="form.errors.nama_produk" />
-                        
+
                         <CustomSelect v-model="form.id_kategori" label="Kategori" :options="kategoris" labelKey="nama_kategori" valueKey="id_kategori" :error="form.errors.id_kategori" />
-                        
+
                         <div class="w-full form-control">
                             <label class="ml-1 label">
                                 <span class="label-text font-black uppercase text-[10px] tracking-widest text-base-content/70">
                                     Gambar Produk (Bisa Pilih Banyak)
                                 </span>
-                                <button 
-                                    v-if="imagePreviews.length > 0" 
-                                    type="button" 
-                                    @click="clearSelection" 
+                                <button
+                                    v-if="imagePreviews.length > 0"
+                                    type="button"
+                                    @click="clearSelection"
                                     class="text-[10px] font-bold text-error hover:underline uppercase tracking-wider"
                                 >
                                     Hapus Semua
@@ -96,13 +96,13 @@ const submit = () => {
                             </label>
 
                             <div class="relative w-full overflow-hidden transition-all border-2 border-dashed rounded-2xl bg-base-200 border-base-300 hover:border-primary hover:bg-base-200/50 group">
-                                <input 
+                                <input
                                     ref="fileInput"
-                                    type="file" 
-                                    multiple 
-                                    @change="handleFileChange" 
-                                    class="absolute inset-0 z-40 w-full h-full opacity-0 cursor-pointer" 
-                                    accept="image/*" 
+                                    type="file"
+                                    multiple
+                                    @change="handleFileChange"
+                                    class="absolute inset-0 z-40 w-full h-full opacity-0 cursor-pointer"
+                                    accept="image/*"
                                 />
                                 <div class="flex flex-col items-center justify-center p-8 text-center pointer-events-none">
                                     <svg class="w-10 h-10 mb-3 transition-colors text-base-content/30 group-hover:text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
@@ -122,10 +122,10 @@ const submit = () => {
                             <div class="flex flex-wrap gap-3">
                                 <div v-for="(url, idx) in imagePreviews" :key="idx" class="relative w-20 h-20 overflow-hidden border shadow-sm rounded-xl border-primary/30 group">
                                     <img :src="url" class="block object-cover w-full h-full" alt="Preview Baru" />
-                                    
-                                    <button 
-                                        type="button" 
-                                        @click.prevent="removeImage(idx)" 
+
+                                    <button
+                                        type="button"
+                                        @click.prevent="removeImage(idx)"
                                         class="absolute z-50 flex items-center justify-center w-6 h-6 text-white transition-all duration-200 scale-75 rounded-full opacity-0 bg-error top-1 right-1 group-hover:opacity-100 group-hover:scale-100 hover:bg-red-600 shadow-md"
                                         title="Hapus gambar ini"
                                     >
@@ -148,7 +148,7 @@ const submit = () => {
                             <CustomButton type="submit" class="flex-1" :disabled="form.processing">Simpan Produk</CustomButton>
                             <CustomButton type="link" :href="route('produk.index')" variant="secondary">Batal</CustomButton>
                         </div>
-                        
+
                     </form>
                 </div>
             </div>

@@ -1,10 +1,10 @@
 <script setup>
 import StafLayout from '@/Layouts/StafLayout.vue';
-import CustomInput from '@/Components/CustomInput.vue';
-import CustomSelect from '@/Components/CustomSelect.vue';
-import CustomSelectSearch from '@/Components/CustomSelectSearch.vue';
-import CustomRadioButton from '@/Components/CustomRadioButton.vue';
-import CustomButton from '@/Components/CustomButton.vue';
+import CustomInput from '@/Components/Form/CustomInput.vue';
+import CustomSelect from '@/Components/Form/CustomSelect.vue';
+import CustomSelectSearch from '@/Components/Form/CustomSelectSearch.vue';
+import CustomRadioButton from '@/Components/Form/CustomRadioButton.vue';
+import CustomButton from '@/Components/Form/CustomButton.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { computed } from 'vue';
 

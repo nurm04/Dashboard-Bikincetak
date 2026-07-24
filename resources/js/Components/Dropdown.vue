@@ -8,9 +8,8 @@ const props = defineProps({
 });
 
 const open = ref(false);
-const dropdownElement = ref(null); // Reference ke elemen utama
+const dropdownElement = ref(null);
 
-// Fungsi untuk menutup jika klik di luar elemen dropdown
 const closeOnClickOutside = (event) => {
     if (open.value && dropdownElement.value && !dropdownElement.value.contains(event.target)) {
         open.value = false;

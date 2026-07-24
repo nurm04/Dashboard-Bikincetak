@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Http\Controllers\BukuBesarController;
+use App\Http\Controllers\Web\BukuBesarController;
 use App\Models\Pembayaran;
 
 class PembayaranService
@@ -43,7 +43,7 @@ class PembayaranService
         BukuBesarController::catatJurnal(
             $akunKas,
             $idPembayaran,
-            'penjualan',
+            'pendapatan',
             "Penerimaan Pembayaran Kasir Pesanan #{$pesanan->id_pesan}",
             $nominalBayar,
             0
@@ -52,7 +52,7 @@ class PembayaranService
         BukuBesarController::catatJurnal(
             $akunPendapatan,
             $idPembayaran,
-            'penjualan',
+            'pendapatan',
             "Pendapatan Penjualan Kasir Pesanan #{$pesanan->id_pesan}",
             0,
             $nominalBayar

@@ -2,9 +2,9 @@
 import { ref, watch } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import StafLayout from '@/Layouts/StafLayout.vue';
-import CustomButton from '@/Components/CustomButton.vue';
+import CustomButton from '@/Components/Form/CustomButton.vue';
+import CustomInputSearch from '@/Components/Form/CustomInputSearch.vue';
 import CustomTable from '@/Components/CustomTable.vue';
-import CustomInputSearch from '@/Components/CustomInputSearch.vue';
 
 const debounce = (fn, delay) => {
     let timeoutId;

@@ -1,14 +1,14 @@
 <script setup>
 import { ref, watch, computed } from 'vue';
+import { alertStore } from '@/Utils/alertStore';
 import { Head, useForm, Link, router } from '@inertiajs/vue3';
 import StafLayout from '@/Layouts/StafLayout.vue';
 import CustomTable from '@/Components/CustomTable.vue';
-import { alertStore } from '@/Utils/alertStore';
-import CustomButton from '@/Components/CustomButton.vue';
-import CustomInputNumber from '@/Components/CustomInputNumber.vue';
-import CustomInput from '@/Components/CustomInput.vue';
-import CustomInputSearch from '@/Components/CustomInputSearch.vue';
-import CustomSelect from '@/Components/CustomSelect.vue';
+import CustomButton from '@/Components/Form/CustomButton.vue';
+import CustomInputNumber from '@/Components/Form/CustomInputNumber.vue';
+import CustomInput from '@/Components/Form/CustomInput.vue';
+import CustomInputSearch from '@/Components/Form/CustomInputSearch.vue';
+import CustomSelect from '@/Components/Form/CustomSelect.vue';
 
 const debounce = (fn, delay) => {
     let timeoutId;
@@ -31,7 +31,6 @@ const showBayarSebagianModal = ref(false);
 const selectedPesanId = ref(null);
 const selectedPesan = ref(null);
 
-const formOperasional = useForm({ status_operasional: '' });
 const formPembayaran = useForm({ status_pembayaran: '', nominal_bayar: null });
 
 const search = ref(props.filters?.search || '');
@@ -87,15 +86,6 @@ const resetModal = () => {
     showBayarSebagianModal.value = false;
 };
 
-const updateOperasional = (id_pesan, value) => {
-    formOperasional.status_operasional = value;
-    formOperasional.put(route('pesan.updateOperasional', id_pesan), {
-        preserveScroll: true,
-        onSuccess: () => alertStore.show('Status Operasional berhasil diperbarui!', 'success'),
-        onError: () => alertStore.show('Gagal memperbarui status operasional!', 'error')
-    });
-};
-
 const updatePembayaran = (pesan, value) => {
     if (sudahLunas(pesan)) return;
 
@@ -136,21 +126,6 @@ const formatEnum = (text) => {
     if (!text) return '';
     return text.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 };
-
-const getAllowedOperasional = (statusSaatIni) => {
-    if (!props.enumOperasional || props.enumOperasional.length === 0) return [];
-
-    const alurProses = props.enumOperasional;
-    const currentIndex = alurProses.indexOf(statusSaatIni);
-    const indexBatal = alurProses.length - 1;
-    const indexSelesai = alurProses.length - 2;
-
-    if (currentIndex === -1 || currentIndex >= indexSelesai) {
-        return [statusSaatIni];
-    }
-
-    return [statusSaatIni, alurProses[currentIndex + 1], alurProses[indexBatal]];
-};
 </script>
 
 <template>
@@ -166,7 +141,7 @@ const getAllowedOperasional = (statusSaatIni) => {
         <div class="min-h-screen px-4 py-6 mx-auto sm:px-6 lg:px-8 max-w-7xl">
 
             <div class="flex flex-col gap-4 mb-6 md:flex-row md:items-center md:justify-between">
-                <Link :href="route('pesan.pos-kasir')" class="font-black tracking-wider shadow-md btn btn-primary rounded-xl shrink-0">
+                <Link v-if="$can('pesan', 'tambah')" :href="route('pesan.pos-kasir')" class="font-black tracking-wider shadow-md btn btn-primary rounded-xl shrink-0">
                     + Tambah Pesanan (POS)
                 </Link>
             </div>
@@ -248,25 +223,13 @@ const getAllowedOperasional = (statusSaatIni) => {
                     </td>
 
                     <td class="px-6 py-4" :class="p.status_operasional === 'batal' ? 'opacity-50' : ''">
-                        <select
-                            class="select select-bordered select-sm text-[10px] font-black uppercase tracking-wider text-base-content rounded-xl shadow-sm bg-base-100 border-base-300"
-                            :value="p.status_operasional"
-                            @change="updateOperasional(p.id_pesan, $event.target.value)"
-                            :disabled="formOperasional.processing || p.status_operasional === 'batal' || p.status_operasional === 'selesai'"
-                        >
-                            <option
-                                v-for="status in getAllowedOperasional(p.status_operasional)"
-                                :key="status"
-                                :value="status"
-                                :disabled="status === p.status_operasional"
-                            >
-                                {{ formatEnum(status) }} <template v-if="status === p.status_operasional"></template>
-                            </option>
-                        </select>
+                        <div class="inline-flex items-center px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-xl shadow-sm border border-base-300 bg-base-100 text-base-content">
+                            {{ formatEnum(p.status_operasional) }}
+                        </div>
                     </td>
 
                     <td class="px-6 py-4 text-center">
-                        <CustomButton type="link" :href="route('pesan.detail', p.id_pesan)" variant="info" size="sm">
+                        <CustomButton v-if="$can('pesan')" type="link" :href="route('pesan.detail', p.id_pesan)" variant="info" size="sm">
                             Detail
                         </CustomButton>
                     </td>

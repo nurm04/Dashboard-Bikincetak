@@ -1,9 +1,10 @@
 <script setup>
 import { ref, computed } from 'vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import StafLayout from '@/Layouts/StafLayout.vue';
-import CustomInput from '@/Components/CustomInput.vue';
-import CustomButton from '@/Components/CustomButton.vue';
+import CustomInput from '@/Components/Form/CustomInput.vue';
+import CustomButton from '@/Components/Form/CustomButton.vue';
+import { ArrowLeft } from 'lucide-vue-next';
 
 const props = defineProps({
     bukuBesar: Array,
@@ -41,13 +42,17 @@ const totalKredit = computed(() => props.bukuBesar.reduce((sum, item) => sum + N
 
     <StafLayout>
         <template #header>
-            <div class="flex items-center justify-between">
-                <h2 class="text-xl font-bold leading-tight text-base-content">
-                    Buku Besar (General Ledger)
-                </h2>
-                <a :href="`/dashboard?start_month=${filterForm.start_month}&end_month=${filterForm.end_month}`" class="font-bold btn btn-sm btn-ghost">
-                    ⬅ Kembali
-                </a>
+            <div class="flex items-center justify-between w-full">
+                <div class="flex items-center gap-4">
+                    <Link :href="`/dashboard?start_month=${filterForm.start_month}&end_month=${filterForm.end_month}`" class="btn btn-sm btn-circle btn-ghost ring-1 ring-base-300">
+                        <ArrowLeft class="w-4 h-4" />
+                    </Link>
+                    <div>
+                        <h2 class="text-xl font-semibold leading-tight text-base-content">
+                            Buku Besar (General Ledger)
+                        </h2>
+                    </div>
+                </div>
             </div>
         </template>
 

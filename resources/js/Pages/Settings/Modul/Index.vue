@@ -1,10 +1,10 @@
 <script setup>
 import { ref } from 'vue';
-import StafLayout from '@/Layouts/StafLayout.vue';
-import CustomTable from '@/Components/CustomTable.vue';
-import CustomButton from '@/Components/CustomButton.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { alertStore } from '@/Utils/alertStore';
+import StafLayout from '@/Layouts/StafLayout.vue';
+import CustomTable from '@/Components/CustomTable.vue';
+import CustomButton from '@/Components/Form/CustomButton.vue';
 import CustomAlertConfirm from '@/Components/CustomAlertConfirm.vue';
 
 const props = defineProps({

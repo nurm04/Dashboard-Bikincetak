@@ -1,9 +1,9 @@
 <script setup>
 import StafLayout from '@/Layouts/StafLayout.vue';
-import CustomInput from '@/Components/CustomInput.vue';
-import CustomInputNumber from '@/Components/CustomInputNumber.vue';
-import CustomButton from '@/Components/CustomButton.vue';
-import CustomCheckbox from '@/Components/CustomCheckbox.vue';
+import CustomInput from '@/Components/Form/CustomInput.vue';
+import CustomInputNumber from '@/Components/Form/CustomInputNumber.vue';
+import CustomButton from '@/Components/Form/CustomButton.vue';
+import CustomCheckbox from '@/Components/Form/CustomCheckbox.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 
 const props = defineProps({

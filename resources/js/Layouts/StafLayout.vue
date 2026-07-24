@@ -4,11 +4,14 @@ import ThemeSwitcher from '@/Components/ThemeSwitcher.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import CustomAlert from '@/Components/CustomAlert.vue';
 import { usePage, Link, router } from '@inertiajs/vue3';
-import { watch, onMounted, ref } from 'vue';
+import { watch, onMounted, ref, computed } from 'vue';
 import { alertStore } from '@/Utils/alertStore';
-import CustomInputSearch from '@/Components/CustomInputSearch.vue';
+import CustomInputSearch from '@/Components/Form/CustomInputSearch.vue';
 
 const page = usePage();
+
+const isVendor = computed(() => page.props.auth?.user?.role === 'vendor');
+const stafRole = computed(() => page.props.auth?.user?.staf?.id_role_staf);
 
 watch(() => page.props.flash, (flash) => {
     if (flash?.success) alertStore.show(flash.success, 'success');
@@ -19,8 +22,6 @@ const notifikasiBanyak = ref([]);
 const notifSound = new Audio('/sounds/notif.mp3');
 let originalTitle = '';
 
-// 1. TAMBAHKAN STATE UNTUK SIDEBAR
-// Ambil dari localStorage biar posisi sidebar konsisten saat pindah halaman
 const isSidebarCollapsed = ref(localStorage.getItem('sidebar_collapsed') === 'true');
 
 const toggleSidebar = () => {
@@ -35,6 +36,28 @@ const playNotificationSound = () => {
     });
 };
 
+const tambahNotifKeLayar = (kodePesanan, judul, pesan, tipe) => {
+    playNotificationSound();
+
+    if (document.hidden) {
+        document.title = `(1) 🔔 ${judul}`;
+    }
+
+    const idNotif = Date.now();
+    notifikasiBanyak.value.push({
+        id: idNotif,
+        tipe: tipe,
+        judul: judul,
+        pesan: `${pesan}: ${kodePesanan}`,
+    });
+
+    setTimeout(() => {
+        notifikasiBanyak.value = notifikasiBanyak.value.filter(n => n.id !== idNotif);
+    }, 5000);
+
+    router.reload({ preserveScroll: true, preserveState: true });
+};
+
 onMounted(() => {
     originalTitle = document.title;
 
@@ -45,29 +68,23 @@ onMounted(() => {
     });
 
     if (window.Echo) {
-        window.Echo.channel('pesanan-channel')
-            .listen('.pesanan.baru', (e) => {
-                console.log("Sinyal masuk bro!", e);
 
-                playNotificationSound();
-
-                if (document.hidden) {
-                    document.title = "(1) 🔔 Pesanan Baru Masuk!";
-                }
-
-                const idNotif = Date.now();
-                const kodePesanan = e?.pesan?.id_pesan || e?.pesanan?.id_pesan || 'Cek Dashboard';
-                notifikasiBanyak.value.push({
-                    id: idNotif,
-                    pesan: `Ada order masuk baru: ${kodePesanan}`,
+        if (['ROLE-STAF-ADMIN', 'ROLE-STAF-KASIR'].includes(stafRole.value)) {
+            window.Echo.channel('pesanan-channel')
+                .listen('.pesanan.baru', (e) => {
+                    const kodePesanan = e?.pesan?.id_pesan || e?.pesanan?.id_pesan || 'Cek Dashboard';
+                    tambahNotifKeLayar(kodePesanan, 'Pesanan Baru!', 'Ada order masuk baru', 'pesanan');
                 });
+        }
 
-                setTimeout(() => {
-                    notifikasiBanyak.value = notifikasiBanyak.value.filter(n => n.id !== idNotif);
-                }, 5000);
+        if (['ROLE-STAF-ADMIN', 'ROLE-STAF-PRODUKSI'].includes(stafRole.value)) {
+            window.Echo.channel('produksi-channel')
+                .listen('.produksi.baru', (e) => {
+                    const kodePesanan = e?.pesan?.id_pesan || e?.pesanan?.id_pesan || 'Cek Dashboard';
+                    tambahNotifKeLayar(kodePesanan, 'Antrean Produksi!', 'Pesanan Lunas/DP, siap dikerjakan', 'produksi');
+                });
+        }
 
-                router.reload({ preserveScroll: true, preserveState: true });
-            });
     } else {
         console.error("Waduh, window.Echo belum aktif! Cek file bootstrap.js lu.");
     }
@@ -83,18 +100,28 @@ const doGlobalSearch = () => {
 
 <template>
     <div class="flex min-h-screen bg-base-200 text-base-content selection:bg-primary selection:text-white">
-        <Sidebar :isCollapsed="isSidebarCollapsed" />
-        <div class="flex flex-col flex-1 min-h-screen transition-all duration-300" :class="isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'">
+
+        <Sidebar v-if="!isVendor" :isCollapsed="isSidebarCollapsed" />
+
+        <div class="flex flex-col flex-1 min-h-screen transition-all duration-300" :class="!isVendor ? (isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64') : ''">
+
             <nav class="sticky top-0 flex items-center h-16 px-4 transition-colors border-b shadow-sm z-60 lg:px-8 bg-base-100/90 backdrop-blur-md border-base-300">
                 <div class="flex items-center gap-3">
-                    <button @click="toggleSidebar" class="hidden lg:flex btn btn-ghost btn-sm btn-circle hover:bg-base-200 ring-1 ring-base-300/50">
+
+                    <button v-if="!isVendor" @click="toggleSidebar" class="hidden lg:flex btn btn-ghost btn-sm btn-circle hover:bg-base-200 ring-1 ring-base-300/50">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
                             <path v-if="!isSidebarCollapsed" stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                             <path v-else stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M12 17.25h8.25" />
                         </svg>
                     </button>
 
-                    <div class="flex-1 hidden max-w-md ml-2 md:block">
+                    <div v-else class="flex items-center ml-1">
+                        <span class="text-xl italic font-black tracking-tighter text-primary drop-shadow-sm">
+                            BIKIN<span class="text-base-content">CETAK</span>
+                        </span>
+                    </div>
+
+                    <div v-if="!isVendor" class="flex-1 hidden max-w-md ml-2 md:block">
                         <form @submit.prevent="doGlobalSearch">
                             <CustomInputSearch
                                 v-model="globalSearchKey"
@@ -118,7 +145,7 @@ const doGlobalSearch = () => {
                                 </div>
                                 <div class="hidden sm:flex sm:flex-col sm:items-start sm:justify-center">
                                     <span class="text-xs leading-none opacity-80">{{ $page.props.auth.user.name }}</span>
-                                    <span class="text-[9px] leading-none text-primary mt-1 uppercase tracking-wider">Administrator</span>
+                                    <span class="text-[9px] leading-none text-primary mt-1 uppercase tracking-wider">{{ $page.props.auth.user.role }}</span>
                                 </div>
                                 <svg class="hidden w-4 h-4 ml-1 opacity-50 sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </button>
@@ -156,14 +183,41 @@ const doGlobalSearch = () => {
                 <slot />
             </main>
         </div>
+
         <div class="toast toast-end toast-bottom" style="z-index: 99999;">
-            <div v-for="notif in notifikasiBanyak" :key="notif.id" class="border-l-4 shadow-lg alert bg-base-100 border-success animate-bounce">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="w-6 h-6 stroke-success shrink-0"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <div v-for="notif in notifikasiBanyak" :key="notif.id"
+                class="border-l-4 shadow-lg alert bg-base-100 animate-bounce"
+                :class="notif.tipe === 'produksi' ? 'border-warning' : 'border-success'">
+
+                <!-- Ikon Hijau untuk Pesanan Baru -->
+                <svg v-if="notif.tipe === 'pesanan'" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="w-6 h-6 stroke-success shrink-0"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+
+                <!-- Ikon Kuning/Warning untuk Produksi Baru -->
+                <svg v-else-if="notif.tipe === 'produksi'" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="w-6 h-6 stroke-warning shrink-0"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.83-5.83M15.17 11.42L21 5.58A2.652 2.652 0 0017.25 1.83l-5.83 5.83m-3.84 3.84L1.83 17.25A2.652 2.652 0 005.58 21l5.83-5.83m-3.84-3.84L1.83 5.58A2.652 2.652 0 015.58 1.83l5.83 5.83"></path></svg>
+
                 <div>
-                    <h3 class="text-sm font-bold">Pesanan Baru!</h3>
+                    <h3 class="text-sm font-bold" :class="notif.tipe === 'produksi' ? 'text-warning' : 'text-success'">
+                        {{ notif.judul }}
+                    </h3>
                     <div class="text-xs opacity-80">{{ notif.pesan }}</div>
                 </div>
             </div>
         </div>
     </div>
 </template>
+
+<style scoped>
+nav::-webkit-scrollbar {
+    width: 4px;
+}
+nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+nav::-webkit-scrollbar-thumb {
+    background-color: oklch(var(--p) / 0.2);
+    border-radius: 10px;
+}
+nav:hover::-webkit-scrollbar-thumb {
+    background-color: oklch(var(--p) / 0.5);
+}
+</style>

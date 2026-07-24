@@ -1,10 +1,10 @@
 <script setup>
 import { ref, onMounted } from 'vue';
-import StafLayout from '@/Layouts/StafLayout.vue';
-import CustomButton from '@/Components/CustomButton.vue';
-import CustomTableForm from '@/Components/CustomTableForm.vue';
 import { Head, useForm } from '@inertiajs/vue3';
-import CustomInputNumber from '@/Components/CustomInputNumber.vue';
+import StafLayout from '@/Layouts/StafLayout.vue';
+import CustomTableForm from '@/Components/CustomTableForm.vue';
+import CustomButton from '@/Components/Form/CustomButton.vue';
+import CustomInputNumber from '@/Components/Form/CustomInputNumber.vue';
 import CustomAlertConfirm from '@/Components/CustomAlertConfirm.vue';
 
 const props = defineProps({ produk: Object });
