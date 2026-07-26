@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import StafLayout from '@/Layouts/StafLayout.vue';
 import CustomButton from '@/Components/Form/CustomButton.vue';
-import CustomTableForm from '@/Components/Form/CustomTableForm.vue';
+import CustomTableForm from '@/Components/CustomTableForm.vue';
 import CustomInputNumber from '@/Components/Form/CustomInputNumber.vue';
 import CustomSelect from '@/Components/Form/CustomSelect.vue';
 import CustomSelectSearch from '@/Components/Form/CustomSelectSearch.vue';

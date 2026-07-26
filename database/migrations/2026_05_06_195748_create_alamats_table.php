@@ -28,7 +28,7 @@ return new class extends Migration
 
             $table->string('kode_pos');
 
-            $table->renameColumn('alamat', 'alamat_lengkap');
+            $table->text('alamat_lengkap');
 
             $table->decimal('latitude', 10, 7)->nullable();
             $table->decimal('longitude', 10, 7)->nullable();

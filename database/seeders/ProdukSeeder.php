@@ -148,7 +148,7 @@ class ProdukSeeder extends Seeder
             ['id_pilihan' => 'VAR-017-001', 'id_varian' => 'VAR-017', 'nama_pilihan' => '44 mm', 'created_at' => $now, 'updated_at' => $now],
             ['id_pilihan' => 'VAR-017-002', 'id_varian' => 'VAR-017', 'nama_pilihan' => '58 mm', 'created_at' => $now, 'updated_at' => $now],
 
-            ['id_pilihan' => 'VAR-018-001', 'id_varian' => 'VAR-008', 'nama_pilihan' => 'Mug Putih', 'created_at' => $now, 'updated_at' => $now],
+            ['id_pilihan' => 'VAR-018-001', 'id_varian' => 'VAR-018', 'nama_pilihan' => 'Mug Putih', 'created_at' => $now, 'updated_at' => $now],
 
             ['id_pilihan' => 'VAR-019-001', 'id_varian' => 'VAR-019', 'nama_pilihan' => 'Kertas Custom', 'created_at' => $now, 'updated_at' => $now],
             ['id_pilihan' => 'VAR-019-002', 'id_varian' => 'VAR-019', 'nama_pilihan' => 'Plastik Custom', 'created_at' => $now, 'updated_at' => $now],

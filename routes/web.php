@@ -127,7 +127,6 @@ Route::middleware('auth')->group(function () {
             Route::get('pesan', [PesanController::class, 'index'])->name('pesan.index');
             Route::post('pesan', [PesanController::class, 'store'])->name('pesan.store');
             Route::get('pesan/{id}/detail', [PesanController::class, 'detail'])->name('pesan.detail');
-            Route::put('pesan/{id}/operasional', [PesanController::class, 'updateOperasional'])->middleware('akses:pesan,ubah')->name('pesan.updateOperasional');
             Route::put('pesan/{id}/pembayaran', [PembayaranController::class, 'store'])->name('pesan.updatePembayaran');
             Route::put('/pesan/{id_pesan}/resi', [PesanController::class, 'updateResi'])->middleware('akses:pesan,ubah')->name('pesan.updateResi');
             Route::get('/pesan/{id_pesan}/cetak-label', [PesanController::class, 'cetakLabel'])->name('pesan.cetakLabel');

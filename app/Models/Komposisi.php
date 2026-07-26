@@ -27,7 +27,7 @@ class Komposisi extends Model
     }
     public function bahanBaku(): BelongsTo
     {
-        return $this->belongsTo(bahanBaku::class, 'id_bahan_baku', 'id_bahan_baku');
+        return $this->belongsTo(BahanBaku::class, 'id_bahan_baku', 'id_bahan_baku');
     }
     public function pilihanFinishing()
     {
