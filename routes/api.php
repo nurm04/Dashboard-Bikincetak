@@ -17,6 +17,8 @@ Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 Route::get('/items', [ProdukController::class, 'getAllItems']);
 Route::get('/item/{id}', [ProdukController::class, 'getDetailItem']);
 
+Route::get('/pesanan/status/{kode_transaksi}', [PesanController::class, 'getStatusPesanan']);
+
 Route::get('/shipping/provinces', [ShippingController::class, 'getProvinces']);
 Route::get('/shipping/cities/{provinceId}', [ShippingController::class, 'getCities']);
 Route::get('/shipping/districts/{cityId}', [ShippingController::class, 'getDistricts']);

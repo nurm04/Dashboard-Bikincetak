@@ -238,6 +238,7 @@ class ProduksiController extends Controller
     {
         $user = auth()->user();
         $vendorId = null;
+        $search = $request->query('search'); // Ambil query search
 
         if ($user->role === 'vendor') {
             $vendorId = Vendor::where('user_id', $user->id)->value('id_vendor');
@@ -245,6 +246,43 @@ class ProduksiController extends Controller
 
         $query = Pesan::query()
             ->whereIn('status_operasional', ['proses_pengantaran', 'selesai', 'diambil']);
+
+        // TAMBAHAN: Logika Search
+        if (!empty($search)) {
+            $query->where(function($q) use ($search) {
+                $q->where('id_pesan', 'like', "%{$search}%")
+                  ->orWhere('kode_transaksi', 'like', "%{$search}%")
+                  ->orWhere('kode_voucher', 'like', "%{$search}%")
+                  ->orWhere('ekspedisi_nama', 'like', "%{$search}%")
+                  ->orWhere('ekspedisi_layanan', 'like', "%{$search}%")
+                  ->orWhere('nomor_resi', 'like', "%{$search}%")
+
+                  ->orWhereHas('customer.user', function($qUser) use ($search) {
+                      $qUser->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                  })
+
+                  ->orWhereHas('pesananItem', function($qPesananItem) use ($search) {
+                      $qPesananItem->where('id_sku', 'like', "%{$search}%")
+                                   ->orWhere('nama_produk_snapshot', 'like', "%{$search}%")
+                                   ->orWhere('estimasi_pengerjaan_snapshot', 'like', "%{$search}%");
+                  })
+
+                  ->orWhereHas('pembayaran', function($qPembayaran) use ($search) {
+                      $qPembayaran->where('metode_pembayaran', 'like', "%{$search}%");
+                  })
+
+                  ->orWhereHas('alamat', function($qAlamat) use ($search) {
+                      $qAlamat->where('nama_penerima', 'like', "%{$search}%")
+                              ->orWhere('no_hp', 'like', "%{$search}%")
+                              ->orWhere('alamat_lengkap', 'like', "%{$search}%")
+                              ->orWhere('provinsi', 'like', "%{$search}%")
+                              ->orWhere('kota', 'like', "%{$search}%")
+                              ->orWhere('kecamatan', 'like', "%{$search}%")
+                              ->orWhere('kode_pos', 'like', "%{$search}%");
+                  });
+            });
+        }
 
         if ($user->role === 'vendor') {
             $query->whereHas('pesananItem.pesananItemProduksi', function ($q) use ($vendorId) {
@@ -273,11 +311,13 @@ class ProduksiController extends Controller
             ]);
         }
 
-        $pesananHistori = $query->orderBy('updated_at', 'desc')->paginate(10);
+        // TAMBAHAN: Gunakan withQueryString() agar saat klik page 2, filter pencarian tetap ikut
+        $pesananHistori = $query->orderBy('updated_at', 'desc')->paginate(10)->withQueryString();
 
         return Inertia::render('Produksi/History', [
             'pesananHistori' => $pesananHistori,
-            'currentVendorId' => $vendorId
+            'currentVendorId' => $vendorId,
+            'filters' => $request->only(['search']) // Kirim parameter search ke Vue
         ]);
     }
 }

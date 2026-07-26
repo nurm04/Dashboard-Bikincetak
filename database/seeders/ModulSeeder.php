@@ -29,8 +29,13 @@ class ModulSeeder extends Seeder
             ['id' => 10, 'nama_modul' => 'Bahan Baku', 'slug' => 'bahan-baku', 'created_at' => '2026-05-16 03:47:12', 'updated_at' => '2026-05-16 03:47:12'],
             ['id' => 11, 'nama_modul' => 'Pembelian Bahan', 'slug' => 'pembelian-bahan', 'created_at' => '2026-05-16 03:47:39', 'updated_at' => '2026-05-16 03:47:39'],
             ['id' => 12, 'nama_modul' => 'Pesan', 'slug' => 'pesan', 'created_at' => '2026-05-16 06:06:54', 'updated_at' => '2026-05-16 06:06:54'],
-            ['id' => 13, 'nama_modul' => 'Pembayaran', 'slug' => 'pembayaran', 'created_at' => '2026-05-16 06:06:59', 'updated_at' => '2026-05-16 06:06:59'],
-            ['id' => 14, 'nama_modul' => 'Voucher', 'slug' => 'voucher', 'created_at' => '2026-05-16 06:07:59', 'updated_at' => '2026-05-16 06:07:59'],
+            ['id' => 13, 'nama_modul' => 'Alamat', 'slug' => 'alamat', 'created_at' => '2026-05-16 06:07:59', 'updated_at' => '2026-05-16 06:07:59'],
+            ['id' => 14, 'nama_modul' => 'Pembayaran', 'slug' => 'pembayaran', 'created_at' => '2026-05-16 06:06:59', 'updated_at' => '2026-05-16 06:06:59'],
+            ['id' => 15, 'nama_modul' => 'Voucher', 'slug' => 'voucher', 'created_at' => '2026-05-16 06:07:59', 'updated_at' => '2026-05-16 06:07:59'],
+            ['id' => 16, 'nama_modul' => 'Vendor', 'slug' => 'vendor', 'created_at' => '2026-05-16 06:07:59', 'updated_at' => '2026-05-16 06:07:59'],
+            ['id' => 17, 'nama_modul' => 'produksi', 'slug' => 'produksi', 'created_at' => '2026-05-16 06:07:59', 'updated_at' => '2026-05-16 06:07:59'],
+            ['id' => 18, 'nama_modul' => 'Tagihan Vendor', 'slug' => 'tagihan-vendor', 'created_at' => '2026-05-16 06:07:59', 'updated_at' => '2026-05-16 06:07:59'],
+            ['id' => 19, 'nama_modul' => 'File Manage', 'slug' => 'file-manage', 'created_at' => '2026-05-16 06:07:59', 'updated_at' => '2026-05-16 06:07:59'],
         ]);
     }
 }

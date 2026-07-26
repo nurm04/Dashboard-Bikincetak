@@ -45,10 +45,19 @@ const formatRupiah = (angka) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(angka);
 };
 
-const formatDate = (dateString) => {
-    if(!dateString) return '-';
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date);
+const formatTanggal = (tgl) => {
+    if (!tgl) return '-';
+
+    const date = new Date(tgl);
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+
+    return `${year}-${month}-${day} ${hours}:${minutes}`;
 };
 </script>
 
@@ -109,9 +118,9 @@ const formatDate = (dateString) => {
                         </td>
 
                         <td class="px-6 py-4">
-                            <div class="text-xs font-bold">{{ formatDate(item.berlaku_dari) }}</div>
+                            <div class="text-xs font-bold">{{ formatTanggal(item.berlaku_dari) }}</div>
                             <div class="text-xs opacity-50">s/d</div>
-                            <div class="text-xs font-bold">{{ formatDate(item.berlaku_sampai) }}</div>
+                            <div class="text-xs font-bold">{{ formatTanggal(item.berlaku_sampai) }}</div>
                             <div v-if="item.kuota_penggunaan" class="text-[10px] font-bold text-info mt-1 tracking-wider uppercase">
                                 Sisa Kuota: {{ item.kuota_penggunaan }}
                             </div>

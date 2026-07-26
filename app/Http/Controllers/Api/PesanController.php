@@ -463,6 +463,36 @@ class PesanController extends Controller
         ]);
     }
 
+    public function getStatusPesanan(string $kode_transaksi)
+    {
+        $pesanan = Pesan::with([
+            'alamat',
+            'pesananItem.pesananItemFinishing',
+            'pembayaran'
+        ])
+        ->where('kode_transaksi', $kode_transaksi)
+        ->first();
+
+        if (!$pesanan) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pesanan tidak ditemukan.'
+            ], 404);
+        }
+
+        $rincian = PesanService::kalkulasiRincianPesanan($pesanan);
+
+        $pesanan->kode_unik = $rincian['kode_unik'];
+        $pesanan->total_tagihan = $rincian['grand_total'];
+        $pesanan->total_dibayar = $rincian['total_dibayar'];
+        $pesanan->sisa_tagihan = $rincian['sisa_tagihan'];
+
+        return response()->json([
+            'success' => true,
+            'data' => $pesanan
+        ]);
+    }
+
     public function cancelPesanan(Request $request, string $id_pesan)
     {
         $customerId = $request->user()?->customer?->id_customer;

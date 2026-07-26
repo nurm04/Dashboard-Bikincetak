@@ -9,6 +9,7 @@ defineProps({
     }
 });
 
+// Dropdown Produk
 const isProductDropdownOpen = ref(
     route().current('produk.*') ||
     route().current('kategori.*') ||
@@ -20,6 +21,16 @@ const isProductDropdownOpen = ref(
 
 const toggleProductDropdown = () => {
     isProductDropdownOpen.value = !isProductDropdownOpen.value;
+};
+
+// Dropdown Pengaturan (BARU)
+const isSettingsDropdownOpen = ref(
+    route().current('hak-akses.*') ||
+    route().current('file-manage.*') // Pastikan route name lu 'file-manage.index'
+);
+
+const toggleSettingsDropdown = () => {
+    isSettingsDropdownOpen.value = !isSettingsDropdownOpen.value;
 };
 </script>
 
@@ -120,6 +131,7 @@ const toggleProductDropdown = () => {
                 <span v-if="!isCollapsed">Data Vendor</span>
             </Link>
 
+            <!-- DROPDOWN PRODUK -->
             <div v-if="$can('kategori') || $can('produk') || $can('varian') || $can('produk-sku') || $can('finishing') || $can('voucher')" class="space-y-1">
                 <button @click="toggleProductDropdown"
                     class="flex items-center w-full py-3 text-sm font-bold transition-all duration-300 rounded-xl group"
@@ -280,21 +292,55 @@ const toggleProductDropdown = () => {
                 <span v-if="!isCollapsed">Pembayaran</span>
             </Link>
 
-            <Link v-if="$can('hak-akses')" :href="route('hak-akses.index')"
-                class="flex items-center py-3 text-sm font-bold transition-all duration-300 rounded-xl"
-                :class="{
-                    'bg-primary text-white shadow-lg shadow-primary/30': route().current('hak-akses.*'),
-                    'text-base-content/70 hover:bg-base-200 hover:text-base-content': !route().current('hak-akses.*'),
-                    'translate-x-1': !isCollapsed && route().current('hak-akses.*'),
-                    'hover:translate-x-1': !isCollapsed && !route().current('hak-akses.*'),
-                    'justify-center px-0': isCollapsed,
-                    'px-4': !isCollapsed
-                }"
-                :title="isCollapsed ? 'Hak Akses' : ''"
-            >
-                <svg class="w-5 h-5 shrink-0" :class="!isCollapsed && 'mr-3'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"></path></svg>
-                <span v-if="!isCollapsed">Hak Akses</span>
-            </Link>
+            <!-- DROPDOWN PENGATURAN -->
+            <div v-if="$can('hak-akses') || $can('file-manage')" class="space-y-1">
+                <button @click="toggleSettingsDropdown"
+                    class="flex items-center w-full py-3 text-sm font-bold transition-all duration-300 rounded-xl group"
+                    :class="{
+                        'bg-primary text-white shadow-lg shadow-primary/30': route().current('hak-akses.*') || route().current('file-manage.*'),
+                        'text-base-content/70 hover:bg-base-200 hover:text-base-content': !(route().current('hak-akses.*') || route().current('file-manage.*')),
+                        'translate-x-1': !isCollapsed && (route().current('hak-akses.*') || route().current('file-manage.*')),
+                        'hover:translate-x-1': !isCollapsed && !(route().current('hak-akses.*') || route().current('file-manage.*')),
+                        'justify-center px-0': isCollapsed,
+                        'justify-between px-4': !isCollapsed
+                    }"
+                    :title="isCollapsed ? 'Pengaturan' : ''"
+                >
+                    <div class="flex items-center" :class="isCollapsed && 'justify-center w-full'">
+                        <!-- Icon Adjustments untuk Settings -->
+                        <svg class="w-5 h-5 shrink-0" :class="!isCollapsed && 'mr-3'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                        <span v-if="!isCollapsed">Pengaturan</span>
+                    </div>
+                    <svg v-if="!isCollapsed" class="w-4 h-4 transition-transform duration-300 shrink-0"
+                        :class="{ 'rotate-180': isSettingsDropdownOpen }"
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+
+                <div v-show="isSettingsDropdownOpen && !isCollapsed" class="pl-2 mt-1 ml-4 space-y-2 border-l-2 border-base-300/50">
+                    <Link v-if="$can('hak-akses')" :href="route('hak-akses.index')"
+                        class="flex items-center px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-all duration-300 rounded-lg"
+                        :class="{
+                            'bg-primary text-white shadow-lg shadow-primary/30 translate-x-1': route().current('hak-akses.*'),
+                            'text-base-content/60 hover:bg-base-200 hover:text-base-content hover:translate-x-1': !route().current('hak-akses.*')
+                        }"
+                    >
+                        Hak Akses
+                    </Link>
+
+                    <Link v-if="$can('file-manage')" :href="route('file-manage.index')"
+                        class="flex items-center px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-all duration-300 rounded-lg"
+                        :class="{
+                            'bg-primary text-white shadow-lg shadow-primary/30 translate-x-1': route().current('file-manage.*'),
+                            'text-base-content/60 hover:bg-base-200 hover:text-base-content hover:translate-x-1': !route().current('file-manage.*')
+                        }"
+                    >
+                        Storage File
+                    </Link>
+                </div>
+            </div>
+
         </nav>
 
         <div class="p-4 border-t border-base-300 bg-base-100 shrink-0" :class="isCollapsed ? 'flex justify-center' : ''">

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\BahanBaku;
+use App\Models\Pembayaran; // Tambahan import model Pembayaran
 use App\Models\Pesan;
 use App\Models\PesananItemProduksi;
 use App\Services\PesanService;
@@ -72,17 +73,23 @@ class DashboardController extends Controller
         }
 
         $hariIni = Carbon::today();
-        $pesananHariIni = Pesan::with('pembayaran')->whereDate('tanggal_pesan', $hariIni)
-            ->whereNotIn('status_operasional', ['keranjang', 'batal'])->get();
 
-        $omzetHariIni = $pesananHariIni->sum(fn($p) => $p->pembayaran->where('status_pembayaran', 'berhasil')->sum('nominal_bayar'));
+        // Optimasi: Langsung hitung jumlah tanpa me-load data relasi
+        $pesananHariIniCount = Pesan::whereDate('tanggal_pesan', $hariIni)
+            ->whereNotIn('status_operasional', ['keranjang', 'batal'])->count();
+
+        // Mengambil omzet dari total pembayaran hari ini yang berhasil
+        // Catatan: Ubah 'updated_at' menjadi 'created_at' atau 'tanggal_bayar' jika skema database Anda berbeda
+        $omzetHariIni = Pembayaran::whereDate('updated_at', $hariIni)
+            ->where('status_pembayaran', 'berhasil')
+            ->sum('nominal_bayar');
 
         return [
             'role_view' => 'admin',
             'grafikBEP' => ['labels' => $labels, 'pemasukan' => $dataPemasukan, 'pengeluaran' => $dataPengeluaran],
             'filters' => ['start_month' => $startMonth, 'end_month' => $endMonth],
             'kpi' => [
-                'pesanan_hari_ini' => $pesananHariIni->count(),
+                'pesanan_hari_ini' => $pesananHariIniCount,
                 'omzet_hari_ini' => $omzetHariIni,
                 'antrean_produksi' => Pesan::where('status_operasional', 'menunggu_diproses')->has('pembayaran')->count(),
                 'siap_kirim' => Pesan::where('status_operasional', 'proses_pengantaran')->count(),
@@ -100,10 +107,15 @@ class DashboardController extends Controller
     private function getKasirData(Request $request)
     {
         $hariIni = Carbon::today();
-        $pesananHariIni = Pesan::with('pembayaran')->whereDate('tanggal_pesan', $hariIni)
-            ->whereNotIn('status_operasional', ['keranjang', 'batal'])->get();
 
-        $omzetHariIni = $pesananHariIni->sum(fn($p) => $p->pembayaran->where('status_pembayaran', 'berhasil')->sum('nominal_bayar'));
+        // Optimasi: Langsung hitung jumlah tanpa me-load data relasi
+        $pesananHariIniCount = Pesan::whereDate('tanggal_pesan', $hariIni)
+            ->whereNotIn('status_operasional', ['keranjang', 'batal'])->count();
+
+        // Mengambil omzet dari total pembayaran hari ini yang berhasil
+        $omzetHariIni = Pembayaran::whereDate('updated_at', $hariIni)
+            ->where('status_pembayaran', 'berhasil')
+            ->sum('nominal_bayar');
 
         $tagihanVendorPending = PesananItemProduksi::with(['vendor', 'pesananItem.pesan'])
             ->whereNotNull('id_vendor')
@@ -126,7 +138,7 @@ class DashboardController extends Controller
         return [
             'role_view' => 'kasir',
             'kpi' => [
-                'pesanan_hari_ini' => $pesananHariIni->count(),
+                'pesanan_hari_ini' => $pesananHariIniCount,
                 'omzet_hari_ini' => $omzetHariIni,
                 'tagihan_pending' => $tagihanPendingCount,
             ],

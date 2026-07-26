@@ -1,24 +1,54 @@
 <script setup>
-import { computed } from 'vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { computed, ref, watch } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { ArrowLeft, CheckCircle, History as HistoryIcon } from 'lucide-vue-next';
 import StafLayout from '@/Layouts/StafLayout.vue';
 import CustomTable from '@/Components/CustomTable.vue';
+import CustomInputSearch from '@/Components/Form/CustomInputSearch.vue';
 
 const props = defineProps({
     pesananHistori: Object,
     currentVendorId: String,
 });
 
-const formatDateTime = (dateStr) => {
-    if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleString('id-ID', {
-        day: '2-digit', month: 'short', year: 'numeric',
-        hour: '2-digit', minute: '2-digit'
-    });
+const formatTanggal = (tgl) => {
+    if (!tgl) return '-';
+
+    const date = new Date(tgl);
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+
+    return `${year}-${month}-${day} ${hours}:${minutes}`;
 };
 
-// UBAH: Jadikan computed supaya kolom 'Pembayaran' cuma muncul untuk Vendor
+const debounce = (fn, delay) => {
+    let timeoutId;
+    return (...args) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => fn(...args), delay);
+    };
+};
+
+const search = ref(props.filters?.search || '');
+
+watch(
+    search,
+    debounce((newSearch) => {
+        router.get('/produksi/histori', {
+            search: newSearch
+        }, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true
+        });
+    }, 300)
+);
+
 const headersProses = computed(() => {
     const baseHeaders = ['Pelaksana', 'Instruksi / Keterangan', 'Qty', 'Catatan Laporan', 'Status'];
     if (props.currentVendorId) {
@@ -49,7 +79,14 @@ const headersProses = computed(() => {
 
         <div class="px-4 py-8 mx-auto space-y-6 max-w-7xl sm:px-6 lg:px-8">
 
-            <!-- KONDISI KOSONG -->
+            <div class="flex items-center justify-start w-full mb-2">
+                <CustomInputSearch
+                    v-model="search"
+                    class="w-full sm:w-80"
+                    placeholder="Cari ID / Nama Customer / Nama Produk..."
+                />
+            </div>
+
             <div v-if="pesananHistori.data.length === 0" class="flex flex-col items-center justify-center py-24 text-center border rounded-lg border-base-200 bg-base-100">
                 <HistoryIcon class="w-12 h-12 mb-4 text-base-content/20" />
                 <h3 class="text-base font-semibold text-base-content">Belum Ada Histori</h3>
@@ -78,7 +115,7 @@ const headersProses = computed(() => {
                     </div>
                     <div class="text-sm text-right text-base-content/60">
                         Diperbarui pada:<br>
-                        <span class="font-semibold text-base-content">{{ formatDateTime(pesanan.updated_at) }}</span>
+                        <span class="font-semibold text-base-content">{{ formatTanggal(pesanan.updated_at) }}</span>
                     </div>
                 </div>
 

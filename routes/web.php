@@ -3,16 +3,13 @@ use App\Http\Controllers\Web\AkunController;
 use App\Http\Controllers\Web\BahanBakuController;
 use App\Http\Controllers\Web\BukuBesarController;
 use App\Http\Controllers\Web\DashboardController;
+use App\Http\Controllers\Web\FileManageController;
 use App\Http\Controllers\Web\GlobalSearchController;
 use App\Http\Controllers\Web\HakAksesController;
 use App\Http\Controllers\Web\ModulController;
 use App\Http\Controllers\Web\PembayaranController;
 use App\Http\Controllers\Web\PembelianBahanController;
 use App\Http\Controllers\Web\PesanController;
-use App\Http\Controllers\Web\ProduksiController;
-use App\Http\Controllers\Web\ProfilController;
-use App\Http\Controllers\Web\ShippingController;
-use App\Http\Controllers\Web\TagihanVendorController;
 use App\Http\Controllers\Web\Produk\DiskonCustomerController;
 use App\Http\Controllers\Web\Produk\FinishingController;
 use App\Http\Controllers\Web\Produk\HargaBertingkatController;
@@ -26,6 +23,10 @@ use App\Http\Controllers\Web\Produk\ProdukSkuController;
 use App\Http\Controllers\Web\Produk\ProdukVarianController;
 use App\Http\Controllers\Web\Produk\SkuFinishingController;
 use App\Http\Controllers\Web\Produk\VarianController;
+use App\Http\Controllers\Web\ProduksiController;
+use App\Http\Controllers\Web\ProfilController;
+use App\Http\Controllers\Web\ShippingController;
+use App\Http\Controllers\Web\TagihanVendorController;
 use App\Http\Controllers\Web\User\AlamatController;
 use App\Http\Controllers\Web\User\CustomerController;
 use App\Http\Controllers\Web\User\RoleCustomerController;
@@ -69,12 +70,6 @@ Route::middleware('auth')->group(function () {
         Route::post('produksi/{id_pesan}/alokasi', [ProduksiController::class, 'alokasiProduksi'])->middleware('akses:produksi,ubah')->name('produksi.alokasi');
         Route::post('produksi/{id_pesan}/kirim', [ProduksiController::class, 'kirimPesanan'])->middleware('akses:produksi,ubah')->name('produksi.kirim');
         Route::get('/buku-besar', [BukuBesarController::class, 'index'])->name('buku-besar.index');
-        Route::middleware('akses:customer')->group(function () {
-            Route::resource('modul', ModulController::class)->middleware('akses:hak-akses');
-            Route::get('/hak-akses', [ModulController::class, 'index'])->name('hak-akses.index');
-            Route::get('/hak-akses/{id_modul}/edit', [HakAksesController::class, 'edit'])->name('hak-akses.edit');
-            Route::post('/hak-akses/{id_modul}/sync', [HakAksesController::class, 'sync'])->middleware('akses:hak-akses,ubah')->name('hak-akses.sync');
-        });
         Route::resource('akun', AkunController::class)->middleware('akses:akun');
         Route::middleware('akses:customer')->group(function () {
             Route::resource('customer', CustomerController::class);
@@ -150,6 +145,14 @@ Route::middleware('auth')->group(function () {
         Route::resource('vendor', VendorController::class)->middleware('akses:vendor');
         Route::resource('tagihan-vendor', TagihanVendorController::class)->middleware('akses:tagihan-vendor');
         Route::get('/search', [GlobalSearchController::class, 'index'])->name('global.search');
+        Route::middleware('akses:hak-akses')->group(function () {
+            Route::resource('modul', ModulController::class)->middleware('akses:hak-akses');
+            Route::get('/hak-akses', [ModulController::class, 'index'])->name('hak-akses.index');
+            Route::get('/hak-akses/{id_modul}/edit', [HakAksesController::class, 'edit'])->name('hak-akses.edit');
+            Route::post('/hak-akses/{id_modul}/sync', [HakAksesController::class, 'sync'])->middleware('akses:hak-akses,ubah')->name('hak-akses.sync');
+        });
+        Route::get('/file-manage', [FileManageController::class, 'index'])->middleware('akses:hak-akses')->name('file-manage.index');
+        Route::post('/file-manage/hapus', [FileManageController::class, 'hapusMassal'])->middleware('akses:hak-akses,hapus')->name('file-manage.hapus');
     });
 
 });

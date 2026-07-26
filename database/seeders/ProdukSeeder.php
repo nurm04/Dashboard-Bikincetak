@@ -23,6 +23,7 @@ class ProdukSeeder extends Seeder
             ['id_kategori' => 'KAT-005', 'nama_kategori' => 'Office Stationery', 'created_at' => $now, 'updated_at' => $now],
             ['id_kategori' => 'KAT-006', 'nama_kategori' => 'Buku & Form Bisnis', 'created_at' => $now, 'updated_at' => $now],
             ['id_kategori' => 'KAT-007', 'nama_kategori' => 'Kemasan & Apparel', 'created_at' => $now, 'updated_at' => $now],
+            ['id_kategori' => 'KAT-008', 'nama_kategori' => 'Merchandise', 'created_at' => $now, 'updated_at' => $now],
         ]);
 
         DB::table('varian')->insert([
@@ -33,14 +34,22 @@ class ProdukSeeder extends Seeder
             ['id_varian' => 'VAR-005', 'nama_varian' => 'Ukuran Banner', 'created_at' => $now, 'updated_at' => $now],
             ['id_varian' => 'VAR-006', 'nama_varian' => 'Bahan Kalender', 'created_at' => $now, 'updated_at' => $now],
             ['id_varian' => 'VAR-007', 'nama_varian' => 'Jumlah Lembar Kalender', 'created_at' => $now, 'updated_at' => $now],
-            ['id_varian' => 'VAR-008', 'nama_varian' => 'Bahan Mug', 'created_at' => $now, 'updated_at' => $now],
             ['id_varian' => 'VAR-009', 'nama_varian' => 'Bahan Kartu Nama', 'created_at' => $now, 'updated_at' => $now],
             ['id_varian' => 'VAR-010', 'nama_varian' => 'Bahan Stempel', 'created_at' => $now, 'updated_at' => $now],
             ['id_varian' => 'VAR-011', 'nama_varian' => 'Bahan Nota NCR', 'created_at' => $now, 'updated_at' => $now],
             ['id_varian' => 'VAR-012', 'nama_varian' => 'Bahan Paper Bag', 'created_at' => $now, 'updated_at' => $now],
             ['id_varian' => 'VAR-013', 'nama_varian' => 'Bahan Tote Bag', 'created_at' => $now, 'updated_at' => $now],
             ['id_varian' => 'VAR-014', 'nama_varian' => 'Ukuran Tote Bag', 'created_at' => $now, 'updated_at' => $now],
-            ['id_varian' => 'VAR-000', 'nama_varian' => 'Sisi Cetak', 'created_at' => $now, 'updated_at' => $now],
+            ['id_varian' => 'VAR-015', 'nama_varian' => 'Bahan Gantungan Kunci', 'created_at' => $now, 'updated_at' => $now],
+            ['id_varian' => 'VAR-016', 'nama_varian' => 'Ukuran Gantungan Kunci', 'created_at' => $now, 'updated_at' => $now],
+            ['id_varian' => 'VAR-017', 'nama_varian' => 'Ukuran Pin Peniti', 'created_at' => $now, 'updated_at' => $now],
+            ['id_varian' => 'VAR-018', 'nama_varian' => 'Bahan Mug', 'created_at' => $now, 'updated_at' => $now],
+            ['id_varian' => 'VAR-019', 'nama_varian' => 'Bahan Kipas Promosi', 'created_at' => $now, 'updated_at' => $now],
+            ['id_varian' => 'VAR-020', 'nama_varian' => 'Ukuran Jam Dinding', 'created_at' => $now, 'updated_at' => $now],
+            ['id_varian' => 'VAR-021', 'nama_varian' => 'Bahan Puzzle', 'created_at' => $now, 'updated_at' => $now],
+            ['id_varian' => 'VAR-022', 'nama_varian' => 'Ukuran Puzzle', 'created_at' => $now, 'updated_at' => $now],
+            ['id_varian' => 'VAR-023', 'nama_varian' => 'Ukuran Mini Stand', 'created_at' => $now, 'updated_at' => $now],
+            ['id_varian' => 'VAR-000', 'nama_varian' => 'Bahan Customer/BikinCetak', 'created_at' => $now, 'updated_at' => $now],
         ]);
 
         DB::table('pilihan_varian')->insert([
@@ -98,18 +107,16 @@ class ProdukSeeder extends Seeder
             ['id_pilihan' => 'VAR-007-001', 'id_varian' => 'VAR-007', 'nama_pilihan' => '8 Lembar', 'created_at' => $now, 'updated_at' => $now],
             ['id_pilihan' => 'VAR-007-002', 'id_varian' => 'VAR-007', 'nama_pilihan' => '13 Lembar', 'created_at' => $now, 'updated_at' => $now],
 
-            ['id_pilihan' => 'VAR-008-001', 'id_varian' => 'VAR-008', 'nama_pilihan' => 'Mug Putih', 'created_at' => $now, 'updated_at' => $now],
-
             ['id_pilihan' => 'VAR-009-001', 'id_varian' => 'VAR-009', 'nama_pilihan' => 'AC260', 'created_at' => $now, 'updated_at' => $now],
             ['id_pilihan' => 'VAR-009-002', 'id_varian' => 'VAR-009', 'nama_pilihan' => 'Jasmin', 'created_at' => $now, 'updated_at' => $now],
 
-            ['id_pilihan' => 'VAR-010-001', 'id_varian' => 'VAR-010', 'nama_pilihan' => 'Lingkaran Diameter 28mm', 'created_at' => $now, 'updated_at' => $now],
-            ['id_pilihan' => 'VAR-010-002', 'id_varian' => 'VAR-010', 'nama_pilihan' => 'Lingkaran Diameter 35mm', 'created_at' => $now, 'updated_at' => $now],
-            ['id_pilihan' => 'VAR-010-003', 'id_varian' => 'VAR-010', 'nama_pilihan' => 'Lingkaran Diameter 45mm', 'created_at' => $now, 'updated_at' => $now],
-            ['id_pilihan' => 'VAR-010-004', 'id_varian' => 'VAR-010', 'nama_pilihan' => 'Oval Diameter 45mm', 'created_at' => $now, 'updated_at' => $now],
-            ['id_pilihan' => 'VAR-010-005', 'id_varian' => 'VAR-010', 'nama_pilihan' => 'Oval Diameter 51mm', 'created_at' => $now, 'updated_at' => $now],
-            ['id_pilihan' => 'VAR-010-006', 'id_varian' => 'VAR-010', 'nama_pilihan' => 'Persegi 27x55mm', 'created_at' => $now, 'updated_at' => $now],
-            ['id_pilihan' => 'VAR-010-007', 'id_varian' => 'VAR-010', 'nama_pilihan' => 'Persegi 32x55mm', 'created_at' => $now, 'updated_at' => $now],
+            ['id_pilihan' => 'VAR-010-001', 'id_varian' => 'VAR-010', 'nama_pilihan' => 'Lingkaran Diameter 28 mm', 'created_at' => $now, 'updated_at' => $now],
+            ['id_pilihan' => 'VAR-010-002', 'id_varian' => 'VAR-010', 'nama_pilihan' => 'Lingkaran Diameter 35 mm', 'created_at' => $now, 'updated_at' => $now],
+            ['id_pilihan' => 'VAR-010-003', 'id_varian' => 'VAR-010', 'nama_pilihan' => 'Lingkaran Diameter 45 mm', 'created_at' => $now, 'updated_at' => $now],
+            ['id_pilihan' => 'VAR-010-004', 'id_varian' => 'VAR-010', 'nama_pilihan' => 'Oval Diameter 45 mm', 'created_at' => $now, 'updated_at' => $now],
+            ['id_pilihan' => 'VAR-010-005', 'id_varian' => 'VAR-010', 'nama_pilihan' => 'Oval Diameter 51 mm', 'created_at' => $now, 'updated_at' => $now],
+            ['id_pilihan' => 'VAR-010-006', 'id_varian' => 'VAR-010', 'nama_pilihan' => 'Persegi 27x55 mm', 'created_at' => $now, 'updated_at' => $now],
+            ['id_pilihan' => 'VAR-010-007', 'id_varian' => 'VAR-010', 'nama_pilihan' => 'Persegi 32x55 mm', 'created_at' => $now, 'updated_at' => $now],
 
             ['id_pilihan' => 'VAR-011-001', 'id_varian' => 'VAR-011', 'nama_pilihan' => 'NCR A4', 'created_at' => $now, 'updated_at' => $now],
             ['id_pilihan' => 'VAR-011-002', 'id_varian' => 'VAR-011', 'nama_pilihan' => 'NCR A5', 'created_at' => $now, 'updated_at' => $now],
@@ -127,8 +134,39 @@ class ProdukSeeder extends Seeder
             ['id_pilihan' => 'VAR-014-002', 'id_varian' => 'VAR-014', 'nama_pilihan' => 'A5', 'created_at' => $now, 'updated_at' => $now],
             ['id_pilihan' => 'VAR-014-003', 'id_varian' => 'VAR-014', 'nama_pilihan' => 'A6', 'created_at' => $now, 'updated_at' => $now],
 
-            ['id_pilihan' => 'VAR-000-001', 'id_varian' => 'VAR-000', 'nama_pilihan' => 'Depan Belakang', 'created_at' => $now, 'updated_at' => $now],
-            ['id_pilihan' => 'VAR-000-002', 'id_varian' => 'VAR-000', 'nama_pilihan' => 'Depan Saja', 'created_at' => $now, 'updated_at' => $now],
+            ['id_pilihan' => 'VAR-015-001', 'id_varian' => 'VAR-015', 'nama_pilihan' => 'Akrilik', 'created_at' => $now, 'updated_at' => $now],
+            ['id_pilihan' => 'VAR-015-002', 'id_varian' => 'VAR-015', 'nama_pilihan' => 'Akrilik Grafir', 'created_at' => $now, 'updated_at' => $now],
+            ['id_pilihan' => 'VAR-015-003', 'id_varian' => 'VAR-015', 'nama_pilihan' => 'Pin', 'created_at' => $now, 'updated_at' => $now],
+
+            ['id_pilihan' => 'VAR-016-001', 'id_varian' => 'VAR-016', 'nama_pilihan' => '20 cm', 'created_at' => $now, 'updated_at' => $now],
+            ['id_pilihan' => 'VAR-016-002', 'id_varian' => 'VAR-016', 'nama_pilihan' => '30 cm', 'created_at' => $now, 'updated_at' => $now],
+            ['id_pilihan' => 'VAR-016-003', 'id_varian' => 'VAR-016', 'nama_pilihan' => '40 cm', 'created_at' => $now, 'updated_at' => $now],
+            ['id_pilihan' => 'VAR-016-004', 'id_varian' => 'VAR-016', 'nama_pilihan' => '50 cm', 'created_at' => $now, 'updated_at' => $now],
+            ['id_pilihan' => 'VAR-016-005', 'id_varian' => 'VAR-016', 'nama_pilihan' => '58 cm', 'created_at' => $now, 'updated_at' => $now],
+            ['id_pilihan' => 'VAR-016-006', 'id_varian' => 'VAR-016', 'nama_pilihan' => '70 cm', 'created_at' => $now, 'updated_at' => $now],
+
+            ['id_pilihan' => 'VAR-017-001', 'id_varian' => 'VAR-017', 'nama_pilihan' => '44 mm', 'created_at' => $now, 'updated_at' => $now],
+            ['id_pilihan' => 'VAR-017-002', 'id_varian' => 'VAR-017', 'nama_pilihan' => '58 mm', 'created_at' => $now, 'updated_at' => $now],
+
+            ['id_pilihan' => 'VAR-018-001', 'id_varian' => 'VAR-008', 'nama_pilihan' => 'Mug Putih', 'created_at' => $now, 'updated_at' => $now],
+
+            ['id_pilihan' => 'VAR-019-001', 'id_varian' => 'VAR-019', 'nama_pilihan' => 'Kertas Custom', 'created_at' => $now, 'updated_at' => $now],
+            ['id_pilihan' => 'VAR-019-002', 'id_varian' => 'VAR-019', 'nama_pilihan' => 'Plastik Custom', 'created_at' => $now, 'updated_at' => $now],
+
+            ['id_pilihan' => 'VAR-020-001', 'id_varian' => 'VAR-020', 'nama_pilihan' => '28 cm', 'created_at' => $now, 'updated_at' => $now],
+            ['id_pilihan' => 'VAR-020-002', 'id_varian' => 'VAR-020', 'nama_pilihan' => '32 cm', 'created_at' => $now, 'updated_at' => $now],
+
+            ['id_pilihan' => 'VAR-021-001', 'id_varian' => 'VAR-021', 'nama_pilihan' => 'Akrilik', 'created_at' => $now, 'updated_at' => $now],
+
+            ['id_pilihan' => 'VAR-022-001', 'id_varian' => 'VAR-022', 'nama_pilihan' => 'A4', 'created_at' => $now, 'updated_at' => $now],
+            ['id_pilihan' => 'VAR-022-002', 'id_varian' => 'VAR-022', 'nama_pilihan' => 'A5', 'created_at' => $now, 'updated_at' => $now],
+
+            ['id_pilihan' => 'VAR-023-001', 'id_varian' => 'VAR-023', 'nama_pilihan' => '50 cm', 'created_at' => $now, 'updated_at' => $now],
+            ['id_pilihan' => 'VAR-023-002', 'id_varian' => 'VAR-023', 'nama_pilihan' => '75 cm', 'created_at' => $now, 'updated_at' => $now],
+            ['id_pilihan' => 'VAR-023-003', 'id_varian' => 'VAR-023', 'nama_pilihan' => '100 cm', 'created_at' => $now, 'updated_at' => $now],
+
+            ['id_pilihan' => 'VAR-000-002', 'id_varian' => 'VAR-000', 'nama_pilihan' => 'Bahan Pelanggan', 'created_at' => $now, 'updated_at' => $now],
+            ['id_pilihan' => 'VAR-000-001', 'id_varian' => 'VAR-000', 'nama_pilihan' => 'Bahan dari Bikincetak', 'created_at' => $now, 'updated_at' => $now],
         ]);
 
         DB::table('produk')->insert([
@@ -145,7 +183,6 @@ class ProdukSeeder extends Seeder
             ['id_produk' => 'PRD-3002', 'id_kategori' => 'KAT-003', 'nama_produk' => 'Roll Banner', 'gambar' => null, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
 
             ['id_produk' => 'PRD-4001', 'id_kategori' => 'KAT-004', 'nama_produk' => 'Kalender Meja', 'gambar' => null, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
-            ['id_produk' => 'PRD-4002', 'id_kategori' => 'KAT-004', 'nama_produk' => 'Mug', 'gambar' => null, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
 
             ['id_produk' => 'PRD-5001', 'id_kategori' => 'KAT-005', 'nama_produk' => 'Kartu nama', 'gambar' => null, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
             ['id_produk' => 'PRD-5002', 'id_kategori' => 'KAT-005', 'nama_produk' => 'Stempel', 'gambar' => null, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
@@ -154,6 +191,17 @@ class ProdukSeeder extends Seeder
 
             ['id_produk' => 'PRD-7001', 'id_kategori' => 'KAT-007', 'nama_produk' => 'Paper Bag', 'gambar' => null, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
             ['id_produk' => 'PRD-7002', 'id_kategori' => 'KAT-007', 'nama_produk' => 'Tote Bag', 'gambar' => null, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
+
+            ['id_produk' => 'PRD-8001', 'id_kategori' => 'KAT-008', 'nama_produk' => 'Gantungan Kunci', 'gambar' => null, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
+            ['id_produk' => 'PRD-8002', 'id_kategori' => 'KAT-008', 'nama_produk' => 'Pin Peniti', 'gambar' => null, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
+            ['id_produk' => 'PRD-8003', 'id_kategori' => 'KAT-008', 'nama_produk' => 'Mug', 'gambar' => null, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
+            ['id_produk' => 'PRD-8004', 'id_kategori' => 'KAT-008', 'nama_produk' => 'Kipas Promosi', 'gambar' => null, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
+            ['id_produk' => 'PRD-8005', 'id_kategori' => 'KAT-008', 'nama_produk' => 'Jam Dinding', 'gambar' => null, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
+            ['id_produk' => 'PRD-8006', 'id_kategori' => 'KAT-008', 'nama_produk' => 'Print EToll Custom', 'gambar' => null, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
+            ['id_produk' => 'PRD-8007', 'id_kategori' => 'KAT-008', 'nama_produk' => 'Korek Api Custom', 'gambar' => null, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
+            ['id_produk' => 'PRD-8008', 'id_kategori' => 'KAT-008', 'nama_produk' => 'Puzzle Custom', 'gambar' => null, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
+            ['id_produk' => 'PRD-8009', 'id_kategori' => 'KAT-008', 'nama_produk' => 'Mini Stand Akrilik', 'gambar' => null, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
+            ['id_produk' => 'PRD-8010', 'id_kategori' => 'KAT-008', 'nama_produk' => 'Casing Handphone Custom', 'gambar' => null, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
         ]);
 
 
@@ -176,7 +224,6 @@ class ProdukSeeder extends Seeder
 
             ['id_produk' => 'PRD-4001', 'id_varian' => 'VAR-006', 'created_at' => $now, 'updated_at' => $now],
             ['id_produk' => 'PRD-4001', 'id_varian' => 'VAR-007', 'created_at' => $now, 'updated_at' => $now],
-            ['id_produk' => 'PRD-4002', 'id_varian' => 'VAR-008', 'created_at' => $now, 'updated_at' => $now],
 
             ['id_produk' => 'PRD-5001', 'id_varian' => 'VAR-009', 'created_at' => $now, 'updated_at' => $now],
             ['id_produk' => 'PRD-5002', 'id_varian' => 'VAR-010', 'created_at' => $now, 'updated_at' => $now],
@@ -186,6 +233,19 @@ class ProdukSeeder extends Seeder
             ['id_produk' => 'PRD-7001', 'id_varian' => 'VAR-012', 'created_at' => $now, 'updated_at' => $now],
             ['id_produk' => 'PRD-7002', 'id_varian' => 'VAR-013', 'created_at' => $now, 'updated_at' => $now],
             ['id_produk' => 'PRD-7002', 'id_varian' => 'VAR-014', 'created_at' => $now, 'updated_at' => $now],
+
+            ['id_produk' => 'PRD-8001', 'id_varian' => 'VAR-015', 'created_at' => $now, 'updated_at' => $now],
+            ['id_produk' => 'PRD-8001', 'id_varian' => 'VAR-016', 'created_at' => $now, 'updated_at' => $now],
+            ['id_produk' => 'PRD-8002', 'id_varian' => 'VAR-017', 'created_at' => $now, 'updated_at' => $now],
+            ['id_produk' => 'PRD-8003', 'id_varian' => 'VAR-018', 'created_at' => $now, 'updated_at' => $now],
+            ['id_produk' => 'PRD-8004', 'id_varian' => 'VAR-019', 'created_at' => $now, 'updated_at' => $now],
+            ['id_produk' => 'PRD-8005', 'id_varian' => 'VAR-020', 'created_at' => $now, 'updated_at' => $now],
+            ['id_produk' => 'PRD-8006', 'id_varian' => 'VAR-000', 'created_at' => $now, 'updated_at' => $now],
+            ['id_produk' => 'PRD-8007', 'id_varian' => 'VAR-000', 'created_at' => $now, 'updated_at' => $now],
+            ['id_produk' => 'PRD-8008', 'id_varian' => 'VAR-021', 'created_at' => $now, 'updated_at' => $now],
+            ['id_produk' => 'PRD-8008', 'id_varian' => 'VAR-022', 'created_at' => $now, 'updated_at' => $now],
+            ['id_produk' => 'PRD-8009', 'id_varian' => 'VAR-023', 'created_at' => $now, 'updated_at' => $now],
+            ['id_produk' => 'PRD-8010', 'id_varian' => 'VAR-000', 'created_at' => $now, 'updated_at' => $now],
         ]);
     }
 }

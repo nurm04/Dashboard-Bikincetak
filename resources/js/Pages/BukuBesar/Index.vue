@@ -29,8 +29,17 @@ const formatRupiah = (angka) => {
 
 const formatTanggal = (tgl) => {
     if (!tgl) return '-';
-    const d = new Date(tgl);
-    return d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-');
+
+    const date = new Date(tgl);
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+
+    return `${year}-${month}-${day} ${hours}:${minutes}`;
 };
 
 const totalDebit = computed(() => props.bukuBesar.reduce((sum, item) => sum + Number(item.debit), 0));

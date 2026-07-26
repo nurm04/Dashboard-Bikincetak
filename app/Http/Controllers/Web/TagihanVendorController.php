@@ -14,11 +14,31 @@ class TagihanVendorController extends Controller
 {
     public function index(Request $request)
     {
-        $pendingRaw = PesananItemProduksi::with(['vendor', 'pesananItem.pesan'])
+        $search = $request->query('search');
+
+        // ==========================================
+        // 1. QUERY PENDING (Menunggu Pembayaran)
+        // ==========================================
+        $pendingQuery = PesananItemProduksi::with(['vendor', 'pesananItem.pesan'])
             ->whereNotNull('id_vendor')
             ->whereNull('id_tagihan_vendor')
-            ->orderBy('created_at', 'asc')
-            ->get();
+            ->orderBy('created_at', 'asc');
+
+        if (!empty($search)) {
+            $pendingQuery->where(function($q) use ($search) {
+                $q->whereHas('vendor', function($qVendor) use ($search) {
+                    $qVendor->where('nama_vendor', 'like', "%{$search}%")
+                            ->orWhere('nama_bank', 'like', "%{$search}%")
+                            ->orWhere('no_rekening', 'like', "%{$search}%")
+                            ->orWhere('atas_nama', 'like', "%{$search}%");
+                })
+                ->orWhereHas('pesananItem.pesan', function($qPesan) use ($search) {
+                    $qPesan->where('id_pesan', 'like', "%{$search}%");
+                });
+            });
+        }
+
+        $pendingRaw = $pendingQuery->get();
 
         $pendingTagihan = $pendingRaw->groupBy('id_vendor')->map(function ($items, $id_vendor) {
             $vendor = $items->first()->vendor;
@@ -40,17 +60,38 @@ class TagihanVendorController extends Controller
             ];
         })->values();
 
-        $riwayatTagihan = TagihanVendor::with([
+        // ==========================================
+        // 2. QUERY RIWAYAT (Sudah Lunas)
+        // ==========================================
+        $riwayatQuery = TagihanVendor::with([
             'vendor',
             'pesananItemProduksi.pesananItem.pesan'
         ])
             ->whereNotNull('id_vendor')
-            ->orderBy('tanggal_bayar', 'desc')
-            ->paginate(10);
+            ->orderBy('tanggal_bayar', 'desc');
+
+        if (!empty($search)) {
+            $riwayatQuery->where(function($q) use ($search) {
+                $q->where('kode_tagihan', 'like', "%{$search}%")
+                  ->orWhere('nama_bank', 'like', "%{$search}%")
+                  ->orWhere('no_rekening', 'like', "%{$search}%")
+                  ->orWhere('atas_nama', 'like', "%{$search}%")
+                  ->orWhereHas('vendor', function($qVendor) use ($search) {
+                      $qVendor->where('nama_vendor', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('pesananItemProduksi.pesananItem.pesan', function($qPesan) use ($search) {
+                      $qPesan->where('id_pesan', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        // Tambahkan withQueryString agar parameter search tidak hilang pas pindah page
+        $riwayatTagihan = $riwayatQuery->paginate(10)->withQueryString();
 
         return Inertia::render('TagihanVendor/Index', [
             'pendingTagihan' => $pendingTagihan,
-            'riwayatTagihan' => $riwayatTagihan
+            'riwayatTagihan' => $riwayatTagihan,
+            'filters' => $request->only(['search']) // Kirim query ke Vue
         ]);
     }
 

@@ -1,50 +1,56 @@
 <script setup>
-import { ref } from 'vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { ref, watch } from 'vue'; // Tambahkan watch
+import { Head, useForm, router } from '@inertiajs/vue3'; // Tambahkan router
 import { alertStore } from '@/Utils/alertStore';
 import StafLayout from '@/Layouts/StafLayout.vue';
 import CustomButton from '@/Components/Form/CustomButton.vue';
 import CustomTable from '@/Components/CustomTable.vue';
 import CustomInputFile from '@/Components/Form/CustomInputFile.vue';
+import CustomInputSearch from '@/Components/Form/CustomInputSearch.vue'; // Import komponen Search
 
 const props = defineProps({
     pendingTagihan: Array,
     riwayatTagihan: Object,
+    filters: Object, // Terima props filters
 });
 
+// LOGIKA PENCARIAN (SEARCH)
+const search = ref(props.filters?.search || '');
 const activeTab = ref('pending');
+
+const debounce = (fn, delay) => {
+    let timeoutId;
+    return (...args) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => fn(...args), delay);
+    };
+};
+
+watch(search, debounce((newSearch) => {
+    // Sesuaikan URL '/tagihan-vendor' jika URL route kamu berbeda
+    router.get('/tagihan-vendor', { search: newSearch }, {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true
+    });
+}, 300));
+
 
 const headersPending = ['Vendor', 'Info Bank', 'Jml Pekerjaan', 'Total Hutang', 'Aksi'];
 const headersRiwayat = ['Tanggal Bayar', 'Vendor', 'Total Tagihan', 'Status', 'Aksi'];
 
-// Form State
+// ... (Semua Form State, Confirm Modal, Detail Modal, dan DoBayar TETAP SAMA seperti sebelumnya) ...
 const isConfirmModalOpen = ref(false);
 const form = useForm({
     id_vendor: null,
-    bukti_bayar: {
-        tipe_file: 'upload',
-        file: null,
-        link_file: ''
-    }
+    bukti_bayar: { tipe_file: 'upload', file: null, link_file: '' }
 });
-
-// State untuk nampilin data bank di Modal Konfirmasi
-const confirmData = ref({
-    vendor: '',
-    bank: '',
-    total: 0
-});
-
-// Modal Detail State
+const confirmData = ref({ vendor: '', bank: '', total: 0 });
 const isDetailModalOpen = ref(false);
 const selectedVendorDetail = ref(null);
 
 const formatRupiah = (angka) => {
-    return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        minimumFractionDigits: 0,
-    }).format(angka || 0);
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka || 0);
 };
 
 const openDetailModal = (tipe, data) => {
@@ -53,7 +59,7 @@ const openDetailModal = (tipe, data) => {
             is_lunas: false,
             id_vendor: data.id_vendor,
             nama_vendor: data.nama_vendor,
-            info_bank: data.info_bank, // Tarik data info_bank
+            info_bank: data.info_bank,
             total: data.total_hutang,
             items: data.items
         };
@@ -62,7 +68,6 @@ const openDetailModal = (tipe, data) => {
             is_lunas: true,
             id_vendor: data.id_vendor,
             nama_vendor: data.vendor?.nama_vendor || 'Vendor Tidak Diketahui',
-            // Ambil dari snapshot data tagihan_vendor
             info_bank: data.nama_bank ? `${data.nama_bank} - ${data.no_rekening} a.n ${data.atas_nama}` : '-',
             total: data.total_tagihan,
             items: data.pesanan_item_produksi?.map(i => ({
@@ -79,22 +84,12 @@ const openDetailModal = (tipe, data) => {
 
 const closeDetailModal = () => {
     isDetailModalOpen.value = false;
-    setTimeout(() => {
-        selectedVendorDetail.value = null;
-    }, 300);
+    setTimeout(() => { selectedVendorDetail.value = null; }, 300);
 };
 
-// Update: Triger Modal Konfirmasi sekarang menerima Object data lengkap
 const openConfirmModal = (item) => {
     form.id_vendor = item.id_vendor;
-
-    // Set data buat ditampilin ke kasir sebelum bayar
-    confirmData.value = {
-        vendor: item.nama_vendor,
-        bank: item.info_bank,
-        total: item.total_hutang || item.total // Fleksibel dari obj table atau obj detail
-    };
-
+    confirmData.value = { vendor: item.nama_vendor, bank: item.info_bank, total: item.total_hutang || item.total };
     isConfirmModalOpen.value = true;
 };
 
@@ -115,9 +110,7 @@ const doBayar = () => {
             activeTab.value = 'riwayat';
         },
         onError: () => {
-            if (!form.errors['bukti_bayar.file']) {
-                alertStore.show('Gagal memproses pembayaran!', 'error');
-            }
+            if (!form.errors['bukti_bayar.file']) { alertStore.show('Gagal memproses pembayaran!', 'error'); }
         }
     });
 };
@@ -249,38 +242,50 @@ const doBayar = () => {
         <div class="min-h-screen px-4 py-3 sm:px-6 lg:px-8">
             <div class="mx-auto max-w-7xl">
 
-                <div class="flex gap-4 mb-8 border-b border-base-300">
-                    <button
-                        @click="activeTab = 'pending'"
-                        :class="[
-                            'pb-3 text-sm font-bold tracking-wide transition-colors border-b-2',
-                            activeTab === 'pending'
-                                ? 'text-primary border-primary'
-                                : 'text-base-content/50 border-transparent hover:text-base-content/80'
-                        ]"
-                    >
-                        Menunggu Pembayaran
-                        <span v-if="pendingTagihan.length > 0" class="px-2 py-0.5 ml-2 text-xs text-white bg-error rounded-full">
-                            {{ pendingTagihan.length }}
-                        </span>
-                    </button>
-                    <button
-                        @click="activeTab = 'riwayat'"
-                        :class="[
-                            'pb-3 text-sm font-bold tracking-wide transition-colors border-b-2',
-                            activeTab === 'riwayat'
-                                ? 'text-primary border-primary'
-                                : 'text-base-content/50 border-transparent hover:text-base-content/80'
-                        ]"
-                    >
-                        Riwayat Lunas
-                    </button>
+                <!-- BAGIAN TABS & SEARCH -->
+                <div class="flex flex-col sm:flex-row gap-4 mb-8 border-b border-base-300 justify-between sm:items-end pb-px">
+                    <div class="flex gap-4">
+                        <button
+                            @click="activeTab = 'pending'"
+                            :class="[
+                                'pb-3 text-sm font-bold tracking-wide transition-colors border-b-2',
+                                activeTab === 'pending'
+                                    ? 'text-primary border-primary'
+                                    : 'text-base-content/50 border-transparent hover:text-base-content/80'
+                            ]"
+                        >
+                            Menunggu Pembayaran
+                            <span v-if="pendingTagihan.length > 0" class="px-2 py-0.5 ml-2 text-xs text-white bg-error rounded-full">
+                                {{ pendingTagihan.length }}
+                            </span>
+                        </button>
+                        <button
+                            @click="activeTab = 'riwayat'"
+                            :class="[
+                                'pb-3 text-sm font-bold tracking-wide transition-colors border-b-2',
+                                activeTab === 'riwayat'
+                                    ? 'text-primary border-primary'
+                                    : 'text-base-content/50 border-transparent hover:text-base-content/80'
+                            ]"
+                        >
+                            Riwayat Lunas
+                        </button>
+                    </div>
+
+                    <!-- INPUT SEARCH BARU -->
+                    <div class="w-full sm:w-72 pb-2">
+                        <CustomInputSearch
+                            v-model="search"
+                            placeholder="Cari Vendor / Info Bank / ID Pesanan..."
+                        />
+                    </div>
                 </div>
 
                 <!-- TAB 1: PENDING -->
                 <div v-if="activeTab === 'pending'">
                     <CustomTable :headers="headersPending">
                         <tr v-for="item in pendingTagihan" :key="item.id_vendor" class="transition-colors hover:bg-base-200/50">
+                            <!-- Data Tabel Pending Sama -->
                             <td class="px-6 py-4 font-bold text-base-content">{{ item.nama_vendor }}</td>
                             <td class="px-6 py-4 text-xs font-medium text-base-content/70">{{ item.info_bank }}</td>
                             <td class="px-6 py-4 font-bold text-center text-base-content">
@@ -289,21 +294,18 @@ const doBayar = () => {
                             <td class="px-6 py-4 font-mono font-bold text-error">{{ formatRupiah(item.total_hutang) }}</td>
                             <td class="px-6 py-4">
                                 <div class="flex justify-center space-x-2">
-                                    <CustomButton @click="openDetailModal('pending', item)" variant="info" size="sm">
-                                        Detail
-                                    </CustomButton>
-                                    <!-- Parameter diubah untuk melempar seluruh object item -->
-                                    <CustomButton v-if="$can('tagihan-vendor', 'tambah')" @click="openConfirmModal(item)" variant="primary" size="sm">
-                                        Bayar Semua
-                                    </CustomButton>
+                                    <CustomButton @click="openDetailModal('pending', item)" variant="info" size="sm">Detail</CustomButton>
+                                    <CustomButton v-if="$can('tagihan-vendor', 'tambah')" @click="openConfirmModal(item)" variant="primary" size="sm">Bayar Semua</CustomButton>
                                 </div>
                             </td>
                         </tr>
+
+                        <!-- Pesan Jika Kosong/Tidak Ditemukan -->
                         <tr v-if="pendingTagihan.length === 0">
                             <td colspan="5" class="px-6 py-20 text-center">
                                 <div class="flex flex-col items-center opacity-30">
                                     <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                    <p class="text-sm font-bold tracking-widest uppercase">Tidak ada tagihan pending</p>
+                                    <p class="text-sm font-bold tracking-widest uppercase">{{ search ? 'Pencarian Tidak Ditemukan' : 'Tidak ada tagihan pending' }}</p>
                                 </div>
                             </td>
                         </tr>
@@ -314,20 +316,15 @@ const doBayar = () => {
                 <div v-if="activeTab === 'riwayat'">
                     <CustomTable :headers="headersRiwayat">
                         <tr v-for="tagihan in riwayatTagihan.data" :key="tagihan.id" class="transition-colors hover:bg-base-200/50">
+                            <!-- Data Tabel Riwayat Sama -->
                             <td class="px-6 py-4 text-sm text-base-content/80">
                                 {{ new Date(tagihan.tanggal_bayar).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) }}
                             </td>
-                            <td class="px-6 py-4 font-bold text-base-content">
-                                {{ tagihan.vendor?.nama_vendor }}
-                            </td>
-                            <td class="px-6 py-4 font-mono font-bold text-success">
-                                {{ formatRupiah(tagihan.total_tagihan) }}
-                            </td>
+                            <td class="px-6 py-4 font-bold text-base-content">{{ tagihan.vendor?.nama_vendor }}</td>
+                            <td class="px-6 py-4 font-mono font-bold text-success">{{ formatRupiah(tagihan.total_tagihan) }}</td>
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-2">
-                                    <span class="px-2 py-1 text-[10px] font-black tracking-wider uppercase border rounded-md text-success border-success/30 bg-success/10">
-                                        Lunas
-                                    </span>
+                                    <span class="px-2 py-1 text-[10px] font-black tracking-wider uppercase border rounded-md text-success border-success/30 bg-success/10">Lunas</span>
                                     <a v-if="tagihan.bukti_bayar" :href="`/storage/${tagihan.bukti_bayar}`" target="_blank" class="text-primary hover:text-primary-focus" title="Lihat Bukti">
                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" /></svg>
                                     </a>
@@ -335,21 +332,36 @@ const doBayar = () => {
                             </td>
                             <td class="px-6 py-4">
                                 <div class="flex justify-center space-x-2">
-                                    <CustomButton @click="openDetailModal('riwayat', tagihan)" variant="info" size="sm">
-                                        Detail
-                                    </CustomButton>
+                                    <CustomButton @click="openDetailModal('riwayat', tagihan)" variant="info" size="sm">Detail</CustomButton>
                                 </div>
                             </td>
                         </tr>
+
+                        <!-- Pesan Jika Kosong/Tidak Ditemukan -->
                         <tr v-if="riwayatTagihan.data.length === 0">
                             <td colspan="5" class="px-6 py-20 text-center">
                                 <div class="flex flex-col items-center opacity-30">
                                     <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                                    <p class="text-sm font-bold tracking-widest uppercase">Belum ada riwayat pembayaran</p>
+                                    <p class="text-sm font-bold tracking-widest uppercase">{{ search ? 'Pencarian Tidak Ditemukan' : 'Belum ada riwayat pembayaran' }}</p>
                                 </div>
                             </td>
                         </tr>
                     </CustomTable>
+
+                    <!-- PAGINATION BARU UNTUK TAB RIWAYAT -->
+                    <div class="flex justify-center pb-8 mt-8" v-if="riwayatTagihan.links && riwayatTagihan.links.length > 3">
+                        <div class="join">
+                            <Link v-for="(link, i) in riwayatTagihan.links" :key="i"
+                                :href="link.url || '#'"
+                                class="font-medium join-item btn btn-sm"
+                                :class="[
+                                    link.active ? 'btn-active btn-neutral' : 'bg-base-100',
+                                    !link.url ? 'btn-disabled text-base-content/30' : ''
+                                ]"
+                                v-html="link.label"
+                            ></Link>
+                        </div>
+                    </div>
                 </div>
 
             </div>

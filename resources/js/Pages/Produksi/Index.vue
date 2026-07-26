@@ -19,12 +19,19 @@ const props = defineProps({
     currentVendorId: String,
 });
 
-const formatDateTime = (dateStr) => {
-    if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleString('id-ID', {
-        day: '2-digit', month: 'short', year: 'numeric',
-        hour: '2-digit', minute: '2-digit'
-    });
+const formatTanggal = (tgl) => {
+    if (!tgl) return '-';
+
+    const date = new Date(tgl);
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+
+    return `${year}-${month}-${day} ${hours}:${minutes}`;
 };
 
 const isDeadlinePassed = (dateStr) => {
@@ -312,7 +319,7 @@ const executeKirimPesanan = () => {
                         <Clock class="w-4 h-4 text-base-content/40" />
                         <span class="text-base-content/60">Deadline:</span>
                         <span class="font-semibold" :class="isDeadlinePassed(pesanan.waktu_deadline) ? 'text-red-600' : 'text-base-content'">
-                            {{ formatDateTime(pesanan.waktu_deadline) }}
+                            {{ formatTanggal(pesanan.waktu_deadline) }}
                         </span>
                     </div>
                 </div>
