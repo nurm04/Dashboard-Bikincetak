@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Models\BahanBaku;
 use App\Models\Customer;
 use App\Models\Komposisi;
 use App\Models\Pesan;
@@ -336,6 +337,113 @@ class PesanController extends Controller
             DB::rollBack();
             Log::error('Gagal membuat pesanan: ' . $e->getMessage());
             return back()->with('error', 'Gagal membuat pesanan: ' . $e->getMessage());
+        }
+    }
+
+    public function updateOperasional(Request $request, $id_pesan)
+    {
+        $request->validate([
+            'status_operasional' => 'required|in:keranjang,menunggu_diproses,proses_pengerjaan,proses_pengantaran,selesai,batal'
+        ]);
+
+        $pesanan = Pesan::with([
+            'pesananItem.pesananItemFinishing.skuFinishing',
+            'customer.user'
+        ])->where(
+            'id_pesan',
+            $id_pesan
+        )->firstOrFail();
+
+        $statusLama = $pesanan->status_operasional;
+        $statusBaru = $request->status_operasional;
+
+        try {
+            DB::beginTransaction();
+
+            if ($statusBaru === 'proses_pengerjaan' && $statusLama !== 'proses_pengerjaan') {
+
+                $items = $pesanan->pesananItem;
+                $totalHppPesanan = 0;
+
+                foreach ($items as $item) {
+                    $totalHppPesanan += ((float) $item->hpp_satuan_snapshot * $item->jumlah);
+
+                    $finishingTerpilih = collect($item->pesananItemFinishing ?? [])
+                        ->map(fn($f) => $f->skuFinishing->id_pilihan_finishing ?? null)
+                        ->filter()
+                        ->toArray();
+
+                    foreach ($item->pesananItemFinishing ?? [] as $finishing) {
+                        $totalHppPesanan += ((float) $finishing->hpp_finishing_snapshot * $item->jumlah);
+                    }
+
+                    $semuaKomposisi = Komposisi::where('id_sku', $item->id_sku)->get();
+
+                    foreach ($semuaKomposisi as $komp) {
+                        if (is_null($komp->id_pilihan_finishing) || in_array($komp->id_pilihan_finishing, $finishingTerpilih)) {
+
+                            $bahan = BahanBaku::lockForUpdate()->findOrFail($komp->id_bahan_baku);
+
+                            $qty_dipakai = $komp->jumlah_pakai * (float) $item->jumlah;
+                            $bahan->stok_sekarang -= $qty_dipakai;
+                            $bahan->save();
+                        }
+                    }
+                }
+
+                // if ($totalHppPesanan > 0) {
+                //     BukuBesarController::catatHppPenjualan($pesanan->id_pesan, $totalHppPesanan);
+                // }
+            }
+
+            if ($statusBaru === 'proses_pengantaran' && $statusLama !== 'proses_pengantaran') {
+                $ekspedisiDipilih = strtolower($pesanan->ekspedisi_nama ?? '');
+
+                if ($ekspedisiDipilih === 'kurir toko') {
+                    $pesanan->nomor_resi = 'LOKAL-' . date('ymd') . '-' . strtoupper(Str::random(4));
+                }
+            }
+
+            if ($statusBaru === 'batal') {
+                $pesanan->tanggal_selesai = null;
+            }
+
+            if ($statusBaru === 'selesai') {
+                $pesanan->tanggal_selesai = now();
+            } elseif ($statusBaru !== 'batal') {
+                $pesanan->tanggal_selesai = null;
+            }
+
+            $pesanan->status_operasional = $statusBaru;
+            $pesanan->save();
+
+            DB::commit();
+            if (!in_array($statusBaru, ['keranjang','menunggu_diproses']))
+            {
+                $pesanan->load('customer.user');
+
+                PesanService::kirimNotifikasiStatus(
+                    $pesanan,
+                    $statusBaru
+                );
+            }
+            return back()->with('success', 'Status Operasional berhasil diperbarui.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error(
+                'Update Operasional Gagal',
+                [
+                    'id_pesan' => $id_pesan,
+                    'status' => $request->status_operasional,
+                    'message' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                ]
+            );
+
+            return back()->with('error', 'Gagal update operasional: ' . $e->getMessage());
         }
     }
 
