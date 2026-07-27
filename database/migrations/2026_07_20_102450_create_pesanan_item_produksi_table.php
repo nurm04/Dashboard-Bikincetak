@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('id_pesanan_item')->constrained('pesanan_item')->cascadeOnDelete();
             $table->enum('tipe_pengerjaan', ['sendiri', 'vendor']);
+            $table->json('hasil_desain')->nullable();
             $table->string('id_vendor', 50)->nullable();
             $table->unsignedBigInteger('id_tagihan_vendor')->nullable();
             $table->integer('qty_dikerjakan');

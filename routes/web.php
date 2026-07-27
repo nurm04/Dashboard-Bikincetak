@@ -69,6 +69,8 @@ Route::middleware('auth')->group(function () {
     Route::middleware('block.vendor')->group(function () {
         Route::post('produksi/{id_pesan}/alokasi', [ProduksiController::class, 'alokasiProduksi'])->middleware('akses:produksi,ubah')->name('produksi.alokasi');
         Route::post('produksi/{id_pesan}/kirim', [ProduksiController::class, 'kirimPesanan'])->middleware('akses:produksi,ubah')->name('produksi.kirim');
+        Route::put('/produksi/{id_pesan}/update-berat', [ProduksiController::class, 'updateBerat'])->middleware('akses:produksi,ubah')->name('produksi.update_berat');
+        Route::post('/produksi/{id_pesan}/pengantaran', [ProduksiController::class, 'prosesPengantaran'])->middleware('akses:produksi,ubah')->name('produksi.pengantaran.proses');
         Route::get('/buku-besar', [BukuBesarController::class, 'index'])->name('buku-besar.index');
         Route::resource('akun', AkunController::class)->middleware('akses:akun');
         Route::middleware('akses:customer')->group(function () {

@@ -231,10 +231,14 @@ class PesanController extends Controller
             ]);
 
             foreach ($request->items as $index => $item) {
+                // 1. Cek apakah ini produk custom
+                $isCustom = $item['id_sku'] === 'SKU-CUSTOM';
+
                 $finishing = isset($item['finishing']) ? json_decode($item['finishing'], true) : [];
                 $selectedFinishingIds = [];
 
-                if (!empty($finishing) && is_array($finishing)) {
+                // 2. Skip query finishing master kalau ini produk custom
+                if (!$isCustom && !empty($finishing) && is_array($finishing)) {
                     foreach ($finishing as $fin) {
                         $skuFin = SkuFinishing::find($fin['id_sku_finishing']);
                         if ($skuFin && $skuFin->id_pilihan_finishing) {
@@ -243,11 +247,16 @@ class PesanController extends Controller
                     }
                 }
 
-                $totalBeratItem = PesanService::hitungBeratTotalItem($item['id_sku'], $item['jumlah'], $selectedFinishingIds);
+                // 3. Set berat 0 kalau custom, kalau reguler hitung dari service
+                $totalBeratItem = $isCustom ? 0 : PesanService::hitungBeratTotalItem($item['id_sku'], $item['jumlah'], $selectedFinishingIds);
 
-                $hppSatuan = Komposisi::where('id_sku', $item['id_sku'])
-                    ->whereNull('id_pilihan_finishing')
-                    ->sum('hpp');
+                // 4. Set HPP 0 kalau custom, kalau reguler hitung dari tabel Komposisi
+                $hppSatuan = 0;
+                if (!$isCustom) {
+                    $hppSatuan = Komposisi::where('id_sku', $item['id_sku'])
+                        ->whereNull('id_pilihan_finishing')
+                        ->sum('hpp');
+                }
 
                 $fileDesainData = null;
 
@@ -300,7 +309,8 @@ class PesanController extends Controller
                     'catatan' => $item['catatan'] ?? null,
                 ]);
 
-                if (!empty($finishing) && is_array($finishing)) {
+                // 5. Bypass (skip) insert ke tabel pesanan_item_finishing kalau ini produk custom
+                if (!$isCustom && !empty($finishing) && is_array($finishing)) {
                     foreach ($finishing as $fin) {
                         $skuFinishingAsli = SkuFinishing::find($fin['id_sku_finishing']);
                         $idPilihanFinishing = $skuFinishingAsli

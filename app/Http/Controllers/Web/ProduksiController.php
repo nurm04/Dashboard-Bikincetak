@@ -138,18 +138,21 @@ class ProduksiController extends Controller
         $request->validate([
             'deskripsi_pengerjaan' => 'required|string',
             'total_tagihan_vendor' => 'nullable|numeric|min:0',
-            'file_nota' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048'
+            'file_nota' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'hasil_desain' => 'nullable|file|mimes:pdf,cdr,ai,psd,jpg,jpeg,png,zip,rar|max:10240'
         ]);
 
         $schedule = PesananItemProduksi::with('pesananItem.pesananItemFinishing.skuFinishing')->findOrFail($id_item_produksi);
 
-        $user = auth()->user();
-        $isAdmin = in_array($user->role, ['admin', 'administrator']);
-        $vendorId = Vendor::where('user_id', $user->id)->value('id_vendor');
+        $user = auth()->user()->load('staf', 'vendor');
+        $isAdmin = in_array($user->role, ['admin', 'administrator']) ||
+                   ($user->staf && in_array($user->staf->role, ['admin', 'administrator']));
+        $isInternal = $isAdmin || $user->role === 'staf' || $user->staf !== null;
+        $vendorId = $user->vendor ? $user->vendor->id_vendor : null;
 
         if ($schedule->tipe_pengerjaan === 'vendor') {
-            if (!$isAdmin && $vendorId !== $schedule->id_vendor) {
-                return back()->with('error', 'Akses ditolak! Hanya Admin atau Vendor terkait yang berhak mengubah data ini.');
+            if (!$isInternal && $vendorId !== $schedule->id_vendor) {
+                return back()->with('error', 'Akses ditolak! Hanya Staf Internal atau Vendor terkait yang berhak mengubah data ini.');
             }
         } else {
             if ($schedule->status_pengerjaan === 'selesai' && !$isAdmin) {
@@ -160,8 +163,9 @@ class ProduksiController extends Controller
         try {
             DB::beginTransaction();
 
-            if ($schedule->tipe_pengerjaan === 'sendiri' && $schedule->status_pengerjaan !== 'selesai') {
-                $item = $schedule->pesananItem;
+            $item = $schedule->pesananItem;
+
+            if ($schedule->tipe_pengerjaan === 'sendiri' && $schedule->status_pengerjaan !== 'selesai' && $item->id_sku !== 'SKU-CUSTOM') {
 
                 $finishingTerpilih = collect($item->pesananItemFinishing ?? [])
                     ->map(fn($f) => $f->skuFinishing->id_pilihan_finishing ?? null)
@@ -173,9 +177,7 @@ class ProduksiController extends Controller
                 foreach ($semuaKomposisi as $komp) {
                     if (is_null($komp->id_pilihan_finishing) || in_array($komp->id_pilihan_finishing, $finishingTerpilih)) {
                         $bahan = BahanBaku::lockForUpdate()->findOrFail($komp->id_bahan_baku);
-
                         $qty_dipakai = $komp->jumlah_pakai * (float) $schedule->qty_dikerjakan;
-
                         $bahan->stok_sekarang -= $qty_dipakai;
                         $bahan->save();
                     }
@@ -189,11 +191,19 @@ class ProduksiController extends Controller
                 $pathNota = $file->storeAs('nota_vendor', $filename, 'public');
             }
 
+            $pathHasil = $schedule->hasil_desain;
+            if ($request->hasFile('hasil_desain')) {
+                $file = $request->file('hasil_desain');
+                $filename = "HASIL-" . time() . "-" . uniqid() . "." . $file->getClientOriginalExtension();
+                $pathHasil = $file->storeAs('hasil_desain_produksi', $filename, 'public');
+            }
+
             $schedule->update([
                 'status_pengerjaan' => 'selesai',
                 'deskripsi_pengerjaan' => $request->deskripsi_pengerjaan,
                 'total_tagihan_vendor' => $schedule->tipe_pengerjaan === 'vendor' ? $request->total_tagihan_vendor : null,
-                'file_nota' => $pathNota
+                'file_nota' => $pathNota,
+                'hasil_desain' => $pathHasil
             ]);
 
             DB::commit();
@@ -204,6 +214,44 @@ class ProduksiController extends Controller
             Log::error('Gagal menyelesaikan item produksi: ' . $e->getMessage());
             return back()->with('error', 'Gagal memproses data: ' . $e->getMessage());
         }
+    }
+
+    public function updateBerat(Request $request, $id_pesan)
+    {
+        $request->validate([
+            'items' => 'required|array',
+            'items.*.id_pesanan_item' => 'required|exists:pesanan_item,id',
+            'items.*.berat' => 'required|numeric|min:1',
+        ]);
+
+        foreach ($request->items as $item) {
+            PesananItem::where('id', $item['id_pesanan_item'])->update([
+                'total_berat_snapshot' => $item['berat']
+            ]);
+        }
+        return back()->with('success', 'Berat produk custom berhasil disimpan.');
+    }
+
+    public function prosesPengantaran(Request $request, $id_pesan)
+    {
+        $request->validate([
+            'ekspedisi_nama'     => 'required|string',
+            'ekspedisi_layanan'  => 'nullable|string',
+            'harga_ongkir'       => 'required|numeric|min:0',
+            'ekspedisi_estimasi' => 'nullable|string',
+        ]);
+
+        $pesanan = Pesan::where('id_pesan', $id_pesan)->firstOrFail();
+
+        $pesanan->update([
+            'ekspedisi_nama'     => $request->ekspedisi_nama,
+            'ekspedisi_layanan'  => $request->ekspedisi_layanan,
+            'harga_ongkir'       => $request->harga_ongkir,
+            'ekspedisi_estimasi' => $request->ekspedisi_estimasi,
+            'status_operasional' => 'proses_pengantaran',
+        ]);
+
+        return back()->with('success', 'Pesanan berhasil diproses dan masuk ke tahap pengantaran.');
     }
 
     public function kirimPesanan($id_pesan)

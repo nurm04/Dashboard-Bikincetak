@@ -35,6 +35,11 @@ class ShippingController extends Controller
 
         $totalBerat = 0;
         foreach ($request->items as $item) {
+            if (isset($item['id_sku']) && $item['id_sku'] === 'SKU-CUSTOM') {
+                $totalBerat += $item['total_berat'] ?? $item['total_berat_snapshot'] ?? $item['berat'] ?? 0;
+                continue;
+            }
+
             $finishing = isset($item['finishings']) ? (is_array($item['finishings']) ? $item['finishings'] : json_decode($item['finishings'], true)) : [];
             $finishingIds = collect($finishing)->pluck('id_sku_finishing')->toArray();
 

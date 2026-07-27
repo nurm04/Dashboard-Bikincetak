@@ -23,12 +23,18 @@ const activeCustomer = ref(null);
 const form = ref({
     id_produk: '',
     id_sku: '',
-    estimasi_pengerjaan: '',
+    estimasi_pengerjaan: 'Reguler',
     finishings: {},
     desainPayload: { tipe_file: 'upload', file: null, link_file: '' },
     jumlah: 1,
-    catatan: ''
+    catatan: '',
+    // Tambahan untuk produk custom
+    custom_nama_produk: '',
+    custom_harga_satuan: 0,
 });
+
+const isCustomProduct = computed(() => form.value.id_produk === 'PRD-0001');
+const isJasaDesain = computed(() => form.value.id_produk === 'PRD-0002'); // State baru untuk mendeteksi Jasa Desain
 
 onMounted(() => {
     activeCustomer.value = JSON.parse(localStorage.getItem('pos_active_customer'));
@@ -41,8 +47,9 @@ const fetchAllProduks = async () => {
 };
 
 const fetchDetailProduk = async (id) => {
-    if (!id) return;
+    if (!id || id === 'PRD-0001') return; // Bypass fetch untuk produk custom
 
+    isFetching.value = true;
     try {
         const { data } = await axios.get(`/api/item/${id}`);
         detailProduk.value = data.data;
@@ -71,19 +78,30 @@ watch(() => props.editData, async (newVal) => {
 
     form.value = {
         id_produk: '', id_sku: '', estimasi_pengerjaan: 'Reguler', finishings: {},
-        desainPayload: { tipe_file: 'upload', file: null, link_file: '' }, jumlah: 1, catatan: ''
+        desainPayload: { tipe_file: 'upload', file: null, link_file: '' }, jumlah: 1, catatan: '',
+        custom_nama_produk: '', custom_harga_satuan: 0
     };
 
-    form.value.id_produk = newVal.id_sku.split('-SKU-')[0];
-    await fetchDetailProduk(form.value.id_produk);
+    // Deteksi apakah item yang diedit adalah produk custom
+    const isEditingCustom = newVal.id_sku === 'SKU-CUSTOM';
+    form.value.id_produk = isEditingCustom ? 'PRD-0001' : newVal.id_sku.split('-SKU-')[0];
+
+    if (isEditingCustom) {
+        form.value.id_sku = 'SKU-CUSTOM';
+        form.value.custom_nama_produk = newVal.nama_produk_snapshot;
+        form.value.custom_harga_satuan = newVal.harga_satuan_snapshot;
+    } else {
+        await fetchDetailProduk(form.value.id_produk);
+    }
+
     await nextTick();
 
     form.value.id_sku = newVal.id_sku;
     form.value.jumlah = newVal.jumlah;
     form.value.catatan = newVal.catatan;
-    form.value.estimasi_pengerjaan = newVal.estimasi_pengerjaan_snapshot;
+    form.value.estimasi_pengerjaan = newVal.estimasi_pengerjaan_snapshot || 'Reguler';
 
-    if (newVal.pesanan_item_finishing?.length) {
+    if (!isEditingCustom && newVal.pesanan_item_finishing?.length) {
         const skuMaster = detailProduk.value?.skus?.find(s => s.id_sku === newVal.id_sku);
         if(skuMaster){
             newVal.pesanan_item_finishing.forEach(fin => {
@@ -106,6 +124,8 @@ const skuOptions = computed(() => (detailProduk.value?.skus || []).map(s => ({ v
 const selectedSku = computed(() => (detailProduk.value?.skus || []).find(s => s.id_sku === form.value.id_sku) || null);
 
 const finishingPayload = computed(() => {
+    if (isCustomProduct.value || isJasaDesain.value) return []; // Kosongkan finishing untuk custom/jasa desain
+
     const data = [];
     Object.values(form.value.finishings).forEach(idSkuFin => {
         if (!idSkuFin) return;
@@ -125,11 +145,14 @@ const finishingPayload = computed(() => {
 // ========================================================
 // 1. HARGA DASAR & DISKON (MENDUKUNG NOMINAL/PERSEN)
 // ========================================================
-const hargaDasarAwal = computed(() => Number(selectedSku.value?.harga_dasar) || 0);
+const hargaDasarAwal = computed(() => {
+    if (isCustomProduct.value) return Number(form.value.custom_harga_satuan) || 0;
+    return Number(selectedSku.value?.harga_dasar) || 0;
+});
 
 // Hitung Harga Bertingkat (Grosir) sbg Potongan per pcs
 const diskonGrosir = computed(() => {
-    if (!selectedSku.value) return 0;
+    if (isCustomProduct.value || !selectedSku.value) return 0; // Custom tidak ada grosir
     const tier = [...(selectedSku.value.harga_bertingkat || [])]
         .sort((a, b) => b.min - a.min)
         .find(t => form.value.jumlah >= t.min && (t.max === 0 || t.max === null || form.value.jumlah <= t.max));
@@ -140,6 +163,7 @@ const diskonGrosir = computed(() => {
 
 // Hitung Diskon Customer Role per pcs
 const diskonMember = computed(() => {
+    if (isCustomProduct.value) return 0; // Custom tidak ada diskon member master
     const roleId = activeCustomer.value?.id_role_customer;
     if (!roleId || !selectedSku.value?.diskon_customer) return 0;
     const d = selectedSku.value.diskon_customer.find(d => String(d.id_role_customer) === String(roleId));
@@ -158,8 +182,9 @@ const hargaSatuanSnapshot = computed(() => Math.max(0, hargaDasarAwal.value - to
 // 2. SLA / HARGA PENGERJAAN (MENDUKUNG NOMINAL/PERSEN)
 // ========================================================
 const pengerjaanOptions = computed(() => {
+    if (isCustomProduct.value || isJasaDesain.value) return [{ value: 'Reguler', label: 'Reguler (+ Rp 0)' }];
+
     const list = (selectedSku.value?.harga_pengerjaan || []).map(p => {
-        // Label dinamis: Nampilin % atau Rp di dropdown Kasir
         const labelBiaya = p.tipe === 'persen' ? `${p.nilai}%` : `Rp ${Number(p.nilai).toLocaleString('id-ID')}`;
         return { value: p.pengerjaan, label: `${p.pengerjaan} (+ ${labelBiaya})` };
     });
@@ -167,6 +192,7 @@ const pengerjaanOptions = computed(() => {
 });
 
 const totalFinishing = computed(() => {
+    if (isCustomProduct.value || isJasaDesain.value) return 0;
     return Object.values(form.value.finishings).reduce((acc, idSkuFin) => {
         const fin = selectedSku.value?.opsi_finishing?.find(f => String(f.id_sku_finishing) === String(idSkuFin));
         return acc + (fin ? fin.harga_tambahan : 0);
@@ -177,13 +203,15 @@ const totalProduk = computed(() => (hargaSatuanSnapshot.value + totalFinishing.v
 
 // Kalkulasi nominal total SLA untuk item ini
 const totalSla = computed(() => {
+    if (isCustomProduct.value || isJasaDesain.value) return 0; // Bypass hitung SLA
+
     const p = selectedSku.value?.harga_pengerjaan?.find(o => o.pengerjaan === form.value.estimasi_pengerjaan);
     if (!p) return 0;
 
     if (p.tipe === 'persen') {
         return totalProduk.value * (Number(p.nilai) / 100);
     } else {
-        return Number(p.nilai); // Nominal langsung sbg Add-on biaya
+        return Number(p.nilai);
     }
 });
 
@@ -194,6 +222,7 @@ const subtotalItem = computed(() => totalProduk.value + totalSla.value);
 // 3. LAIN-LAIN
 // ========================================================
 const finishingGroups = computed(() => {
+    if (isCustomProduct.value || isJasaDesain.value) return {};
     const groups = {};
     selectedSku.value?.opsi_finishing?.forEach(fin => {
         if (!groups[fin.kategori_finishing]) groups[fin.kategori_finishing] = { options: [{ value: '', label: `Tanpa ${fin.kategori_finishing}` }] };
@@ -207,6 +236,7 @@ const finishingGroups = computed(() => {
 });
 
 const currentMinimumOrder = computed(() => {
+    if (isCustomProduct.value || isJasaDesain.value) return 1;
     let minOrder = selectedSku.value?.minimum_pesan || 1;
     Object.values(form.value.finishings).forEach(idSkuFin => {
         if (!idSkuFin) return;
@@ -226,21 +256,44 @@ watch(currentMinimumOrder, (newMin) => {
 const isEditMode = computed(() => !!props.editData);
 
 watch(() => form.value.id_sku, (newVal, oldVal) => {
+    if (isCustomProduct.value || isJasaDesain.value) return; // Skip logika auto-reset
     if (!selectedSku.value) return;
-
     if (isEditMode.value && !oldVal) return;
 
     form.value.finishings = {};
     form.value.jumlah = selectedSku.value.minimum_pesan || 1;
 
     form.value.estimasi_pengerjaan =
-        selectedSku.value.harga_pengerjaan?.[0]?.pengerjaan || '';
+        selectedSku.value.harga_pengerjaan?.[0]?.pengerjaan || 'Reguler';
 });
 
-watch(() => form.value.id_produk, (val) => fetchDetailProduk(val));
+watch(() => form.value.id_produk, (val) => {
+    if (val === 'PRD-0001') {
+        form.value.id_sku = 'SKU-CUSTOM';
+        form.value.custom_nama_produk = '';
+        form.value.custom_harga_satuan = 0;
+        form.value.finishings = {};
+        form.value.estimasi_pengerjaan = 'Reguler';
+        form.value.jumlah = 1;
+    } else if (val === 'PRD-0002') {
+        form.value.finishings = {};
+        form.value.estimasi_pengerjaan = 'Reguler';
+        form.value.jumlah = 1;
+        fetchDetailProduk(val);
+    } else {
+        fetchDetailProduk(val);
+    }
+});
 
 const handleFormSubmit = () => {
-    if (!form.value.id_sku) { alertStore.show('Pilih varian produk!', 'error'); return; }
+    if (isCustomProduct.value && !form.value.custom_nama_produk) {
+        alertStore.show('Nama produk custom wajib diisi!', 'error');
+        return;
+    }
+    if (!isCustomProduct.value && !form.value.id_sku) {
+        alertStore.show('Pilih varian produk!', 'error');
+        return;
+    }
 
     const rincianDiskon = [];
 
@@ -268,7 +321,7 @@ const handleFormSubmit = () => {
 
     const payloadData = {
         id_sku: form.value.id_sku,
-        nama_produk_snapshot: selectedSku.value?.nama_sku,
+        nama_produk_snapshot: isCustomProduct.value ? form.value.custom_nama_produk : selectedSku.value?.nama_sku,
         jumlah: form.value.jumlah,
         catatan: form.value.catatan,
         estimasi_pengerjaan: form.value.estimasi_pengerjaan,
@@ -282,20 +335,21 @@ const handleFormSubmit = () => {
 
         finishing: props.isPosMode ? finishingPayload.value : JSON.stringify(finishingPayload.value),
 
-        file: form.value.desainPayload.file,
-        tipe_file: form.value.desainPayload.tipe_file,
-        link_file: form.value.desainPayload.link_file,
+        file: isJasaDesain.value ? null : form.value.desainPayload.file,
+        tipe_file: isJasaDesain.value ? null : form.value.desainPayload.tipe_file,
+        link_file: isJasaDesain.value ? null : form.value.desainPayload.link_file,
 
         total_produk: totalProduk.value,
         total_sla: totalSla.value,
         subtotal: subtotalItem.value,
 
         ...(props.isPosMode && {
-            master_diskon_customer: selectedSku.value?.diskon_customer || [],
-            master_harga_bertingkat: selectedSku.value?.harga_bertingkat || [],
-            master_harga_pengerjaan: selectedSku.value?.harga_pengerjaan || [],
+            master_diskon_customer: isCustomProduct.value ? [] : selectedSku.value?.diskon_customer || [],
+            master_harga_bertingkat: isCustomProduct.value ? [] : selectedSku.value?.harga_bertingkat || [],
+            master_harga_pengerjaan: isCustomProduct.value ? [] : selectedSku.value?.harga_pengerjaan || [],
         })
     };
+
     emit('submit', payloadData);
 };
 </script>
@@ -325,32 +379,48 @@ const handleFormSubmit = () => {
 
         <div class="relative z-10 grid grid-cols-1 gap-8 px-8 lg:grid-cols-12 lg:gap-12">
 
-            <div class="space-y-6 lg:col-span-6">
+            <!-- Jika Jasa Desain (PRD-0002) span diubah menjadi lebar penuh agar rapi -->
+            <div :class="['space-y-6', isJasaDesain ? 'lg:col-span-12 max-w-2xl' : 'lg:col-span-6']">
                 <h3 class="flex items-center gap-2 mb-2 text-xs font-black tracking-widest uppercase text-primary">Spesifikasi Dasar</h3>
                 <div class="space-y-5">
                     <CustomSelectSearch v-model="form.id_produk" label="Pilih Produk Master" :options="listProduks" labelKey="nama_produk" valueKey="id_produk" placeholder="-- Cari Produk --" />
 
-                    <CustomSelectSearch v-model="form.id_sku" label="Varian & Bahan" :options="skuOptions" labelKey="label" valueKey="value" placeholder="-- Pilih Varian --" />
+                    <!-- FORM KHUSUS PRODUK CUSTOM -->
+                    <template v-if="isCustomProduct">
+                        <CustomInput label="Nama Produk / Pesanan" type="text" v-model="form.custom_nama_produk" placeholder="Ketik nama pesanan secara manual..." />
+                        <CustomInput label="Harga Satuan (Rp)" type="number" v-model="form.custom_harga_satuan" />
+                    </template>
 
-                    <CustomSelectSearch v-model="form.estimasi_pengerjaan" label="Kecepatan Pengerjaan (SLA)" :options="pengerjaanOptions" labelKey="label" valueKey="value" :add-option="false" />
+                    <!-- FORM UNTUK PRODUK REGULER DARI DATABASE -->
+                    <template v-else>
+                        <CustomSelectSearch v-model="form.id_sku" label="Varian & Bahan" :options="skuOptions" labelKey="label" valueKey="value" placeholder="-- Pilih Varian --" />
 
-                    <div class="form-control">
-                        <CustomInput label="Jumlah Pesanan (Qty)" type="number" v-model="form.jumlah" :min="currentMinimumOrder" />
-                        <div v-if="form.jumlah < currentMinimumOrder" class="flex items-center gap-1.5 mt-2 text-[10px] font-bold text-error">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" /></svg>
-                            Minimal pemesanan untuk spesifikasi ini: {{ currentMinimumOrder }} pcs
+                        <!-- Sembunyikan jika Jasa Desain -->
+                        <CustomSelectSearch v-if="!isJasaDesain" v-model="form.estimasi_pengerjaan" label="Kecepatan Pengerjaan (SLA)" :options="pengerjaanOptions" labelKey="label" valueKey="value" :add-option="false" />
+                    </template>
+
+                    <!-- Sembunyikan input lain jika Jasa Desain -->
+                    <template v-if="!isJasaDesain">
+                        <div class="form-control">
+                            <CustomInput label="Jumlah Pesanan (Qty)" type="number" v-model="form.jumlah" :min="currentMinimumOrder" />
+                            <div v-if="form.jumlah < currentMinimumOrder" class="flex items-center gap-1.5 mt-2 text-[10px] font-bold text-error">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" /></svg>
+                                Minimal pemesanan untuk spesifikasi ini: {{ currentMinimumOrder }} pcs
+                            </div>
                         </div>
-                    </div>
 
-                    <CustomTextarea label="Catatan Internal / Revisi Produksi" v-model="form.catatan" :rows="2" placeholder="Cth: Potong putus keliling..." />
+                        <CustomTextarea label="Catatan Internal / Revisi Produksi" v-model="form.catatan" :rows="2" placeholder="Cth: Potong putus keliling, bahan bawa sendiri, dll..." />
+                    </template>
                 </div>
 
-                <div class="absolute hidden w-px -translate-x-1/2 lg:block top-8 bottom-8 left-1/2 bg-base-200/80"></div>
+                <div v-if="!isJasaDesain" class="absolute hidden w-px -translate-x-1/2 lg:block top-8 bottom-8 left-1/2 bg-base-200/80"></div>
             </div>
 
-            <div class="space-y-8 lg:col-span-6">
+            <!-- Sembunyikan sisi kanan sepenuhnya jika Jasa Desain (Finishing & Desain) -->
+            <div v-if="!isJasaDesain" class="space-y-8 lg:col-span-6">
 
-                <div>
+                <!-- FINISHING DIHILANGKAN JIKA PRODUK CUSTOM -->
+                <div v-if="!isCustomProduct">
                     <h3 class="flex items-center gap-2 mb-4 text-xs font-black tracking-widest uppercase text-primary">Tambahan Finishing</h3>
                     <div class="space-y-4">
                         <template v-if="Object.keys(finishingGroups).length > 0">

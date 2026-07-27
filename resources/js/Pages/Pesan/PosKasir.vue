@@ -107,7 +107,7 @@ watch(cartItems, (newCart) => {
 const customerOptions = computed(() => {
     return props.customers.map(c => ({
         id_customer: c.id_customer,
-        nama_tampilan: `${c.user?.name || 'Walk-In'} (${c.id_customer})`
+        nama_tampilan: `${c.user?.name || 'Walk-In'} (${c.no_hp})`
     }));
 });
 
@@ -224,7 +224,7 @@ const manualLayananOptions = [
     { id: 'Lalamove / Deliveree', nama: 'Lalamove / Deliveree' },
     { id: 'Kurir Toko (Motor)', nama: 'Kurir Toko (Motor)' },
     { id: 'Kurir Toko (Mobil)', nama: 'Kurir Toko (Mobil)' },
-    { id: 'Titip Travel / Bus', nama: 'Titip Travel / Bus' },
+    { id: 'Titip Travel', nama: 'Titip Travel' },
     { id: 'Lainnya', nama: 'Lainnya' },
 ];
 
