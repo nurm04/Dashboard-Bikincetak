@@ -16,6 +16,8 @@ class SkuFinishingController extends Controller
             'finishing.*.id_pilihan_finishing' => 'required',
             'finishing.*.minimum_pesan' => 'required|numeric|min:0',
             'finishing.*.harga_tambahan' => 'required|numeric|min:0',
+            'finishing.*.tipe' => 'required|in:nominal,persen',
+            'finishing.*.kali_jumlah_pesan' => 'required|boolean',
         ]);
 
         try {
@@ -28,6 +30,8 @@ class SkuFinishingController extends Controller
                     'id_pilihan_finishing' => $item['id_pilihan_finishing'],
                     'minimum_pesan' => $item['minimum_pesan'],
                     'harga_tambahan' => $item['harga_tambahan'],
+                    'tipe' => $item['tipe'],
+                    'kali_jumlah_pesan' => $item['kali_jumlah_pesan'],
                 ]);
             }
 

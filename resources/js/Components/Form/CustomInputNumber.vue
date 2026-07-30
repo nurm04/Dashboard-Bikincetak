@@ -14,16 +14,19 @@ const emit = defineEmits(['update:modelValue']);
 
 const handleInput = (e) => {
     let val = e.target.value;
-    if (val === '') { emit('update:modelValue', ''); return; }
-    let numericVal = parseFloat(val);
-    if (numericVal < props.min) numericVal = props.min;
-    emit('update:modelValue', numericVal);
+    emit('update:modelValue', val);
 };
 
 const handleBlur = (e) => {
-    if (e.target.value === '' || parseFloat(e.target.value) < props.min) {
+    let val = e.target.value;
+    if (val === '' || isNaN(val)) {
         emit('update:modelValue', props.min);
+        return;
     }
+
+    let numericVal = parseFloat(val);
+    if (numericVal < props.min) numericVal = props.min;
+    emit('update:modelValue', numericVal);
 };
 </script>
 
@@ -43,6 +46,7 @@ const handleBlur = (e) => {
 
             <input
                 type="number"
+                step="any"
                 :value="modelValue"
                 :min="min"
                 :placeholder="placeholder"

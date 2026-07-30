@@ -165,7 +165,7 @@ class ProduksiController extends Controller
 
             $item = $schedule->pesananItem;
 
-            if ($schedule->tipe_pengerjaan === 'sendiri' && $schedule->status_pengerjaan !== 'selesai' && $item->id_sku !== 'SKU-CUSTOM') {
+            if ($schedule->tipe_pengerjaan === 'sendiri' && $schedule->status_pengerjaan !== 'selesai' && $item->id_sku !== 'PRD-0001-SKU-001') {
 
                 $finishingTerpilih = collect($item->pesananItemFinishing ?? [])
                     ->map(fn($f) => $f->skuFinishing->id_pilihan_finishing ?? null)

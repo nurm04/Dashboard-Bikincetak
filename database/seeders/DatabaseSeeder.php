@@ -18,11 +18,14 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             AkunSeeder::class,
             RoleStafSeeder::class,
+            RoleCustomerSeeder::class,
             ModulSeeder::class,
             StafSeeder::class,
             HakAksesSeeder::class,
             ProdukSeeder::class,
-            BahanBakuSeeder::class
+            BahanBakuSeeder::class,
+            ProdukSKUSeeder::class,
+            FinishingSeeder::class,
         ]);
     }
 }

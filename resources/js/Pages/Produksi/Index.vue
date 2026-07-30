@@ -219,7 +219,7 @@ const isReadyToShip = (pesanan) => {
     return hasSchedule && allCompleted;
 };
 
-// --- ALUR LAMA (REGULER / BUKAN SKU-CUSTOM) ---
+// --- ALUR LAMA (REGULER / BUKAN PRD-0001-SKU-001) ---
 const isConfirmKirimOpen = ref(false);
 const selectedKirimId = ref(null);
 const isKirimLoading = ref(false);
@@ -251,8 +251,8 @@ const formBerat = useForm({
 
 const openModalBerat = (pesanan) => {
     selectedPengantaran.value = pesanan;
-    // Ambil hanya item yang SKU-CUSTOM untuk diinput manual
-    const customItems = pesanan.pesanan_item.filter(i => i.id_sku === 'SKU-CUSTOM');
+    // Ambil hanya item yang PRD-0001-SKU-001 untuk diinput manual
+    const customItems = pesanan.pesanan_item.filter(i => i.id_sku === 'PRD-0001-SKU-001');
 
     formBerat.items = customItems.map(i => ({
         id_pesanan_item: i.id,
@@ -455,7 +455,7 @@ const submitPengantaran = () => {
 
 // --- CONTROLLER JALUR PENGANTARAN (PENGATUR CABANG) ---
 const handleProsesPengantaran = (pesanan) => {
-    const hasCustomItem = pesanan.pesanan_item.some(item => item.id_sku === 'SKU-CUSTOM');
+    const hasCustomItem = pesanan.pesanan_item.some(item => item.id_sku === 'PRD-0001-SKU-001');
 
     if (hasCustomItem) {
         // Alur Custom: Buka FORM 1 (Isi & Simpan Berat ke DB dulu)
@@ -856,7 +856,7 @@ const handleProsesPengantaran = (pesanan) => {
     </dialog>
 
 
-    <!-- FORM 1: MODAL UPDATE BERAT (KHUSUS ADA SKU-CUSTOM) -->
+    <!-- FORM 1: MODAL UPDATE BERAT (KHUSUS ADA PRD-0001-SKU-001) -->
     <dialog class="modal" :class="{'modal-open': isModalBeratOpen}">
         <div class="modal-box p-0 rounded-xl max-w-lg overflow-hidden flex flex-col">
             <div class="flex items-center justify-between p-5 border-b border-base-200">

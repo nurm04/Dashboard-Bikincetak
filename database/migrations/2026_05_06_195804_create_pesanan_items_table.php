@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('id_sku');
             $table->string('nama_produk_snapshot');
             $table->integer('jumlah');
+            $table->json('atribut_custom_snapshot')->nullable();
             $table->float('harga_dasar_awal_snapshot')->default(0);
             $table->float('total_diskon_snapshot')->default(0);
             $table->json('rincian_diskon_snapshot')->nullable();

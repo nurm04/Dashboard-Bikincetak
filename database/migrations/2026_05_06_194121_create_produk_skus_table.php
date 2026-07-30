@@ -17,6 +17,8 @@ return new class extends Migration
             $table->string('nama_sku');
             $table->integer('minimum_pesan')->default(1);
             $table->float('harga');
+            $table->text('deskripsi')->nullable();
+            $table->string('tipe_kalkulasi')->default('standard');
             $table->foreign('id_produk')->references('id_produk')->on('produk')->onDelete('cascade');
             $table->timestamps();
         });

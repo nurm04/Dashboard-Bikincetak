@@ -14,6 +14,7 @@ class KomposisiController extends Controller
     public function sync(Request $request, $id_sku)
     {
         $request->validate([
+            'id_produk' => 'required|string',
             'komposisi' => 'present|array',
             'komposisi.*.id_bahan_baku' => 'required|exists:bahan_baku,id_bahan_baku',
             'komposisi.*.jumlah_pakai' => 'required|numeric|min:0.01',

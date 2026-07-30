@@ -17,7 +17,7 @@ class ModulSeeder extends Seeder
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
         DB::table('modul')->insert([
-            ['id' => 1, 'nama_modul' => 'Hak Akses', 'slug' => 'hak-akses', 'created_at' => null, 'updated_at' => null],
+            ['id' => 1, 'nama_modul' => 'Hak Akses', 'slug' => 'hak-akses', 'created_at' => '2026-05-16 03:42:00', 'updated_at' => '2026-05-16 03:42:00'],
             ['id' => 2, 'nama_modul' => 'Akun', 'slug' => 'akun', 'created_at' => '2026-05-16 03:42:46', 'updated_at' => '2026-05-16 03:42:46'],
             ['id' => 3, 'nama_modul' => 'Customer', 'slug' => 'customer', 'created_at' => '2026-05-16 03:43:10', 'updated_at' => '2026-05-16 03:43:10'],
             ['id' => 4, 'nama_modul' => 'Staf', 'slug' => 'staf', 'created_at' => '2026-05-16 03:43:27', 'updated_at' => '2026-05-16 03:43:27'],

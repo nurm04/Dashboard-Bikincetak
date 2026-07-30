@@ -67,7 +67,7 @@ class PesanController extends Controller
             'items.*.harga_dasar_awal_snapshot' => 'nullable|numeric',
             'items.*.total_diskon_snapshot' => 'nullable|numeric',
             'items.*.rincian_diskon_snapshot' => 'nullable|array',
-
+            'items.*.atribut_custom_snapshot' => 'nullable', // <-- Divalidasi
             'items.*.file_desain' => 'nullable',
             'items.*.tipe_file' => 'nullable|string|in:upload,link,email',
             'items.*.link_file' => 'nullable|string'
@@ -95,6 +95,7 @@ class PesanController extends Controller
             $kode_transaksi = $pesanan->kode_transaksi;
 
             foreach ($request->items as $index => $item) {
+                // Handle Finishings
                 $finishings = $item['finishings'] ?? [];
                 if (is_string($finishings)) {
                     $finishings = json_decode($finishings, true);
@@ -108,6 +109,12 @@ class PesanController extends Controller
                             $selectedFinishingIds[] = $skuFin->id_pilihan_finishing;
                         }
                     }
+                }
+
+                // Handle Custom Attributes (Jumlah Halaman, dll)
+                $atributCustom = $item['atribut_custom_snapshot'] ?? null;
+                if (is_string($atributCustom)) {
+                    $atributCustom = json_decode($atributCustom, true);
                 }
 
                 $totalBeratItem = PesanService::hitungBeratTotalItem($item['id_sku'], $item['jumlah'], $selectedFinishingIds);
@@ -155,6 +162,8 @@ class PesanController extends Controller
 
                     'file_desain' => $fileDesainData,
                     'catatan' => $item['catatan'] ?? null,
+
+                    'atribut_custom_snapshot' => $atributCustom // <-- Eksekusi masuk database
                 ]);
 
                 if (!empty($finishings) && is_array($finishings)) {
@@ -490,36 +499,6 @@ class PesanController extends Controller
         return response()->json([
             'success' => true,
             'data' => $pesanan
-        ]);
-    }
-
-    public function cancelPesanan(Request $request, string $id_pesan)
-    {
-        $customerId = $request->user()?->customer?->id_customer;
-
-        $pesanan = Pesan::where('id_customer', $customerId)
-            ->where('id_pesan', $id_pesan)
-            ->first();
-
-        if (!$pesanan) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Pesanan tidak ditemukan.'
-            ], 404);
-        }
-
-        if ($pesanan->status_operasional !== 'menunggu_diproses') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Pesanan tidak dapat dibatalkan.'
-            ], 422);
-        }
-
-        $pesanan->update(['status_operasional' => 'batal']);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Pesanan berhasil dibatalkan.'
         ]);
     }
 

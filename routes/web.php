@@ -95,6 +95,7 @@ Route::middleware('auth')->group(function () {
             Route::post('produk/{id}/varian', [ProdukVarianController::class, 'syncVarian'])->middleware('akses:produk,ubah')->name('produk.syncVarian');
         });
         Route::middleware('akses:produk-sku')->group(function () {
+            Route::post('/produk/sku/{id_produk}/import-csv', [ProdukSkuController::class, 'importCsv'])->middleware('akses:produk-sku,ubah')->name('sku.importCsv');
             Route::get('produk/{id}/sku', [ProdukController::class, 'sku'])->middleware('akses:produk-sku,ubah')->name('produk.sku');
             Route::post('produk/{id}/sku', [ProdukSkuController::class, 'syncSku'])->middleware('akses:produk-sku,ubah')->name('produk.syncSku');
             Route::get('/produk/{id}/detail-sku', [ProdukController::class, 'detailSku'])->name('produk.detailSku');

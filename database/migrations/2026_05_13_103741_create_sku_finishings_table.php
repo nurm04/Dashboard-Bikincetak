@@ -17,6 +17,8 @@ return new class extends Migration
             $table->string('id_pilihan_finishing');
             $table->integer('minimum_pesan')->default(1);
             $table->float('harga_tambahan');
+            $table->enum('tipe', ['nominal', 'persen'])->default('nominal');
+            $table->boolean('kali_jumlah_pesan')->default(false);
             $table->foreign('id_sku')->references('id_sku')->on('produk_sku')->onDelete('cascade');
             $table->foreign('id_pilihan_finishing')->references('id_pilihan_finishing')->on('pilihan_finishing')->onDelete('cascade');
             $table->timestamps();

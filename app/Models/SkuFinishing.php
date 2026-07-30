@@ -19,6 +19,8 @@ class SkuFinishing extends Model
         'id_pilihan_finishing',
         'minimum_pesan',
         'harga_tambahan',
+        'tipe',
+        'kali_jumlah_pesan'
     ];
 
     public function pesananItemFinishing(): HasMany

@@ -184,6 +184,8 @@ class PesanController extends Controller
             'items.*.harga_dasar_awal_snapshot' => 'nullable|numeric',
             'items.*.total_diskon_snapshot' => 'nullable|numeric',
 
+            'items.*.atribut_custom_snapshot' => 'nullable', // <-- Validasi baru
+
             'items.*.file_desain' => 'nullable',
             'items.*.tipe_file' => 'nullable|string|in:upload,link,email',
             'items.*.link_file' => 'nullable|string'
@@ -232,7 +234,7 @@ class PesanController extends Controller
 
             foreach ($request->items as $index => $item) {
                 // 1. Cek apakah ini produk custom
-                $isCustom = $item['id_sku'] === 'SKU-CUSTOM';
+                $isCustom = $item['id_sku'] === 'PRD-0001-SKU-001';
 
                 $finishing = isset($item['finishing']) ? json_decode($item['finishing'], true) : [];
                 $selectedFinishingIds = [];
@@ -245,6 +247,12 @@ class PesanController extends Controller
                             $selectedFinishingIds[] = $skuFin->id_pilihan_finishing;
                         }
                     }
+                }
+
+                // Pengolahan atribut_custom_snapshot
+                $atributCustom = $item['atribut_custom_snapshot'] ?? null;
+                if (is_string($atributCustom)) {
+                    $atributCustom = json_decode($atributCustom, true);
                 }
 
                 // 3. Set berat 0 kalau custom, kalau reguler hitung dari service
@@ -307,6 +315,7 @@ class PesanController extends Controller
                     'total_berat_snapshot' => $totalBeratItem,
                     'file_desain' => $fileDesainData,
                     'catatan' => $item['catatan'] ?? null,
+                    'atribut_custom_snapshot' => $atributCustom // <-- Eksekusi
                 ]);
 
                 // 5. Bypass (skip) insert ke tabel pesanan_item_finishing kalau ini produk custom
@@ -560,6 +569,7 @@ class PesanController extends Controller
             return back()->with('error', 'Gagal tambah item: '.$e->getMessage());
         }
     }
+
     public function updateItem(Request $request, $id)
     {
         $item = PesananItem::findOrFail($id);
@@ -580,6 +590,7 @@ class PesanController extends Controller
             return back()->with('error', 'Gagal update item: '.$e->getMessage());
         }
     }
+
     public function deleteItem($id)
     {
         $item = PesananItem::findOrFail($id);
@@ -619,6 +630,9 @@ class PesanController extends Controller
             'total_diskon_snapshot' => 'nullable|numeric',
             'estimasi_pengerjaan' => 'required',
             'harga_pengerjaan_snapshot' => 'nullable|numeric',
+
+            'atribut_custom_snapshot' => 'nullable', // <-- Validasi baru
+
             'file' => 'nullable',
             'tipe_file' => 'nullable|string|in:upload,link,email',
             'link_file' => 'nullable|string',
@@ -682,6 +696,13 @@ class PesanController extends Controller
                 : $request->rincian_diskon_snapshot;
         }
 
+        $atributCustomArray = null;
+        if ($request->filled('atribut_custom_snapshot')) {
+            $atributCustomArray = is_string($request->atribut_custom_snapshot)
+                ? json_decode($request->atribut_custom_snapshot, true)
+                : $request->atribut_custom_snapshot;
+        }
+
         $data = [
             'id_pesan' => $request->id_pesan,
             'id_sku' => $request->id_sku,
@@ -702,6 +723,7 @@ class PesanController extends Controller
             'file_desain' => $fileDesainData,
 
             'catatan' => $request->catatan,
+            'atribut_custom_snapshot' => $atributCustomArray,
         ];
 
         if ($item) {

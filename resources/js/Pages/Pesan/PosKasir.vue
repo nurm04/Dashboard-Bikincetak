@@ -122,7 +122,6 @@ const alamatOptions = computed(() => {
     }));
 });
 
-// Fungsi Hitung Ulang Keranjang (Triggered saat ganti Customer)
 const recalculateCartItems = (selectedCust) => {
     if (cartItems.value.length === 0) return;
 
@@ -134,12 +133,14 @@ const recalculateCartItems = (selectedCust) => {
         if (!item.master_diskon_customer) return item;
         hasUpdates = true;
 
+        const qty = Number(item.jumlah) || 1;
+        const hargaAwal = item.harga_dasar_awal_snapshot || 0;
         let diskonMember = 0;
         let namaDiskonMember = '';
         if (roleId) {
             const d = item.master_diskon_customer.find(x => String(x.id_role_customer) === String(roleId));
             if (d) {
-                diskonMember = d.tipe === 'persen' ? item.harga_dasar_awal_snapshot * (Number(d.nilai) / 100) : Number(d.nilai);
+                diskonMember = d.tipe === 'persen' ? hargaAwal * (Number(d.nilai) / 100) : Number(d.nilai);
                 namaDiskonMember = d.tipe === 'persen' ? `Diskon ${roleName} (${d.nilai}%)` : `Diskon ${roleName} (Nominal)`;
             }
         }
@@ -148,11 +149,11 @@ const recalculateCartItems = (selectedCust) => {
         let namaDiskonGrosir = '';
         const tier = [...(item.master_harga_bertingkat || [])]
             .sort((a, b) => b.min - a.min)
-            .find(t => item.jumlah >= t.min && (t.max === 0 || t.max === null || item.jumlah <= t.max));
+            .find(t => qty >= t.min && (t.max === 0 || t.max === null || qty <= t.max));
 
         if (tier) {
-            diskonGrosir = tier.tipe === 'persen' ? item.harga_dasar_awal_snapshot * (Number(tier.nilai) / 100) : Number(tier.nilai);
-            namaDiskonGrosir = tier.tipe === 'persen' ? `Harga Grosir Qty ${item.jumlah} (${tier.nilai}%)` : `Harga Grosir Qty ${item.jumlah}`;
+            diskonGrosir = tier.tipe === 'persen' ? hargaAwal * (Number(tier.nilai) / 100) : Number(tier.nilai);
+            namaDiskonGrosir = tier.tipe === 'persen' ? `Harga Grosir Qty ${qty} (${tier.nilai}%)` : `Harga Grosir Qty ${qty}`;
         }
 
         const rincianDiskon = [];
@@ -162,10 +163,17 @@ const recalculateCartItems = (selectedCust) => {
         const totalDiskonSatuan = diskonGrosir + diskonMember;
         item.total_diskon_snapshot = totalDiskonSatuan;
         item.rincian_diskon_snapshot = rincianDiskon;
-        item.harga_satuan_snapshot = Math.max(0, item.harga_dasar_awal_snapshot - totalDiskonSatuan);
+        item.harga_satuan_snapshot = Math.max(0, hargaAwal - totalDiskonSatuan);
 
-        const totalFinishing = item.pesanan_item_finishing?.reduce((sum, f) => sum + (Number(f.harga_finishing_snapshot) || 0), 0) || 0;
-        const newTotalProduk = (item.harga_satuan_snapshot + totalFinishing) * item.jumlah;
+        let multiplierAtribut = 1;
+        if (item.tipe_kalkulasi === 'cetak_buku') {
+            multiplierAtribut = Number(item.atribut_custom_snapshot?.jumlah_halaman) || 1;
+        }
+
+        const hargaSatuProdukFull = item.harga_satuan_snapshot * multiplierAtribut;
+        const totalHargaProduk = hargaSatuProdukFull * qty;
+        const totalFinishing = hitungTotalFinishing(item, qty, hargaSatuProdukFull);
+        const newTotalProduk = totalHargaProduk + totalFinishing;
 
         if (item.master_harga_pengerjaan) {
             const p = item.master_harga_pengerjaan.find(o => o.pengerjaan === item.estimasi_pengerjaan_snapshot);
@@ -378,17 +386,46 @@ const hapusItem = async (cartId) => {
 // ==========================================
 // 6. KALKULASI TOTAL & VOUCHER
 // ==========================================
-const hitungTotalFinishing = (item) => {
+const hitungTotalFinishing = (item, qtyPesanan, hargaDasarProduk) => {
     const listFinishing = item.pesanan_item_finishing || [];
-    return listFinishing.reduce((sum, f) => sum + (Number(f.harga_finishing_snapshot) || 0), 0);
+    let totalBiayaFinishing = 0;
+
+    listFinishing.forEach(f => {
+        let biayaPerFinishing = 0;
+
+        if (f.tipe === 'persen') {
+            biayaPerFinishing = hargaDasarProduk * (Number(f.harga_finishing_snapshot) / 100);
+        } else {
+            biayaPerFinishing = Number(f.harga_finishing_snapshot) || 0;
+        }
+
+        if (f.kali_jumlah_pesan) {
+            biayaPerFinishing = biayaPerFinishing * qtyPesanan;
+        }
+
+        totalBiayaFinishing += biayaPerFinishing;
+    });
+
+    return totalBiayaFinishing;
 };
 
 const hitungTotalItem = (item) => {
-    const hargaDasarNet = Number(item.harga_satuan_snapshot) || 0;
-    const totalFinishing = hitungTotalFinishing(item);
     const qty = Number(item.jumlah) || 1;
+    const hargaDasarNet = Number(item.harga_satuan_snapshot) || 0;
+
+    let multiplierAtribut = 1;
+    if (item.tipe_kalkulasi === 'cetak_buku') {
+        multiplierAtribut = Number(item.atribut_custom_snapshot?.jumlah_halaman) || 1;
+    }
+
+    const hargaSatuProdukFull = hargaDasarNet * multiplierAtribut;
+
+    const totalHargaProduk = hargaSatuProdukFull * qty;
+
+    const totalFinishing = hitungTotalFinishing(item, qty, hargaSatuProdukFull);
     const slaTotal = Number(item.harga_pengerjaan_snapshot) || 0;
-    return ((hargaDasarNet + totalFinishing) * qty) + slaTotal;
+
+    return totalHargaProduk + totalFinishing + slaTotal;
 };
 
 const totalProduk = computed(() => cartItems.value.reduce((total, item) => total + hitungTotalItem(item), 0));
@@ -469,7 +506,6 @@ const submitCheckout = async () => {
         const item = cartItems.value[index];
 
         formData.append(`items[${index}][id_sku]`, item.id_sku);
-        // Memaksa menjadi Number agar aman, berikan fallback default
         formData.append(`items[${index}][jumlah]`, Number(item.jumlah) || 1);
         formData.append(`items[${index}][nama_produk_snapshot]`, item.nama_produk_snapshot);
 
@@ -488,6 +524,11 @@ const submitCheckout = async () => {
         formData.append(`items[${index}][rincian_diskon_snapshot]`, JSON.stringify(item.rincian_diskon_snapshot || []));
         formData.append(`items[${index}][finishing]`, JSON.stringify(item.pesanan_item_finishing || []));
 
+        // MAPPING JSON Atribut Custom (Buku / dll) ke request payload
+        if (item.atribut_custom_snapshot && Object.keys(item.atribut_custom_snapshot).length > 0) {
+            formData.append(`items[${index}][atribut_custom_snapshot]`, JSON.stringify(item.atribut_custom_snapshot));
+        }
+
         if (item.tipe_file === 'upload') {
             const filesToUpload = await getFilesFromDB(item.cart_id);
             if (filesToUpload && filesToUpload.length > 0) {
@@ -503,10 +544,7 @@ const submitCheckout = async () => {
             resetFormDanKeranjang();
         },
         onError: (errors) => {
-            // 1. Cetak seluruh data error ke Console browser (Tekan F12)
             console.error("Detail Error Validasi Laravel:", errors);
-
-            // 2. Ambil baris pesan error pertama dari Laravel dan jadikan alert
             const firstError = Object.values(errors)[0];
             alertStore.show(firstError || 'Gagal checkout, periksa form input!', 'error');
         }

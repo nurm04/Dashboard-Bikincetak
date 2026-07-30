@@ -33,6 +33,22 @@ class StafSeeder extends Seeder
                 'created_at' => '2026-05-16 06:21:47',
                 'updated_at' => '2026-05-16 06:21:47',
             ],
+            [
+                'id_staf' => 'STAF-20260516-003',
+                'user_id' => 3,
+                'no_hp' => '081231231231',
+                'id_role_staf' => 'ROLE-STAF-PRODUKSI',
+                'created_at' => '2026-05-16 06:33:47',
+                'updated_at' => '2026-05-16 06:33:47',
+            ],
+            [
+                'id_staf' => 'STAF-20260516-004',
+                'user_id' => 4,
+                'no_hp' => '081231231231',
+                'id_role_staf' => 'ROLE-STAF-DESAIN',
+                'created_at' => '2026-05-16 06:44:47',
+                'updated_at' => '2026-05-16 06:44:47',
+            ],
         ]);
     }
 }

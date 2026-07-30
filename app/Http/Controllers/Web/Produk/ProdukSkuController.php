@@ -9,6 +9,7 @@ use App\Models\PilihanFinishing;
 use App\Models\ProdukSku;
 use App\Models\RoleCustomer;
 use App\Models\SkuDetailPilihan;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -91,6 +92,109 @@ class ProdukSkuController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function importCsv(Request $request, $id_produk)
+    {
+        $request->validate([
+            'skala_import' => 'required|in:produk_ini,semua_produk', // Validasi input baru
+            'tipe_import'  => 'required|in:sku_finishing,harga_bertingkat,harga_pengerjaan,diskon_customer,komposisi',
+            'file_csv'     => 'required|file|mimes:csv,txt|max:5120',
+        ]);
+
+        $file = $request->file('file_csv');
+        $csvData = array_map('str_getcsv', file($file->getRealPath(), FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
+
+        if (count($csvData) < 2) {
+            return back()->withErrors(['message' => 'File CSV kosong atau tidak memiliki baris data.']);
+        }
+
+        $headers = array_map('trim', $csvData[0]);
+        $headers[0] = preg_replace('/[\xef\xbb\xbf]/', '', $headers[0]);
+
+        $rows = array_slice($csvData, 1);
+        $insertData = [];
+        $skusAffected = [];
+        $now = Carbon::now();
+
+        $validSkus = [];
+        if ($request->skala_import === 'produk_ini') {
+            $validSkus = DB::table('produk_sku')->where('id_produk', $id_produk)->pluck('id_sku')->toArray();
+        }
+
+        foreach ($rows as $row) {
+            if (count($row) !== count($headers) || empty(array_filter($row))) {
+                continue;
+            }
+
+            $row = array_map('trim', $row);
+            $rowData = array_combine($headers, $row);
+
+            if (empty($rowData['id_sku'])) {
+                continue;
+            }
+
+            if ($request->skala_import === 'produk_ini') {
+                if (!in_array($rowData['id_sku'], $validSkus)) {
+                    continue;
+                }
+            }
+
+            $rowData['created_at'] = $now;
+            $rowData['updated_at'] = $now;
+
+            if ($request->tipe_import === 'komposisi') {
+                if (empty($rowData['id_pilihan_finishing'])) {
+                    $rowData['id_pilihan_finishing'] = null;
+                }
+            }
+
+            if ($request->tipe_import === 'harga_bertingkat') {
+                if ($rowData['max'] === '') {
+                    $rowData['max'] = 0;
+                }
+            }
+            if ($request->tipe_import === 'sku_finishing') {
+                if ($rowData['harga_tambahan'] === '') {
+                    $rowData['harga_tambahan'] = 0;
+                }
+                if ($rowData['minimum_pesan'] === '') {
+                    $rowData['minimum_pesan'] = 1;
+                }
+            }
+
+            $insertData[] = $rowData;
+
+            if (!in_array($rowData['id_sku'], $skusAffected)) {
+                $skusAffected[] = $rowData['id_sku'];
+            }
+        }
+
+        if (empty($insertData)) {
+            return back()->withErrors(['message' => 'Tidak ada data valid yang sesuai dengan pilihan skala import.']);
+        }
+
+        try {
+            DB::beginTransaction();
+            DB::table($request->tipe_import)->whereIn('id_sku', $skusAffected)->delete();
+
+            $chunks = array_chunk($insertData, 500);
+            foreach ($chunks as $chunk) {
+                DB::table($request->tipe_import)->insert($chunk);
+            }
+
+            DB::commit();
+
+            $pesan = $request->skala_import === 'produk_ini'
+                ? 'Data CSV berhasil di-import hanya untuk produk ini!'
+                : 'Data CSV berhasil di-import untuk semua produk!';
+
+            return back()->with('success', $pesan);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['message' => 'Terjadi kesalahan sistem saat menyimpan ke database: ' . $e->getMessage()]);
         }
     }
 

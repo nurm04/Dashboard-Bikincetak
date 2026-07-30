@@ -35,7 +35,7 @@ class ShippingController extends Controller
 
         $totalBerat = 0;
         foreach ($request->items as $item) {
-            if (isset($item['id_sku']) && $item['id_sku'] === 'SKU-CUSTOM') {
+            if (isset($item['id_sku']) && $item['id_sku'] === 'PRD-0001-SKU-001') {
                 $totalBerat += $item['total_berat'] ?? $item['total_berat_snapshot'] ?? $item['berat'] ?? 0;
                 continue;
             }

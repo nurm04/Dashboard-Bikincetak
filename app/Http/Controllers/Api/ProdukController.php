@@ -37,15 +37,23 @@ class ProdukController extends Controller
                 }, $produk->gambar);
             }
 
+            $skus = $produk->produkSku->map(function ($sku) {
+                return [
+                    'nama_sku' => $sku->nama_sku,
+                    'harga' => $sku->harga,
+                    'tipe_kalkulasi' => $sku->tipe_kalkulasi,
+                ];
+            })->toArray();
+
             return [
                 'id_produk' => $produk->id_produk,
                 'nama_produk' => $produk->nama_produk,
                 'kategori' => $produk->kategori ? $produk->kategori->nama_kategori : null,
                 'is_active' => $produk->is_active,
                 'gambar_urls' => $gambarUrls,
-
                 'harga_mulai_dari' => $hargaTermurah ?? 0,
                 'diskon_roles' => $diskonRoles,
+                'dataSkus' => $skus,
             ];
         });
 
@@ -77,7 +85,6 @@ class ProdukController extends Controller
                 }, $produk->gambar);
             }
 
-
             $formattedProduk = [
                 'id_produk' => $produk->id_produk,
                 'nama_produk' => $produk->nama_produk,
@@ -90,6 +97,8 @@ class ProdukController extends Controller
                     return [
                         'id_sku' => $sku->id_sku,
                         'nama_sku' => $sku->nama_sku,
+                        'deskripsi' => $sku->deskripsi,
+                        'tipe_kalkulasi' => $sku->tipe_kalkulasi,
                         'minimum_pesan' => $sku->minimum_pesan,
                         'harga_dasar' => $sku->harga,
 
@@ -107,6 +116,8 @@ class ProdukController extends Controller
                                 'nama_pilihan' => $finishing->pilihanFinishing->nama_pilihan ?? null,
                                 'minimum_pesan' => $finishing->minimum_pesan,
                                 'harga_tambahan' => $finishing->harga_tambahan,
+                                'tipe' => $finishing->tipe ?? 'nominal',
+                                'kali_jumlah_pesan' => (bool) $finishing->kali_jumlah_pesan,
                             ];
                         })
                     ];
