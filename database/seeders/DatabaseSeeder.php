@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             BahanBakuSeeder::class,
             ProdukSKUSeeder::class,
             FinishingSeeder::class,
+            KomposisiSeeder::class,
         ]);
     }
 }
