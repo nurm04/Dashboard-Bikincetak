@@ -56,11 +56,59 @@ class PesanService
         $totalSla = 0;
 
         foreach ($pesan->pesananItem as $item) {
-            $totalFinishing = $item->pesananItemFinishing->sum('harga_finishing_snapshot');
+            $qty = $item->jumlah;
             $hargaDasarAwal = $item->harga_dasar_awal_snapshot ?? $item->harga_satuan_snapshot;
-            $totalProdukKotor += ($hargaDasarAwal + $totalFinishing) * $item->jumlah;
             $diskonPerItem = $item->total_diskon_snapshot ?? 0;
-            $totalDiskonItem += $diskonPerItem * $item->jumlah;
+
+            $hargaSatuanNet = max(0, $hargaDasarAwal - $diskonPerItem);
+
+            $atribut = is_string($item->atribut_custom_snapshot)
+                ? json_decode($item->atribut_custom_snapshot, true)
+                : $item->atribut_custom_snapshot;
+
+            $sisi = 1;
+            foreach ($item->pesananItemFinishing as $fin) {
+                $namaFinishing = strtolower($fin->nama_finishing_snapshot ?? '');
+                if (str_contains($namaFinishing, 'dua sisi') || str_contains($namaFinishing, '2 sisi') || str_contains($namaFinishing, 'bolak')) {
+                    $sisi = 2;
+                    break;
+                }
+            }
+
+            $biayaHalaman = 0;
+            if (is_array($atribut) && isset($atribut['Jumlah Halaman'])) {
+                $hal = max(1, (int) $atribut['Jumlah Halaman']);
+                $biayaHalaman = max(0, $hal - 1) * $sisi * 1500;
+            }
+
+            $hargaSatuProdukFull = $hargaSatuanNet + $biayaHalaman;
+            $totalDiskonItem += ($diskonPerItem * $qty);
+
+            $totalFinishingItem = 0;
+            foreach ($item->pesananItemFinishing as $fin) {
+                $biayaFin = 0;
+                if ($fin->tipe === 'persen') {
+                    $biayaFin = $hargaSatuProdukFull * ((float) $fin->harga_finishing_snapshot / 100);
+                } else {
+                    $biayaFin = (float) $fin->harga_finishing_snapshot;
+                }
+
+                $isKaliQty = (bool) optional($fin->skuFinishing)->kali_jumlah_pesan;
+
+                if ($isKaliQty) {
+                    $biayaFin *= $qty;
+                }
+
+                if ($isKaliQty) {
+                    $biayaFin *= $qty;
+                }
+
+                $totalFinishingItem += $biayaFin;
+            }
+
+            $kotorItem = (($hargaDasarAwal + $biayaHalaman) * $qty) + $totalFinishingItem;
+            $totalProdukKotor += $kotorItem;
+
             $totalSla += $item->harga_pengerjaan_snapshot ?? 0;
         }
 
@@ -107,25 +155,38 @@ class PesanService
         return (int) $pesan->pesananItem->sum('total_berat_snapshot');
     }
 
-    public static function hitungBeratTotalItem(string $idSku, int $jumlah, array $selectedFinishingIds = []): int
+    public static function hitungBeratTotalItem(string $idSku, int $jumlah, array $selectedFinishingIds = [], array $atributCustom = []): int
     {
         $komposisiList = Komposisi::with('bahanBaku')
                             ->where('id_sku', $idSku)
                             ->where(function ($query) use ($selectedFinishingIds) {
                                 $query->whereNull('id_pilihan_finishing')
-                                      ->orWhereIn('id_pilihan_finishing', $selectedFinishingIds);
+                                    ->orWhereIn('id_pilihan_finishing', $selectedFinishingIds);
                             })
                             ->get();
+
+        // CUMA AMBIL JUMLAH HALAMAN (Tanpa konversi sisi cetak)
+        $jumlahHalaman = isset($atributCustom['Jumlah Halaman']) ? max(1, (int)$atributCustom['Jumlah Halaman']) : 1;
 
         $beratSatuPcs = 0;
 
         foreach ($komposisiList as $komp) {
             if ($komp->bahanBaku) {
+                // RUMUS LU: Berat Bahan (32.76) x Pemakaian BOM (0.25)
                 $beratBahan = $komp->jumlah_pakai * $komp->bahanBaku->berat_gram_persatuan;
+
+                // JIKA INI BAHAN UTAMA (Kertas Isi Buku), KALIKAN DENGAN HALAMAN (20)
+                if (is_null($komp->id_pilihan_finishing)) {
+                    $beratBahan *= $jumlahHalaman;
+                }
+
+                // (Untuk finishing seperti cover dll, dia akan masuk ke blok $beratSatuPcs tanpa dikali halaman)
+
                 $beratSatuPcs += $beratBahan;
             }
         }
 
+        // Total akhir dikalikan dengan QTY pesanan
         return (int) ceil($beratSatuPcs * $jumlah);
     }
 

@@ -25,6 +25,82 @@ const props = defineProps({
     filters: Object
 });
 
+// ==========================================
+// KALKULASI TOTAL TAGIHAN AKURAT (VUE)
+// ==========================================
+const getTagihanAkurat = (pesan) => {
+    let totalMurniProduk = 0;
+    let totalPengerjaan = 0;
+
+    if (pesan.pesanan_item && Array.isArray(pesan.pesanan_item)) {
+        pesan.pesanan_item.forEach(item => {
+            let hargaDasar = Number(item.harga_satuan_snapshot) || 0;
+            let jumlahHalaman = 1;
+            let atribut = {};
+
+            // 1. Ekstrak Jumlah Halaman dari atribut_custom_snapshot
+            if (item.atribut_custom_snapshot) {
+                if (typeof item.atribut_custom_snapshot === 'string') {
+                    try {
+                        atribut = JSON.parse(item.atribut_custom_snapshot);
+                    } catch (e) {
+                        console.error("Gagal parse atribut_custom_snapshot", e);
+                    }
+                } else {
+                    atribut = item.atribut_custom_snapshot;
+                }
+
+                if (atribut && atribut['Jumlah Halaman'] !== undefined) {
+                    const val = parseInt(String(atribut['Jumlah Halaman']), 10);
+                    if (!isNaN(val) && val > 0) {
+                        jumlahHalaman = val;
+                    }
+                }
+            }
+
+            // 2. Cek Sisi Cetak dari Finishing
+            let sisi = 1;
+            if (item.pesanan_item_finishing) {
+                item.pesanan_item_finishing.forEach(fin => {
+                    const label = (fin.nama_finishing_snapshot || "").toLowerCase();
+                    if (label.includes("2 sisi") || label.includes("dua sisi") || label.includes("bolak")) {
+                        sisi = 2;
+                    }
+                });
+            }
+
+            // 3. Tambahan Kertas (halaman 1 gratis)
+            if (jumlahHalaman > 1) {
+                hargaDasar += (jumlahHalaman - 1) * sisi * 1500;
+            }
+
+            // 4. Hitung Total Finishing + Pengerjaan
+            const finishingTotal = item.pesanan_item_finishing?.reduce((sum, fin) => sum + (Number(fin.harga_finishing_snapshot) || 0), 0) ?? 0;
+            const subtotalItem = (hargaDasar + finishingTotal) * (Number(item.jumlah) || 1);
+
+            totalMurniProduk += subtotalItem;
+            totalPengerjaan += Number(item.harga_pengerjaan_snapshot) || 0;
+        });
+    }
+
+    const ongkir = Number(pesan.harga_ongkir || 0);
+    const diskon = Number(pesan.diskon_voucher_nominal || 0);
+    const kodeUnik = Number(pesan.kode_unik || 0);
+
+    return totalMurniProduk + totalPengerjaan + ongkir - diskon + kodeUnik;
+};
+
+// Map pesanan yang masuk dan inject tagihan akurat
+const pesananAkurat = computed(() => {
+    return props.pesanan.map(p => {
+        return {
+            ...p,
+            total_tagihan_real: getTagihanAkurat(p)
+        };
+    });
+});
+// ==========================================
+
 const headers = ['ID Pesanan', 'Kode Transaksi', 'Customer', 'Total Tagihan', 'Pembayaran', 'Operasional', 'Aksi'];
 
 const showBayarSebagianModal = ref(false);
@@ -74,9 +150,9 @@ watch(
     }, 300)
 );
 
-
 const sudahAdaPembayaran = (pesan) => (pesan.total_dibayar ?? 0) > 0;
-const sudahLunas = (pesan) => (pesan.total_dibayar ?? 0) >= (pesan.total_tagihan ?? 0);
+// PENTING: Gunakan total_tagihan_real untuk validasi lunas!
+const sudahLunas = (pesan) => (pesan.total_dibayar ?? 0) >= (pesan.total_tagihan_real ?? 0);
 
 const resetModal = () => {
     formPembayaran.reset();
@@ -172,8 +248,9 @@ const formatEnum = (text) => {
             </div>
 
             <CustomTable :headers="headers">
+                <!-- Ganti looping pesanan menjadi pesananAkurat -->
                 <tr
-                    v-for="p in pesanan"
+                    v-for="p in pesananAkurat"
                     :key="p.id_pesan"
                     :class="p.status_operasional === 'batal' ? 'bg-base-200/30' : 'hover:bg-base-200/50'"
                     class="transition-colors"
@@ -191,8 +268,9 @@ const formatEnum = (text) => {
                         <div class="text-[10px] opacity-40 font-mono tracking-wider">{{ p.id_customer }}</div>
                     </td>
 
+                    <!-- Ganti p.total_tagihan jadi p.total_tagihan_real -->
                     <td class="px-6 py-4 text-sm font-black" :class="p.status_operasional === 'batal' ? 'opacity-40 line-through' : 'text-base-content'">
-                        {{ formatRupiah(p.total_tagihan ?? 0) }}
+                        {{ formatRupiah(p.total_tagihan_real ?? 0) }}
                     </td>
 
                     <td class="px-6 py-4" :class="p.status_operasional === 'batal' ? 'opacity-50' : ''">
@@ -218,7 +296,8 @@ const formatEnum = (text) => {
                         <div class="mt-1 text-[10px] font-bold opacity-60" :class="p.status_operasional === 'batal' ? 'line-through' : ''">
                             {{ formatRupiah(p.total_dibayar ?? 0) }}
                             /
-                            {{ formatRupiah(p.total_tagihan ?? 0) }}
+                            <!-- Ganti p.total_tagihan jadi p.total_tagihan_real -->
+                            {{ formatRupiah(p.total_tagihan_real ?? 0) }}
                         </div>
                     </td>
 
@@ -258,7 +337,7 @@ const formatEnum = (text) => {
                     <div>
                         <CustomInput
                             label="Total Tagihan"
-                            :model-value="formatRupiah(selectedPesan.total_tagihan)"
+                            :model-value="formatRupiah(selectedPesan.total_tagihan_real)"
                             disabled
                         />
                     </div>
@@ -269,7 +348,7 @@ const formatEnum = (text) => {
                             type="number"
                             placeholder="Masukkan nominal pembayaran"
                             :error="formPembayaran.errors.nominal_bayar"
-                            :max="selectedPesan.total_tagihan - (selectedPesan.total_dibayar ?? 0)"
+                            :max="selectedPesan.total_tagihan_real - (selectedPesan.total_dibayar ?? 0)"
                         />
                     </div>
                     <div class="p-3 text-xs rounded-lg bg-base-200">
@@ -277,7 +356,7 @@ const formatEnum = (text) => {
                             Sudah Dibayar: <b>{{formatRupiah(selectedPesan.total_dibayar ?? 0)}}</b>
                         </div>
                         <div>
-                            Sisa Tagihan: <b>{{formatRupiah(selectedPesan.total_tagihan - (selectedPesan.total_dibayar ?? 0))}}</b>
+                            Sisa Tagihan: <b>{{formatRupiah(selectedPesan.total_tagihan_real - (selectedPesan.total_dibayar ?? 0))}}</b>
                         </div>
                     </div>
                 </div>

@@ -20,7 +20,6 @@ const emit = defineEmits([
     'printLabel'
 ]);
 
-// Computed untuk mengecek apakah status pesanan masih boleh diedit
 const isEditable = computed(() => {
     const statusDilarang = ['proses_pengerjaan', 'proses_pengantaran', 'selesai', 'batal'];
     return !statusDilarang.includes(props.statusOperasional);
@@ -30,6 +29,109 @@ const headers = ['#', 'Produk & Spesifikasi', 'File & Catatan', 'Harga Satuan', 
 
 const formatRupiah = (angka) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(angka || 0);
+};
+
+// ==========================================
+// 1. Ekstrak & Parse Atribut Custom (JSON)
+// ==========================================
+const getCustomAttributes = (item) => {
+    let attr = item.atribut_custom_snapshot;
+    if (!attr) return null;
+
+    if (typeof attr === 'string') {
+        try {
+            attr = JSON.parse(attr);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // Filter nilai yang "", null, atau undefined
+    if (typeof attr === 'object' && attr !== null) {
+        const validAttrs = {};
+        let hasValidData = false;
+
+        for (const [key, value] of Object.entries(attr)) {
+            if (value !== null && value !== undefined && value !== '') {
+                validAttrs[key] = value;
+                hasValidData = true;
+            }
+        }
+
+        return hasValidData ? validAttrs : null;
+    }
+
+    return null;
+};
+
+const getSisiFromFinishing = (item) => {
+    const finishings = item.pesanan_item_finishing || item.finishing || [];
+    let sisi = 1;
+    finishings.forEach(f => {
+        const namaFin = (f.nama_finishing_snapshot || '').toLowerCase();
+        if (namaFin.includes('dua sisi') || namaFin.includes('2 sisi') || namaFin.includes('bolak')) {
+            sisi = 2;
+        }
+    });
+    return sisi;
+};
+
+const isKaliJumlahPesan = (fin) => Boolean(fin.sku_finishing?.kali_jumlah_pesan);
+
+const getDisplayHargaSatuan = (item) => {
+    let hargaAwal = Number(item.harga_satuan_snapshot) || 0;
+    const attr = getCustomAttributes(item);
+    const finishings = item.pesanan_item_finishing || item.finishing || [];
+    const sisi = getSisiFromFinishing(item);
+
+    if (attr && attr['Jumlah Halaman'] !== undefined) {
+        let hal = parseInt(attr['Jumlah Halaman'], 10);
+        if (isNaN(hal) || hal < 1) hal = 1;
+        hargaAwal += (Math.max(0, hal - 1) * sisi * 1500);
+    }
+
+    finishings.forEach(f => {
+        const isKaliQty = isKaliJumlahPesan(f);
+
+        if (isKaliQty) {
+            let val = f.tipe === 'persen'
+                ? (hargaAwal * (Number(f.harga_finishing_snapshot) / 100))
+                : (Number(f.harga_finishing_snapshot) || 0);
+            hargaAwal += val;
+        }
+    });
+
+    return hargaAwal;
+};
+
+// 3. Kalkulasi UI: Subtotal (Murni Produk + Finishing, TANPA SLA)
+const getDisplaySubtotal = (item) => {
+    if (item.subtotal !== undefined) return Number(item.subtotal);
+
+    let hargaAwal = Number(item.harga_satuan_snapshot) || 0;
+    const attr = getCustomAttributes(item);
+    const finishings = item.pesanan_item_finishing || item.finishing || [];
+    const sisi = getSisiFromFinishing(item);
+
+    if (attr && attr['Jumlah Halaman'] !== undefined) {
+        let hal = parseInt(attr['Jumlah Halaman'], 10);
+        if (isNaN(hal) || hal < 1) hal = 1;
+        hargaAwal += (Math.max(0, hal - 1) * sisi * 1500);
+    }
+
+    let total = hargaAwal * item.jumlah;
+
+    finishings.forEach(f => {
+        const isKaliQty = isKaliJumlahPesan(f);
+
+        let val = f.tipe === 'persen'
+            ? (hargaAwal * (Number(f.harga_finishing_snapshot) / 100))
+            : (Number(f.harga_finishing_snapshot) || 0);
+
+        total += (isKaliQty ? val * item.jumlah : val);
+    });
+
+    return total;
 };
 
 const getFileDisplay = (item) => {
@@ -49,7 +151,6 @@ const getFileDisplay = (item) => {
             nilai: item.tipe_file === 'link' ? item.link_file : (item.file ? (item.file.name || 'File Uploaded') : 'Kosong')
         };
     }
-
     return null;
 };
 
@@ -79,13 +180,11 @@ const confirmDelete = () => {
         @confirm="confirmDelete"
     />
     <div>
-        <!-- Header Terpisah -->
         <div class="flex items-center justify-between mb-2 px-3 py-3 rounded-xl bg-base-100">
             <div class="flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 text-primary opacity-80"><path fill-rule="evenodd" d="M10 2a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 2zM10 15a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 15zM10 7a3 3 0 100 6 3 3 0 000-6zM15.657 5.404a.75.75 0 10-1.06-1.06l-1.061 1.06a.75.75 0 001.06 1.06l1.06-1.06zM6.464 14.596a.75.75 0 10-1.06-1.06l-1.06 1.06a.75.75 0 001.06 1.06l1.06-1.06zM18 10a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0118 10zM5 10a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 015 10zM14.596 15.657a.75.75 0 001.06-1.06l-1.06-1.061a.75.75 0 10-1.06 1.06l1.06 1.06zM5.404 6.464a.75.75 0 001.06-1.06l-1.06-1.06a.75.75 0 10-1.061 1.06l1.06 1.06z" clip-rule="evenodd" /></svg>
                 <h3 class="text-[10px] font-black tracking-widest uppercase opacity-60">Daftar Item Cetak</h3>
             </div>
-            <!-- Tombol Tambah disembunyikan jika pesanan sudah diproses -->
             <CustomButton v-if="$can('pesan', 'ubah') && isEditable" @click="$emit('addItem')" size="sm">+ Tambah Item</CustomButton>
         </div>
 
@@ -103,13 +202,25 @@ const confirmDelete = () => {
                 <tr v-for="(item, index) in items" :key="item.id || item.cart_id || index" class="transition-colors border-b hover:bg-base-200/30 border-base-200/50">
                     <td class="pt-3 font-mono font-bold text-center opacity-50 align-top">{{ index + 1 }}</td>
 
-                    <!-- KOLOM 1: PRODUK & FINISHING -->
+                    <!-- KOLOM 1: PRODUK, ATRIBUT CUSTOM & FINISHING -->
                     <td class="pt-3 align-top">
-                        <p class="mb-1.5 text-xs font-black uppercase leading-tight text-primary">{{ item.nama_produk_snapshot }}</p>
+                        <p class="mb-1.5 text-xs font-black capitalize leading-tight text-primary">{{ item.nama_produk_snapshot }}</p>
+
+                        <div v-if="getCustomAttributes(item)" class="flex flex-col gap-0.5 mb-2 text-[10px] font-bold text-base-content/80">
+                            <div v-for="(val, key) in getCustomAttributes(item)" :key="key" class="flex items-start gap-1">
+                                <span class="text-primary mt-px">▪</span>
+                                <span>{{ key }}: <span class="font-black text-primary">{{ val }}</span></span>
+                            </div>
+                        </div>
+
                         <div class="flex flex-col gap-0.5 text-[10px] font-medium opacity-70">
                             <div v-for="(fin, fIdx) in (item.pesanan_item_finishing || item.finishing)" :key="'fin'+fIdx" class="flex items-start gap-1">
                                 <span class="opacity-50 mt-px">▸</span>
-                                <span>{{ fin.nama_finishing_snapshot }} <span class="font-mono">({{ formatRupiah(fin.harga_finishing_snapshot) }})</span></span>
+                                <span>{{ fin.nama_finishing_snapshot }}
+                                    <span class="font-mono">
+                                        ({{ fin.tipe === 'persen' ? `${fin.harga_finishing_snapshot}%` : formatRupiah(fin.harga_finishing_snapshot) }})
+                                    </span>
+                                </span>
                             </div>
                         </div>
                     </td>
@@ -149,10 +260,10 @@ const confirmDelete = () => {
                                 {{ formatRupiah(item.harga_dasar_awal_snapshot) }}
                             </div>
                             <div class="font-mono text-xs font-bold text-base-content">
-                                {{ formatRupiah(item.harga_satuan_snapshot + ((item.pesanan_item_finishing || item.finishing)?.reduce((acc, fin) => acc + (Number(fin.harga_finishing_snapshot) || 0), 0) || 0)) }}
+                                {{ formatRupiah(getDisplayHargaSatuan(item)) }}
                             </div>
                             <div v-if="item.rincian_diskon_snapshot?.length" class="flex flex-col items-end gap-0.5 mt-0.5">
-                                <span v-for="(diskon, dIdx) in item.rincian_diskon_snapshot" :key="'dsc'+dIdx" class="text-[7px] font-black uppercase tracking-wider text-error opacity-90 bg-error/10 px-1.5 py-0.5 rounded">
+                                <span v-for="(diskon, dIdx) in (typeof item.rincian_diskon_snapshot === 'string' ? JSON.parse(item.rincian_diskon_snapshot) : item.rincian_diskon_snapshot)" :key="'dsc'+dIdx" class="text-[7px] font-black uppercase tracking-wider text-error opacity-90 bg-error/10 px-1.5 py-0.5 rounded">
                                     {{ diskon.nama }}
                                 </span>
                             </div>
@@ -168,7 +279,7 @@ const confirmDelete = () => {
                     <td class="pt-3 text-right align-top">
                         <div class="flex flex-col items-end gap-1">
                             <span class="font-mono text-sm font-black text-primary">
-                                {{ formatRupiah(((item.harga_satuan_snapshot + ((item.pesanan_item_finishing || item.finishing)?.reduce((acc, fin) => acc + (Number(fin.harga_finishing_snapshot) || 0), 0) || 0)) * item.jumlah) + (Number(item.harga_pengerjaan_snapshot) || 0)) }}
+                                {{ formatRupiah(getDisplaySubtotal(item)) }}
                             </span>
                             <div v-if="(item.harga_pengerjaan_snapshot || 0) > 0" class="mt-0.5">
                                 <span class="text-[7px] font-black uppercase tracking-wider text-warning opacity-90 bg-warning/10 px-1.5 py-0.5 rounded">
@@ -180,7 +291,6 @@ const confirmDelete = () => {
 
                     <!-- KOLOM 6: AKSI DINAMIS -->
                     <td class="pt-3 text-center align-top">
-                        <!-- TAMPILKAN DROPDOWN LENGKAP JIKA STATUS MASIH MENUNGGU -->
                         <template v-if="isEditable">
                             <CustomTableAction v-slot="{ close }">
                                 <div class="px-4 py-2 text-[9px] font-black text-base-content/30 uppercase tracking-widest border-b border-base-300/50 mb-1">
@@ -202,7 +312,6 @@ const confirmDelete = () => {
                             </CustomTableAction>
                         </template>
 
-                        <!-- TAMPILKAN TOMBOL CETAK LABEL SAJA JIKA STATUS SUDAH DIPROSES -->
                         <template v-else>
                             <button v-if="item.id" @click="$emit('printLabel', item.id)" class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 mx-auto text-[9px] font-black tracking-widest uppercase text-info bg-info/10 hover:bg-info hover:text-info-content transition-colors rounded-lg border border-info/20 tooltip tooltip-left" data-tip="Cetak Label Item SPK">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
@@ -210,7 +319,6 @@ const confirmDelete = () => {
                             </button>
                         </template>
                     </td>
-
                 </tr>
             </CustomTable>
         </div>

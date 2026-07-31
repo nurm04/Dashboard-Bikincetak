@@ -55,6 +55,27 @@ const getFileDisplay = (item) => {
     return null;
 };
 
+const parseAtribut = (atributStr) => {
+    if (!atributStr) return null;
+    if (typeof atributStr === 'object') return atributStr;
+    try {
+        return JSON.parse(atributStr);
+    } catch (e) {
+        console.error("Gagal parse atribut:", e);
+        return null;
+    }
+};
+
+// Filter khusus agar yang isinya "", null, atau undefined TIDAK dirender
+const getValidAttributes = (atributStr) => {
+    const parsed = parseAtribut(atributStr);
+    if (!parsed || typeof parsed !== 'object') return [];
+
+    return Object.entries(parsed)
+        .filter(([key, value]) => value !== null && value !== undefined && value !== '')
+        .map(([key, value]) => ({ key, value }));
+};
+
 const headersProses = ['Pelaksana', 'Instruksi / Keterangan', 'Qty', 'Status', 'Aksi'];
 
 // ==========================================
@@ -269,7 +290,6 @@ const closeModalBerat = () => {
 };
 
 const submitBerat = () => {
-    // Note: Pastikan route 'produksi.update_berat' ini ada di backend lu ya buat update DB
     formBerat.put(route('produksi.update_berat', selectedPengantaran.value.id_pesan), {
         preserveScroll: true,
         onSuccess: () => {
@@ -322,7 +342,6 @@ const isManualEkspedisi = computed(() => ['Ambil di Toko', 'Kurir Toko'].include
 const openPengantaranModal = (pesanan) => {
     formPengantaran.id_alamat = pesanan.id_alamat || '';
 
-    // Parsing nama ekspedisi
     let ekspNameRaw = (pesanan.ekspedisi_nama || '').toLowerCase();
     let matchedCode = 'Kurir Toko';
 
@@ -443,7 +462,7 @@ const submitPengantaran = () => {
         ekspedisi_nama: finalEkspedisiNama,
         ekspedisi_layanan: data.ekspedisi_nama === 'Ambil di Toko' ? 'Ambil Sendiri' : data.ekspedisi_layanan,
         harga_ongkir: data.ekspedisi_nama === 'Ambil di Toko' ? 0 : data.harga_ongkir,
-        ekspedisi_estimasi: data.ekspedisi_nama === 'Ambil di Toko' ? '0' : data.ekspedisi_estimasi, // <--- Tambahkan ini
+        ekspedisi_estimasi: data.ekspedisi_nama === 'Ambil di Toko' ? '0' : data.ekspedisi_estimasi,
     })).post(route('produksi.pengantaran.proses', selectedPengantaran.value.id_pesan), {
         onSuccess: () => {
             closePengantaranModal();
@@ -458,10 +477,8 @@ const handleProsesPengantaran = (pesanan) => {
     const hasCustomItem = pesanan.pesanan_item.some(item => item.id_sku === 'PRD-0001-SKU-001');
 
     if (hasCustomItem) {
-        // Alur Custom: Buka FORM 1 (Isi & Simpan Berat ke DB dulu)
         openModalBerat(pesanan);
     } else {
-        // Alur Reguler: Langsung konfirmasi
         selectedKirimId.value = pesanan.id_pesan;
         isConfirmKirimOpen.value = true;
     }
@@ -469,7 +486,6 @@ const handleProsesPengantaran = (pesanan) => {
 </script>
 
 <template>
-    <!-- MODAL ALERT KONFIRMASI LAMA (Khusus Reguler) -->
     <CustomAlertConfirm
         :show="isConfirmKirimOpen"
         type="warning"
@@ -553,10 +569,20 @@ const handleProsesPengantaran = (pesanan) => {
                             <tbody class="divide-y divide-base-100">
                                 <tr v-for="item in pesanan.pesanan_item" :key="item.id" class="group">
                                     <td class="py-4 font-medium align-top">
-                                        {{ item.nama_produk_snapshot }}
+                                        <span class="capitalize font-semibold">{{ item.nama_produk_snapshot }}</span>
+
+                                        <!-- Menampilkan Atribut Custom (Pake getValidAttributes) -->
+                                        <div v-if="getValidAttributes(item.atribut_custom_snapshot).length > 0" class="mt-1 text-[10px] font-bold text-primary leading-relaxed flex flex-wrap gap-1">
+                                            <span v-for="(attr, idx) in getValidAttributes(item.atribut_custom_snapshot)" :key="attr.key">
+                                                <span v-if="idx > 0" class="mx-1 opacity-40 text-base-content">|</span>
+                                                <span class="opacity-70">{{ attr.key }}:</span> {{ attr.value }}
+                                            </span>
+                                        </div>
+
                                         <div v-if="item.id_sku?.startsWith('PRD-0002')" class="inline-flex mt-1.5 items-center gap-1 text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
                                             Auto In-House
                                         </div>
+
                                         <div v-if="item.pesanan_item_finishing?.length" class="flex flex-col gap-0.5 mt-2 mb-2">
                                             <div v-for="(fin, fIdx) in item.pesanan_item_finishing" :key="'fin'+fIdx" class="flex items-start gap-1">
                                                 <span class="opacity-50 mt-px">▸</span>
@@ -606,7 +632,16 @@ const handleProsesPengantaran = (pesanan) => {
                             <div class="p-4 bg-base-50/50 border-b border-base-200 flex flex-col sm:flex-row gap-4">
                                 <div class="sm:w-1/3">
                                     <span class="text-[10px] font-bold text-base-content/50 uppercase tracking-widest block mb-1.5">Item Produk</span>
-                                    <h4 class="font-medium text-sm text-base-content">{{ item.nama_produk_snapshot }}</h4>
+                                    <h4 class="font-semibold capitalize text-sm text-base-content">{{ item.nama_produk_snapshot }}</h4>
+
+                                    <!-- Menampilkan Atribut Custom (Pake getValidAttributes) -->
+                                    <div v-if="getValidAttributes(item.atribut_custom_snapshot).length > 0" class="mt-1 text-[10px] font-bold text-primary leading-relaxed flex flex-wrap gap-1 mb-2">
+                                        <span v-for="(attr, idx) in getValidAttributes(item.atribut_custom_snapshot)" :key="attr.key">
+                                            <span v-if="idx > 0" class="mx-1 opacity-40 text-base-content">|</span>
+                                            <span class="opacity-70">{{ attr.key }}:</span> {{ attr.value }}
+                                        </span>
+                                    </div>
+
                                     <div v-if="item.pesanan_item_finishing?.length" class="flex flex-col gap-0.5 mb-2 mt-1">
                                         <div v-for="(fin, fIdx) in item.pesanan_item_finishing" :key="'fin'+fIdx" class="flex items-start gap-1">
                                             <span class="opacity-50 mt-px text-xs">▸</span>
@@ -730,7 +765,7 @@ const handleProsesPengantaran = (pesanan) => {
                     <template v-for="(item, itemIndex) in alokasiForm.alokasi" :key="item.id_pesanan_item">
                         <div v-show="!item.is_desain">
                             <div class="flex items-center justify-between mb-3">
-                                <h4 class="font-medium text-sm">{{ item.nama_produk }}</h4>
+                                <h4 class="font-medium capitalize text-sm">{{ item.nama_produk }}</h4>
                                 <span class="text-xs text-base-content/60">Target: <span class="font-semibold text-base-content">{{ item.total_qty }}</span></span>
                             </div>
                             <div class="space-y-3">
@@ -884,7 +919,7 @@ const handleProsesPengantaran = (pesanan) => {
                 <form @submit.prevent="submitBerat" class="space-y-4">
                     <div v-for="(item, index) in formBerat.items" :key="index" class="p-4 bg-base-100 border rounded-lg border-base-200 shadow-sm">
                         <div class="mb-2">
-                            <h4 class="text-sm font-black">{{ item.nama_produk }}</h4>
+                            <h4 class="text-sm capitalize font-black">{{ item.nama_produk }}</h4>
                         </div>
                         <div class="form-control w-full">
                             <label class="label pb-1">

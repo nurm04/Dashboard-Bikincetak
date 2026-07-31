@@ -137,6 +137,7 @@ const recalculateCartItems = (selectedCust) => {
         const hargaAwal = item.harga_dasar_awal_snapshot || 0;
         let diskonMember = 0;
         let namaDiskonMember = '';
+
         if (roleId) {
             const d = item.master_diskon_customer.find(x => String(x.id_role_customer) === String(roleId));
             if (d) {
@@ -165,12 +166,23 @@ const recalculateCartItems = (selectedCust) => {
         item.rincian_diskon_snapshot = rincianDiskon;
         item.harga_satuan_snapshot = Math.max(0, hargaAwal - totalDiskonSatuan);
 
-        let multiplierAtribut = 1;
-        if (item.tipe_kalkulasi === 'cetak_buku') {
-            multiplierAtribut = Number(item.atribut_custom_snapshot?.jumlah_halaman) || 1;
-        }
+        // ==== PERBAIKAN RUMUS CETAK BUKU DI KERANJANG ====
+        let hargaSatuProdukFull = item.harga_satuan_snapshot;
 
-        const hargaSatuProdukFull = item.harga_satuan_snapshot * multiplierAtribut;
+        if (item.tipe_kalkulasi === 'cetak_buku') {
+            let hal = parseInt(item.atribut_custom_snapshot?.['Jumlah Halaman'], 10);
+            if (isNaN(hal) || hal < 1) hal = 1;
+
+            const sisi = Number(item.atribut_custom_snapshot?.['Sisi Cetak']) || 1;
+
+            // Halaman 1 Gratis
+            const tambahanHalaman = Math.max(0, hal - 1);
+            const biayaHalaman = tambahanHalaman * sisi * 1500;
+
+            hargaSatuProdukFull += biayaHalaman; // Tambah Harga Kertas ke Harga Dasar
+        }
+        // =================================================
+
         const totalHargaProduk = hargaSatuProdukFull * qty;
         const totalFinishing = hitungTotalFinishing(item, qty, hargaSatuProdukFull);
         const newTotalProduk = totalHargaProduk + totalFinishing;
@@ -411,17 +423,24 @@ const hitungTotalFinishing = (item, qtyPesanan, hargaDasarProduk) => {
 
 const hitungTotalItem = (item) => {
     const qty = Number(item.jumlah) || 1;
-    const hargaDasarNet = Number(item.harga_satuan_snapshot) || 0;
+    let hargaSatuProdukFull = Number(item.harga_satuan_snapshot) || 0;
 
-    let multiplierAtribut = 1;
+    // ==== PERBAIKAN RUMUS CETAK BUKU MASTER RECALCULATE ====
     if (item.tipe_kalkulasi === 'cetak_buku') {
-        multiplierAtribut = Number(item.atribut_custom_snapshot?.jumlah_halaman) || 1;
-    }
+        let hal = parseInt(item.atribut_custom_snapshot?.['Jumlah Halaman'], 10);
+        if (isNaN(hal) || hal < 1) hal = 1;
 
-    const hargaSatuProdukFull = hargaDasarNet * multiplierAtribut;
+        const sisi = Number(item.atribut_custom_snapshot?.['Sisi Cetak']) || 1;
+
+        // Halaman 1 Gratis
+        const tambahanHalaman = Math.max(0, hal - 1);
+        const biayaHalaman = tambahanHalaman * sisi * 1500;
+
+        hargaSatuProdukFull += biayaHalaman;
+    }
+    // =======================================================
 
     const totalHargaProduk = hargaSatuProdukFull * qty;
-
     const totalFinishing = hitungTotalFinishing(item, qty, hargaSatuProdukFull);
     const slaTotal = Number(item.harga_pengerjaan_snapshot) || 0;
 

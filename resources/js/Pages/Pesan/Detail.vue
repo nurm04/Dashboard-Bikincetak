@@ -1,6 +1,6 @@
 <script setup>
-import { ref } from 'vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { ref, computed } from 'vue'; // <-- Tambahkan computed
+import { Head, useForm, usePage } from '@inertiajs/vue3';
 import StafLayout from '@/Layouts/StafLayout.vue';
 import CustomInput from '@/Components/Form/CustomInput.vue';
 import { alertStore } from '@/Utils/alertStore';
@@ -9,6 +9,8 @@ import OrderInfoCards from './Partials/OrderInfoCards.vue';
 import OrderItemsTable from './Partials/OrderItemsTable.vue';
 import OrderSummary from './Partials/OrderSummary.vue';
 import OrderFormCard from './Partials/OrderFormCard.vue';
+
+const page = usePage();
 
 const props = defineProps({
     pesanan: Object,
@@ -22,6 +24,86 @@ const props = defineProps({
 });
 const showOrderForm = ref(false);
 const itemToEdit = ref(null);
+
+// ==========================================
+// KALKULASI DINAMIS FRONTEND (SINKRONISASI TOTAL)
+// ==========================================
+const getCustomAttributes = (item) => {
+    let attr = item.atribut_custom_snapshot;
+    if (!attr) return null;
+    if (typeof attr === 'string') {
+        try { attr = JSON.parse(attr); } catch (e) { return null; }
+    }
+    return (typeof attr === 'object' && Object.keys(attr).length > 0) ? attr : null;
+};
+
+const isKaliJumlahPesan = (fin) => Boolean(fin.sku_finishing?.kali_jumlah_pesan);
+
+const getDisplaySubtotal = (item) => {
+    if (item.subtotal !== undefined) return Number(item.subtotal);
+
+    let hargaAwal = Number(item.harga_satuan_snapshot) || 0;
+    const attr = getCustomAttributes(item);
+    const finishings = item.pesanan_item_finishing || item.finishing || [];
+
+    let sisi = 1;
+    finishings.forEach(f => {
+        const namaFin = (f.nama_finishing_snapshot || '').toLowerCase();
+        if (namaFin.includes('dua sisi') || namaFin.includes('2 sisi') || namaFin.includes('bolak')) {
+            sisi = 2;
+        }
+    });
+
+    if (attr && attr['Jumlah Halaman'] !== undefined) {
+        let hal = parseInt(attr['Jumlah Halaman'], 10);
+        if (isNaN(hal) || hal < 1) hal = 1;
+        hargaAwal += (Math.max(0, hal - 1) * sisi * 1500);
+    }
+
+    let total = hargaAwal * item.jumlah;
+
+    finishings.forEach(f => {
+        const isKaliQty = isKaliJumlahPesan(f);
+
+        let val = f.tipe === 'persen'
+            ? (hargaAwal * (Number(f.harga_finishing_snapshot) / 100))
+            : (Number(f.harga_finishing_snapshot) || 0);
+
+        total += (isKaliQty ? val * item.jumlah : val);
+    });
+
+    return total;
+};
+
+// 2. Jumlahkan Subtotal Item DITAMBAH SLA di Grand Total Tagihan
+const computedTotalTagihan = computed(() => {
+    let total = 0;
+    if (props.pesanan && props.pesanan.pesanan_item) {
+        props.pesanan.pesanan_item.forEach(item => {
+            let subtotalProduk = getDisplaySubtotal(item);
+            let biayaSLA = Number(item.harga_pengerjaan_snapshot) || 0;
+            total += (subtotalProduk + biayaSLA);
+        });
+    }
+    return total;
+});
+
+// 2. Hitung ulang Grand Total (+ ongkir + kode unik - diskon voucher)
+const computedTotalTransfer = computed(() => {
+    let total = computedTotalTagihan.value;
+    total += Number(props.pesanan?.harga_ongkir || 0);
+    total += Number(props.kode_unik || 0);
+    total -= Number(props.pesanan?.diskon_voucher_nominal || 0);
+    return Math.max(0, total);
+});
+
+// 3. Hitung ulang Sisa Tagihan (Grand Total - Telah Dibayar)
+const computedSisaTagihan = computed(() => {
+    let sisa = computedTotalTransfer.value - Number(props.total_dibayar || 0);
+    return Math.max(0, sisa);
+});
+// ==========================================
+
 
 const handleRequestEdit = (item) => {
     itemToEdit.value = { ...item };
@@ -125,6 +207,7 @@ const submitResi = () => {
         }
     });
 };
+
 const handlePrintLabel = (itemId) => {
     if (!itemId) {
         alertStore.show('Gagal mencetak, ID Item tidak ditemukan!', 'error');
@@ -153,7 +236,7 @@ const handlePrintLabel = (itemId) => {
 
             <OrderInfoCards
                 :pesanan="pesanan"
-                :total_tagihan="total_tagihan"
+                :total_tagihan="computedTotalTagihan"
                 :total_dibayar="total_dibayar"
                 :enumPembayaran="enumPembayaran"
                 :enumOperasional="enumOperasional"
@@ -185,15 +268,16 @@ const handlePrintLabel = (itemId) => {
 
                 <div class="lg:col-span-4 xl:col-span-3">
                     <div class="sticky top-24">
+                        <!-- LEMPAR COMPUTED PROPERTIES KE SINI -->
                         <OrderSummary
-                            :total_tagihan="total_tagihan"
+                            :total_tagihan="computedTotalTagihan"
                             :harga_ongkir="pesanan.harga_ongkir"
                             :diskon_voucher_nominal="pesanan.diskon_voucher_nominal"
                             :kode_voucher="pesanan.kode_voucher"
                             :kode_unik="kode_unik"
-                            :total_transfer="total_transfer"
+                            :total_transfer="computedTotalTransfer"
                             :total_dibayar="total_dibayar"
-                            :sisa_tagihan="sisa_tagihan"
+                            :sisa_tagihan="computedSisaTagihan"
                         />
                     </div>
                 </div>

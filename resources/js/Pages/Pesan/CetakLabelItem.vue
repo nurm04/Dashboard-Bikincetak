@@ -30,10 +30,14 @@ const formatTanggal = (tgl) => {
 
     return `${year}-${month}-${day} ${hours}:${minutes}`;
 };
+const cleanProductName = (name) => {
+    if (!name) return '';
+    return name.replace(/^[A-Za-z]+-\d+-/, '').replace(/-/g, ' ');
+};
 </script>
 
 <template>
-    <Head :title="`Label SPK - ${item?.nama_produk_snapshot}`" />
+    <Head :title="`Label SPK - ${cleanProductName(item?.nama_produk_snapshot)}`" />
 
     <!-- Print styling dioptimalkan khusus printer thermal (78mm - 80mm) -->
     <div class="flex justify-center min-h-screen p-4 font-sans text-black bg-gray-100 print:p-0 print:bg-white">
@@ -60,7 +64,7 @@ const formatTanggal = (tgl) => {
                 <!-- INFO PRODUK UTAMA -->
                 <div class="mb-3 text-center">
                     <p class="text-[9px] uppercase font-bold text-black mb-1 tracking-wider border-b border-black inline-block pb-0.5">DETAIL ITEM</p>
-                    <h2 class="text-sm font-black leading-tight uppercase px-1">{{ item?.nama_produk_snapshot }}</h2>
+                    <h2 class="text-sm font-black leading-tight uppercase px-1">{{ cleanProductName(item?.nama_produk_snapshot) }}</h2>
 
                     <!-- QTY Sangat Besar agar terlihat jelas oleh operator -->
                     <div class="flex items-baseline justify-center gap-1 mt-1">

@@ -23,10 +23,17 @@ class PesanController extends Controller
         $customerId = $request->user()?->customer?->id_customer;
 
         if (!$customerId) {
-            return response()->json(['success' => false, 'message' => 'Customer tidak ditemukan.'], 404);
+            return response()->json([
+                'success' => false,
+                'message' => 'Customer tidak ditemukan.'
+            ], 404);
         }
 
-        $cart = Pesan::with(['pesananItem.pesananItemFinishing', 'pembayaran'])
+        $cart = Pesan::with([
+                'pesananItem.pesananItemFinishing.skuFinishing',
+                'alamat',
+                'pembayaran'
+            ])
             ->where('id_customer', $customerId)
             ->where('status_operasional', 'keranjang')
             ->latest()
@@ -34,9 +41,22 @@ class PesanController extends Controller
 
         if ($cart) {
             $rincian = PesanService::kalkulasiRincianPesanan($cart);
+
+            $cart->subtotal       = $rincian['subtotal'];
+            $cart->kode_unik      = $rincian['kode_unik'];
+            $cart->ongkir         = $rincian['ongkir'];
+            $cart->diskon_voucher = $rincian['diskon_voucher'];
+
             $cart->total_tagihan = $rincian['grand_total'];
             $cart->total_dibayar = $rincian['total_dibayar'];
             $cart->sisa_tagihan  = $rincian['sisa_tagihan'];
+
+            foreach ($cart->pesananItem as $item) {
+                foreach ($item->pesananItemFinishing as $fin) {
+                    $statusKali = $fin->kali_jumlah_pesan ?? ($fin->skuFinishing ? $fin->skuFinishing->kali_jumlah_pesan : 0);
+                    $fin->kali_jumlah_pesan = filter_var($statusKali, FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+                }
+            }
         }
 
         return response()->json([
@@ -67,7 +87,7 @@ class PesanController extends Controller
             'items.*.harga_dasar_awal_snapshot' => 'nullable|numeric',
             'items.*.total_diskon_snapshot' => 'nullable|numeric',
             'items.*.rincian_diskon_snapshot' => 'nullable|array',
-            'items.*.atribut_custom_snapshot' => 'nullable', // <-- Divalidasi
+            'items.*.atribut_custom_snapshot' => 'nullable',
             'items.*.file_desain' => 'nullable',
             'items.*.tipe_file' => 'nullable|string|in:upload,link,email',
             'items.*.link_file' => 'nullable|string'
@@ -95,11 +115,11 @@ class PesanController extends Controller
             $kode_transaksi = $pesanan->kode_transaksi;
 
             foreach ($request->items as $index => $item) {
-                // Handle Finishings
-                $finishings = $item['finishings'] ?? [];
-                if (is_string($finishings)) {
-                    $finishings = json_decode($finishings, true);
+                $finishingsRaw = $item['finishing'] ?? $item['finishings'] ?? [];
+                if (is_string($finishingsRaw)) {
+                    $finishingsRaw = json_decode($finishingsRaw, true);
                 }
+                $finishings = $finishingsRaw;
 
                 $selectedFinishingIds = [];
                 if (!empty($finishings) && is_array($finishings)) {
@@ -111,13 +131,26 @@ class PesanController extends Controller
                     }
                 }
 
-                // Handle Custom Attributes (Jumlah Halaman, dll)
-                $atributCustom = $item['atribut_custom_snapshot'] ?? null;
-                if (is_string($atributCustom)) {
-                    $atributCustom = json_decode($atributCustom, true);
+                $atributCustomRaw = $item['atribut_custom_snapshot'] ?? null;
+                $atributCustomArray = [];
+
+                if (is_string($atributCustomRaw)) {
+                    $atributCustomArray = json_decode($atributCustomRaw, true);
+
+                    if (!is_array($atributCustomArray)) {
+                        $atributCustomArray = [];
+                    }
+                } elseif (is_array($atributCustomRaw)) {
+                    $atributCustomArray = $atributCustomRaw;
+                    $atributCustomRaw = json_encode($atributCustomArray);
                 }
 
-                $totalBeratItem = PesanService::hitungBeratTotalItem($item['id_sku'], $item['jumlah'], $selectedFinishingIds);
+                $totalBeratItem = PesanService::hitungBeratTotalItem(
+                    $item['id_sku'],
+                    $item['jumlah'],
+                    $selectedFinishingIds,
+                    $atributCustomArray
+                );
 
                 $fileDesainData = null;
 
@@ -163,12 +196,12 @@ class PesanController extends Controller
                     'file_desain' => $fileDesainData,
                     'catatan' => $item['catatan'] ?? null,
 
-                    'atribut_custom_snapshot' => $atributCustom // <-- Eksekusi masuk database
+                    'atribut_custom_snapshot' => empty($atributCustomArray) ? null : $atributCustomRaw,
                 ]);
 
                 if (!empty($finishings) && is_array($finishings)) {
-                    foreach ($finishings as $finishing) {
-                        $skuFinishing = SkuFinishing::with('pilihanFinishing.finishing')->find($finishing['id_sku_finishing']);
+                    foreach ($finishings as $finItem) {
+                        $skuFinishing = SkuFinishing::with('pilihanFinishing.finishing')->find($finItem['id_sku_finishing']);
 
                         if ($skuFinishing) {
                             $namaFinishing = strtoupper($skuFinishing->pilihanFinishing->finishing->nama_finishing);
@@ -176,9 +209,9 @@ class PesanController extends Controller
 
                             PesananItemFinishing::create([
                                 'id_pesanan_item' => $pesananItem->id,
-                                'id_sku_finishing' => $finishing['id_sku_finishing'],
+                                'id_sku_finishing' => $finItem['id_sku_finishing'],
                                 'nama_finishing_snapshot' => $namaFinishing . ': ' . $namaPilihan,
-                                'harga_finishing_snapshot' => $finishing['harga_finishing_snapshot'],
+                                'harga_finishing_snapshot' => $finItem['harga_finishing_snapshot'],
                             ]);
                         }
                     }
@@ -244,7 +277,20 @@ class PesanController extends Controller
                 ], 422);
             }
 
-            $beratBaru = PesanService::hitungBeratTotalItem($item->id_sku, $request->jumlah, $selectedFinishingIds);
+            $atributCustomArray = [];
+            if (!empty($item->atribut_custom_snapshot)) {
+                $decoded = json_decode($item->atribut_custom_snapshot, true);
+                if (is_array($decoded)) {
+                    $atributCustomArray = $decoded;
+                }
+            }
+
+            $beratBaru = PesanService::hitungBeratTotalItem(
+                $item->id_sku,
+                $request->jumlah,
+                $selectedFinishingIds,
+                $atributCustomArray
+            );
 
             $item->update([
                 'jumlah' => $request->jumlah,
@@ -334,7 +380,7 @@ class PesanController extends Controller
             ]);
 
             foreach ($selectedItems as $item) {
-                $hppSatuan = Komposisi::where('id_sku', $item->id_sku)
+                $hppDasarSatuan = Komposisi::where('id_sku', $item->id_sku)
                     ->whereNull('id_pilihan_finishing')
                     ->sum('hpp');
 
@@ -348,11 +394,36 @@ class PesanController extends Controller
                     }
                 }
 
-                $totalBeratItem = PesanService::hitungBeratTotalItem($item->id_sku, $item->jumlah, $selectedFinishingIds);
+                $atributCustomArray = [];
+                $jumlahHalaman = 1;
+                $atributRaw = $item->atribut_custom_snapshot;
+
+                if (!empty($atributRaw)) {
+                    $decoded = is_string($atributRaw) ? json_decode($atributRaw, true) : $atributRaw;
+
+                    if (is_array($decoded)) {
+                        $atributCustomArray = $decoded;
+                        if (isset($decoded['Jumlah Halaman'])) {
+                            $val = intval($decoded['Jumlah Halaman']);
+                            if ($val > 0) {
+                                $jumlahHalaman = $val;
+                            }
+                        }
+                    }
+                }
+
+                $hppSatuanFinal = $hppDasarSatuan * $jumlahHalaman;
+
+                $totalBeratItem = PesanService::hitungBeratTotalItem(
+                    $item->id_sku,
+                    $item->jumlah,
+                    $selectedFinishingIds,
+                    $atributCustomArray
+                );
 
                 $item->update([
                     'id_pesan'            => $newPesan->id_pesan,
-                    'hpp_satuan_snapshot' => $hppSatuan,
+                    'hpp_satuan_snapshot' => $hppSatuanFinal,
                     'total_berat_snapshot'=> $totalBeratItem
                 ]);
 
@@ -409,14 +480,14 @@ class PesanController extends Controller
                     'kode_transaksi' => $newPesan->kode_transaksi,
                 ]
             ]);
-
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('Gagal Checkout API: ' . $e->getMessage());
+            Log::error('Gagal Checkout API: ' . $e->getMessage() . ' di baris ' . $e->getLine());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Checkout gagal.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage() . ' di baris ' . $e->getLine()
             ], 500);
         }
     }
@@ -435,6 +506,14 @@ class PesanController extends Controller
                 $pesan->total_tagihan = $rincian['grand_total'];
                 $pesan->total_dibayar = $rincian['total_dibayar'];
                 $pesan->sisa_tagihan  = $rincian['sisa_tagihan'];
+
+                $pesan->pesananItem->transform(function ($item) {
+                    $item->atribut_custom_snapshot = is_string($item->atribut_custom_snapshot) ? json_decode($item->atribut_custom_snapshot, true) : $item->atribut_custom_snapshot;
+                    $item->file_desain = is_string($item->file_desain) ? json_decode($item->file_desain, true) : $item->file_desain;
+                    $item->rincian_diskon_snapshot = is_string($item->rincian_diskon_snapshot) ? json_decode($item->rincian_diskon_snapshot, true) : $item->rincian_diskon_snapshot;
+                    return $item;
+                });
+
                 return $pesan;
             });
 
@@ -466,6 +545,13 @@ class PesanController extends Controller
         $pesanan->total_dibayar = $rincian['total_dibayar'];
         $pesanan->sisa_tagihan  = $rincian['sisa_tagihan'];
 
+        $pesanan->pesananItem->transform(function ($item) {
+            $item->atribut_custom_snapshot = is_string($item->atribut_custom_snapshot) ? json_decode($item->atribut_custom_snapshot, true) : $item->atribut_custom_snapshot;
+            $item->file_desain = is_string($item->file_desain) ? json_decode($item->file_desain, true) : $item->file_desain;
+            $item->rincian_diskon_snapshot = is_string($item->rincian_diskon_snapshot) ? json_decode($item->rincian_diskon_snapshot, true) : $item->rincian_diskon_snapshot;
+            return $item;
+        });
+
         return response()->json([
             'success' => true,
             'data' => $pesanan
@@ -495,6 +581,13 @@ class PesanController extends Controller
         $pesanan->total_tagihan = $rincian['grand_total'];
         $pesanan->total_dibayar = $rincian['total_dibayar'];
         $pesanan->sisa_tagihan = $rincian['sisa_tagihan'];
+
+        $pesanan->pesananItem->transform(function ($item) {
+            $item->atribut_custom_snapshot = is_string($item->atribut_custom_snapshot) ? json_decode($item->atribut_custom_snapshot, true) : $item->atribut_custom_snapshot;
+            $item->file_desain = is_string($item->file_desain) ? json_decode($item->file_desain, true) : $item->file_desain;
+            $item->rincian_diskon_snapshot = is_string($item->rincian_diskon_snapshot) ? json_decode($item->rincian_diskon_snapshot, true) : $item->rincian_diskon_snapshot;
+            return $item;
+        });
 
         return response()->json([
             'success' => true,

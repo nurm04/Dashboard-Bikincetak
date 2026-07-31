@@ -167,17 +167,57 @@ class ProduksiController extends Controller
 
             if ($schedule->tipe_pengerjaan === 'sendiri' && $schedule->status_pengerjaan !== 'selesai' && $item->id_sku !== 'PRD-0001-SKU-001') {
 
-                $finishingTerpilih = collect($item->pesananItemFinishing ?? [])
-                    ->map(fn($f) => $f->skuFinishing->id_pilihan_finishing ?? null)
-                    ->filter()
-                    ->toArray();
+                $atributStr = $item->atribut_custom_snapshot;
+                $atribut = is_string($atributStr) ? json_decode($atributStr, true) : $atributStr;
+
+                $jumlahHalaman = 1;
+                if (is_array($atribut) && isset($atribut['Jumlah Halaman'])) {
+                    $hal = (int) $atribut['Jumlah Halaman'];
+                    if ($hal > 0) $jumlahHalaman = $hal;
+                }
+
+                $sisi = 1;
+                $finishingTerpilih = [];
+                $mapKaliJumlahPesan = [];
+
+                foreach ($item->pesananItemFinishing ?? [] as $f) {
+                    $idPilihan = $f->skuFinishing->id_pilihan_finishing ?? null;
+                    if ($idPilihan) {
+                        $finishingTerpilih[] = $idPilihan;
+                        $mapKaliJumlahPesan[$idPilihan] = (bool) ($f->skuFinishing->kali_jumlah_pesan ?? true);
+                    }
+
+                    $namaFin = strtolower($f->nama_finishing_snapshot ?? '');
+                    if (str_contains($namaFin, 'dua sisi') || str_contains($namaFin, '2 sisi') || str_contains($namaFin, 'bolak')) {
+                        $sisi = 2;
+                    }
+                }
+
+                $pengaliLembar = ceil($jumlahHalaman / $sisi);
+                if ($pengaliLembar < 1) $pengaliLembar = 1;
 
                 $semuaKomposisi = Komposisi::where('id_sku', $item->id_sku)->get();
 
                 foreach ($semuaKomposisi as $komp) {
-                    if (is_null($komp->id_pilihan_finishing) || in_array($komp->id_pilihan_finishing, $finishingTerpilih)) {
+                    $isBahanBakuUtama = is_null($komp->id_pilihan_finishing);
+                    $isBahanFinishingTerpilih = in_array($komp->id_pilihan_finishing, $finishingTerpilih);
+
+                    if ($isBahanBakuUtama || $isBahanFinishingTerpilih) {
                         $bahan = BahanBaku::lockForUpdate()->findOrFail($komp->id_bahan_baku);
-                        $qty_dipakai = $komp->jumlah_pakai * (float) $schedule->qty_dikerjakan;
+                        $qtyPengerjaan = (float) $schedule->qty_dikerjakan;
+
+                        if ($isBahanBakuUtama) {
+                            $qty_dipakai = $komp->jumlah_pakai * $pengaliLembar * $qtyPengerjaan;
+                        } else {
+                            $isKaliQty = $mapKaliJumlahPesan[$komp->id_pilihan_finishing] ?? true;
+
+                            if ($isKaliQty) {
+                                $qty_dipakai = $komp->jumlah_pakai * $qtyPengerjaan;
+                            } else {
+                                $qty_dipakai = $komp->jumlah_pakai;
+                            }
+                        }
+
                         $bahan->stok_sekarang -= $qty_dipakai;
                         $bahan->save();
                     }
@@ -286,7 +326,7 @@ class ProduksiController extends Controller
     {
         $user = auth()->user();
         $vendorId = null;
-        $search = $request->query('search'); // Ambil query search
+        $search = $request->query('search');
 
         if ($user->role === 'vendor') {
             $vendorId = Vendor::where('user_id', $user->id)->value('id_vendor');
@@ -295,7 +335,6 @@ class ProduksiController extends Controller
         $query = Pesan::query()
             ->whereIn('status_operasional', ['proses_pengantaran', 'selesai', 'diambil']);
 
-        // TAMBAHAN: Logika Search
         if (!empty($search)) {
             $query->where(function($q) use ($search) {
                 $q->where('id_pesan', 'like', "%{$search}%")
@@ -359,13 +398,12 @@ class ProduksiController extends Controller
             ]);
         }
 
-        // TAMBAHAN: Gunakan withQueryString() agar saat klik page 2, filter pencarian tetap ikut
         $pesananHistori = $query->orderBy('updated_at', 'desc')->paginate(10)->withQueryString();
 
         return Inertia::render('Produksi/History', [
             'pesananHistori' => $pesananHistori,
             'currentVendorId' => $vendorId,
-            'filters' => $request->only(['search']) // Kirim parameter search ke Vue
+            'filters' => $request->only(['search'])
         ]);
     }
 }

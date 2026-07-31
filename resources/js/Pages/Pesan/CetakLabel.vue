@@ -31,6 +31,11 @@ const formatTanggal = (tgl) => {
     return `${year}-${month}-${day} ${hours}:${minutes}`;
 };
 
+const cleanProductName = (name) => {
+    if (!name) return '';
+    return name.replace(/^[A-Za-z]+-\d+-/, '').replace(/-/g, ' ');
+};
+
 const totalBerat = computed(() => {
     if (!props.pesanan || !props.pesanan.pesanan_item) return 0;
     return props.pesanan.pesanan_item.reduce((sum, item) => sum + (Number(item.total_berat_snapshot) || 0), 0);
@@ -113,7 +118,7 @@ const totalBerat = computed(() => {
                     <ul class="space-y-2">
                         <li v-for="(item, index) in pesanan.pesanan_item" :key="item.id" class="text-xs">
                             <div class="flex items-start justify-between font-black uppercase leading-tight">
-                                <span class="w-[85%]">{{ index + 1 }}. {{ item.nama_produk_snapshot }}</span>
+                                <span class="w-[85%]">{{ index + 1 }}. {{ cleanProductName(item.nama_produk_snapshot) }}</span>
                                 <span class="w-[15%] text-right whitespace-nowrap">{{ item.jumlah }} PCS</span>
                             </div>
                             <div v-if="item.pesanan_item_finishing?.length" class="pl-4 mt-0.5 text-[9px] font-bold uppercase opacity-80 flex flex-wrap gap-x-2">

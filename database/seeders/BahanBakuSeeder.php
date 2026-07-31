@@ -309,6 +309,61 @@ class BahanBakuSeeder extends Seeder
                 'stok_sekarang' => 50,
                 'is_active' => true,
                 'created_at' => $now, 'updated_at' => $now
+            ],
+            [
+                'id_bahan_baku' => 'BAHAN-0028',
+                'nama_bahan_baku' => 'HVS 80 Gsm (Roll)',
+                'satuan' => 'Meter Persegi',
+                'berat_gram_persatuan' => 80.00, // 80 GSM * 1 m2
+                'harga_beli' => 4500, // Estimasi HPP per m2
+                'stok_awal' => 500,
+                'stok_sekarang' => 500,
+                'is_active' => true,
+                'created_at' => $now, 'updated_at' => $now
+            ],
+            [
+                'id_bahan_baku' => 'BAHAN-0029',
+                'nama_bahan_baku' => 'Kalkir 80 Gsm (Roll)',
+                'satuan' => 'Meter Persegi',
+                'berat_gram_persatuan' => 80.00, // 80 GSM * 1 m2
+                'harga_beli' => 12000,
+                'stok_awal' => 100,
+                'stok_sekarang' => 100,
+                'is_active' => true,
+                'created_at' => $now, 'updated_at' => $now
+            ],
+            [
+                'id_bahan_baku' => 'BAHAN-0030',
+                'nama_bahan_baku' => 'Photopaper 260 Gsm (Roll)',
+                'satuan' => 'Meter Persegi',
+                'berat_gram_persatuan' => 260.00, // 260 GSM * 1 m2
+                'harga_beli' => 18000,
+                'stok_awal' => 150,
+                'stok_sekarang' => 150,
+                'is_active' => true,
+                'created_at' => $now, 'updated_at' => $now
+            ],
+            [
+                'id_bahan_baku' => 'BAHAN-0031',
+                'nama_bahan_baku' => 'Art Paper 150 Gsm (Roll)',
+                'satuan' => 'Meter Persegi',
+                'berat_gram_persatuan' => 150.00, // 150 GSM * 1 m2
+                'harga_beli' => 8000,
+                'stok_awal' => 200,
+                'stok_sekarang' => 200,
+                'is_active' => true,
+                'created_at' => $now, 'updated_at' => $now
+            ],
+            [
+                'id_bahan_baku' => 'BAHAN-0032',
+                'nama_bahan_baku' => 'Art Paper 260 Gsm (Roll)',
+                'satuan' => 'Meter Persegi',
+                'berat_gram_persatuan' => 260.00, // 260 GSM * 1 m2
+                'harga_beli' => 11000,
+                'stok_awal' => 200,
+                'stok_sekarang' => 200,
+                'is_active' => true,
+                'created_at' => $now, 'updated_at' => $now
             ]
         ]);
     }

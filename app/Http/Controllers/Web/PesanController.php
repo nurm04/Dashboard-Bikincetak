@@ -113,7 +113,7 @@ class PesanController extends Controller
         $pesanan = Pesan::with([
                 'customer.user',
                 'customer.alamat',
-                'pesananItem.pesananItemFinishing',
+                'pesananItem.pesananItemFinishing.skuFinishing',
                 'alamat',
                 'pembayaran'
             ])
@@ -123,11 +123,11 @@ class PesanController extends Controller
 
         $typePembayaran = DB::select("SHOW COLUMNS FROM pesan WHERE Field = 'status_pembayaran'")[0]->Type;
         preg_match('/^enum\((.*)\)$/', $typePembayaran, $matchesPembayaran);
-        $enumPembayaran = array_map(function($value){ return trim($value, "'"); }, explode(',', $matchesPembayaran[1]));
+        $enumPembayaran = array_map(fn($value) => trim($value, "'"), explode(',', $matchesPembayaran[1]));
 
         $typeOperasional = DB::select("SHOW COLUMNS FROM pesan WHERE Field = 'status_operasional'")[0]->Type;
         preg_match('/^enum\((.*)\)$/', $typeOperasional, $matchesOperasional);
-        $enumOperasional = array_map(function($value){ return trim($value, "'"); }, explode(',', $matchesOperasional[1]));
+        $enumOperasional = array_map(fn($value) => trim($value, "'"), explode(',', $matchesOperasional[1]));
 
         return Inertia::render('Pesan/Detail', [
             'pesanan'         => $pesanan,
@@ -184,7 +184,7 @@ class PesanController extends Controller
             'items.*.harga_dasar_awal_snapshot' => 'nullable|numeric',
             'items.*.total_diskon_snapshot' => 'nullable|numeric',
 
-            'items.*.atribut_custom_snapshot' => 'nullable', // <-- Validasi baru
+            'items.*.atribut_custom_snapshot' => 'nullable', // <-- Atribut JSON
 
             'items.*.file_desain' => 'nullable',
             'items.*.tipe_file' => 'nullable|string|in:upload,link,email',
@@ -196,7 +196,6 @@ class PesanController extends Controller
 
             $id_pesan = PesanService::generateId();
             $kode_transaksi = PesanService::generateKodeTransaksi();
-
             $maxHari = 1;
 
             if (in_array($request->status_pembayaran, ['dibayar_sebagian', 'lunas'])) {
@@ -233,13 +232,11 @@ class PesanController extends Controller
             ]);
 
             foreach ($request->items as $index => $item) {
-                // 1. Cek apakah ini produk custom
                 $isCustom = $item['id_sku'] === 'PRD-0001-SKU-001';
 
                 $finishing = isset($item['finishing']) ? json_decode($item['finishing'], true) : [];
                 $selectedFinishingIds = [];
 
-                // 2. Skip query finishing master kalau ini produk custom
                 if (!$isCustom && !empty($finishing) && is_array($finishing)) {
                     foreach ($finishing as $fin) {
                         $skuFin = SkuFinishing::find($fin['id_sku_finishing']);
@@ -249,25 +246,39 @@ class PesanController extends Controller
                     }
                 }
 
-                // Pengolahan atribut_custom_snapshot
-                $atributCustom = $item['atribut_custom_snapshot'] ?? null;
-                if (is_string($atributCustom)) {
-                    $atributCustom = json_decode($atributCustom, true);
+                // 2. PARSE ATRIBUT CUSTOM ANTI-GAGAL
+                $atributCustomRaw = $item['atribut_custom_snapshot'] ?? null;
+                $atributCustomArray = [];
+
+                if (is_string($atributCustomRaw)) {
+                    $atributCustomArray = json_decode($atributCustomRaw, true);
+                    if (!is_array($atributCustomArray)) $atributCustomArray = [];
+                } elseif (is_array($atributCustomRaw)) {
+                    $atributCustomArray = $atributCustomRaw;
+                    $atributCustomRaw = json_encode($atributCustomArray); // Simpan sebagai String untuk DB
                 }
 
-                // 3. Set berat 0 kalau custom, kalau reguler hitung dari service
-                $totalBeratItem = $isCustom ? 0 : PesanService::hitungBeratTotalItem($item['id_sku'], $item['jumlah'], $selectedFinishingIds);
+                // 3. Set Berat Total & HPP
+                $totalBeratItem = $isCustom ? 0 : PesanService::hitungBeratTotalItem($item['id_sku'], $item['jumlah'], $selectedFinishingIds, $atributCustomArray);
 
-                // 4. Set HPP 0 kalau custom, kalau reguler hitung dari tabel Komposisi
                 $hppSatuan = 0;
                 if (!$isCustom) {
-                    $hppSatuan = Komposisi::where('id_sku', $item['id_sku'])
+                    $multiplierHalaman = 1;
+                    if (isset($atributCustomArray['Jumlah Halaman'])) {
+                        $multiplierHalaman = max(1, (int) $atributCustomArray['Jumlah Halaman']);
+                    }
+
+                    $komposisiDasar = Komposisi::where('id_sku', $item['id_sku'])
                         ->whereNull('id_pilihan_finishing')
-                        ->sum('hpp');
+                        ->get();
+
+                    foreach ($komposisiDasar as $kd) {
+                        $hppSatuan += ($kd->hpp * $multiplierHalaman);
+                    }
                 }
 
+                // 4. File Upload Logic
                 $fileDesainData = null;
-
                 if ($request->hasFile("items.{$index}.file_desain")) {
                     $file = $request->file("items.{$index}.file_desain");
                     if (is_array($file)) $file = $file[0];
@@ -275,27 +286,18 @@ class PesanController extends Controller
                     $filename = "{$id_pesan}-" . \Illuminate\Support\Str::random(6) . "." . $file->getClientOriginalExtension();
                     $path = $file->storeAs('desain_pesanan', $filename, 'public');
 
-                    $fileDesainData = [
-                        'tipe' => 'upload',
-                        'nilai' => $path
-                    ];
+                    $fileDesainData = ['tipe' => 'upload', 'nilai' => $path];
                 } elseif (isset($item['tipe_file']) && $item['tipe_file'] === 'link') {
-                    $fileDesainData = [
-                        'tipe' => 'link',
-                        'nilai' => $item['link_file'] ?? ''
-                    ];
+                    $fileDesainData = ['tipe' => 'link', 'nilai' => $item['link_file'] ?? ''];
                 } elseif (isset($item['tipe_file']) && $item['tipe_file'] === 'email') {
-                    $fileDesainData = [
-                        'tipe' => 'email',
-                        'nilai' => 'Akan dikirim oleh customer melalui Email.'
-                    ];
+                    $fileDesainData = ['tipe' => 'email', 'nilai' => 'Akan dikirim oleh customer melalui Email.'];
                 }
 
                 $rincianDiskonArray = null;
                 if (isset($item['rincian_diskon_snapshot']) && !empty($item['rincian_diskon_snapshot'])) {
                     $rincianDiskonArray = is_string($item['rincian_diskon_snapshot'])
-                                          ? json_decode($item['rincian_diskon_snapshot'], true)
-                                          : $item['rincian_diskon_snapshot'];
+                        ? json_decode($item['rincian_diskon_snapshot'], true)
+                        : $item['rincian_diskon_snapshot'];
                 }
 
                 $pesananItem = PesananItem::create([
@@ -315,10 +317,12 @@ class PesanController extends Controller
                     'total_berat_snapshot' => $totalBeratItem,
                     'file_desain' => $fileDesainData,
                     'catatan' => $item['catatan'] ?? null,
-                    'atribut_custom_snapshot' => $atributCustom // <-- Eksekusi
+
+                    // Masukkan sebagai Raw JSON String supaya pasti tembus ke DB
+                    'atribut_custom_snapshot' => empty($atributCustomArray) ? null : $atributCustomRaw
                 ]);
 
-                // 5. Bypass (skip) insert ke tabel pesanan_item_finishing kalau ini produk custom
+                // 5. Finishing Loop dengan TIPE & KALI JUMLAH PESAN
                 if (!$isCustom && !empty($finishing) && is_array($finishing)) {
                     foreach ($finishing as $fin) {
                         $skuFinishingAsli = SkuFinishing::find($fin['id_sku_finishing']);
@@ -331,10 +335,10 @@ class PesanController extends Controller
                             ->sum('hpp');
 
                         PesananItemFinishing::create([
-                            'id_pesanan_item' => $pesananItem->id,
-                            'id_sku_finishing' => $fin['id_sku_finishing'],
-                            'nama_finishing_snapshot' => $fin['nama_finishing_snapshot'],
-                            'harga_finishing_snapshot' => $fin['harga_finishing_snapshot'],
+                            'id_pesanan_item'        => $pesananItem->id,
+                            'id_sku_finishing'       => $fin['id_sku_finishing'],
+                            'nama_finishing_snapshot'=> $fin['nama_finishing_snapshot'],
+                            'harga_finishing_snapshot'=> $fin['harga_finishing_snapshot'],
                             'hpp_finishing_snapshot' => $hppFinishing,
                         ]);
                     }
@@ -379,6 +383,7 @@ class PesanController extends Controller
         try {
             DB::beginTransaction();
 
+            // KETIKA STATUS BERUBAH KE PROSES PENGERJAAN -> POTONG STOK & HITUNG HPP
             if ($statusBaru === 'proses_pengerjaan' && $statusLama !== 'proses_pengerjaan') {
 
                 $items = $pesanan->pesananItem;
@@ -386,6 +391,15 @@ class PesanController extends Controller
 
                 foreach ($items as $item) {
                     $totalHppPesanan += ((float) $item->hpp_satuan_snapshot * $item->jumlah);
+
+                    // =====================================
+                    // 1. CARI JUMLAH LEMBAR FISIK DARI JSON
+                    // =====================================
+                    $attr = is_string($item->atribut_custom_snapshot) ? json_decode($item->atribut_custom_snapshot, true) : $item->atribut_custom_snapshot;
+                    $jumlahHalaman = isset($attr['Jumlah Halaman']) ? max(1, (int)$attr['Jumlah Halaman']) : 1;
+                    $sisiCetak = isset($attr['Sisi Cetak']) ? max(1, (int)$attr['Sisi Cetak']) : 1;
+
+                    $jumlahLembar = ceil($jumlahHalaman / $sisiCetak);
 
                     $finishingTerpilih = collect($item->pesananItemFinishing ?? [])
                         ->map(fn($f) => $f->skuFinishing->id_pilihan_finishing ?? null)
@@ -398,12 +412,23 @@ class PesanController extends Controller
 
                     $semuaKomposisi = Komposisi::where('id_sku', $item->id_sku)->get();
 
+                    // =====================================
+                    // 2. PEMOTONGAN STOK BERDASARKAN BOM
+                    // =====================================
                     foreach ($semuaKomposisi as $komp) {
                         if (is_null($komp->id_pilihan_finishing) || in_array($komp->id_pilihan_finishing, $finishingTerpilih)) {
 
                             $bahan = BahanBaku::lockForUpdate()->findOrFail($komp->id_bahan_baku);
 
-                            $qty_dipakai = $komp->jumlah_pakai * (float) $item->jumlah;
+                            // BEDA RUMUS ANTARA BAHAN UTAMA (KERTAS ISI) & FINISHING
+                            if (is_null($komp->id_pilihan_finishing)) {
+                                // Bahan Utama: BOM x QTY Pesan x Lembar Buku
+                                $qty_dipakai = $komp->jumlah_pakai * (float) $item->jumlah * $jumlahLembar;
+                            } else {
+                                // Finishing: BOM x QTY Pesan (Cover tetep 1 buku = 1 set cover)
+                                $qty_dipakai = $komp->jumlah_pakai * (float) $item->jumlah;
+                            }
+
                             $bahan->stok_sekarang -= $qty_dipakai;
                             $bahan->save();
                         }
@@ -437,6 +462,7 @@ class PesanController extends Controller
             $pesanan->save();
 
             DB::commit();
+
             if (!in_array($statusBaru, ['keranjang','menunggu_diproses']))
             {
                 $pesanan->load('customer.user');
@@ -631,7 +657,7 @@ class PesanController extends Controller
             'estimasi_pengerjaan' => 'required',
             'harga_pengerjaan_snapshot' => 'nullable|numeric',
 
-            'atribut_custom_snapshot' => 'nullable', // <-- Validasi baru
+            'atribut_custom_snapshot' => 'nullable',
 
             'file' => 'nullable',
             'tipe_file' => 'nullable|string|in:upload,link,email',
@@ -643,50 +669,57 @@ class PesanController extends Controller
             : [];
 
         $selectedFinishingIds = [];
-
         if (!empty($finishing)) {
             foreach ($finishing as $fin) {
                 $skuFin = SkuFinishing::find($fin['id_sku_finishing']);
-
                 if ($skuFin && $skuFin->id_pilihan_finishing) {
                     $selectedFinishingIds[] = $skuFin->id_pilihan_finishing;
                 }
             }
         }
 
+        // 1. PARSE ATRIBUT CUSTOM
+        $atributCustomArray = null;
+        $atributCustomRaw = $request->atribut_custom_snapshot;
+
+        if (!empty($atributCustomRaw)) {
+            $atributCustomArray = is_string($atributCustomRaw)
+                ? json_decode($atributCustomRaw, true)
+                : $atributCustomRaw;
+        }
+
+        // 2. LOGIKA HALAMAN (LANGSUNG AMBIL HALAMAN, TANPA DIBAGI SISI)
+        $jumlahHalaman = isset($atributCustomArray['Jumlah Halaman']) ? max(1, (int)$atributCustomArray['Jumlah Halaman']) : 1;
+
+        // 3. HITUNG BERAT (Akan menggunakan fungsi yang sudah diperbaiki di bawah)
         $totalBeratItem = PesanService::hitungBeratTotalItem(
             $request->id_sku,
             $request->jumlah,
-            $selectedFinishingIds
+            $selectedFinishingIds,
+            $atributCustomArray ?? []
         );
 
-        $hppSatuan = Komposisi::where('id_sku', $request->id_sku)
+        // 4. HITUNG HPP SATUAN (HPP Komposisi x Jumlah Halaman)
+        $hppSatuan = 0;
+        $komposisiDasar = Komposisi::where('id_sku', $request->id_sku)
             ->whereNull('id_pilihan_finishing')
-            ->sum('hpp');
+            ->get();
 
+        foreach ($komposisiDasar as $kd) {
+            $hppSatuan += ($kd->hpp * $jumlahHalaman);
+        }
+
+        // 5. URUSAN FILE UPLOAD
         $fileDesainData = $item?->file_desain;
         if ($request->hasFile('file')) {
             $file = $request->file('file');
             $filename = $request->id_pesan . '-' . Str::random(6) . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs(
-                'desain_pesanan',
-                $filename,
-                'public'
-            );
-            $fileDesainData = [
-                'tipe' => 'upload',
-                'nilai' => $path,
-            ];
+            $path = $file->storeAs('desain_pesanan', $filename, 'public');
+            $fileDesainData = ['tipe' => 'upload', 'nilai' => $path];
         } elseif ($request->tipe_file === 'link') {
-            $fileDesainData = [
-                'tipe' => 'link',
-                'nilai' => $request->link_file ?? '',
-            ];
+            $fileDesainData = ['tipe' => 'link', 'nilai' => $request->link_file ?? ''];
         } elseif ($request->tipe_file === 'email') {
-            $fileDesainData = [
-                'tipe' => 'email',
-                'nilai' => 'Akan dikirim oleh customer melalui Email.',
-            ];
+            $fileDesainData = ['tipe' => 'email', 'nilai' => 'Akan dikirim oleh customer melalui Email.'];
         }
 
         $rincianDiskonArray = null;
@@ -696,12 +729,8 @@ class PesanController extends Controller
                 : $request->rincian_diskon_snapshot;
         }
 
-        $atributCustomArray = null;
-        if ($request->filled('atribut_custom_snapshot')) {
-            $atributCustomArray = is_string($request->atribut_custom_snapshot)
-                ? json_decode($request->atribut_custom_snapshot, true)
-                : $request->atribut_custom_snapshot;
-        }
+        // Siapkan string JSON untuk DB
+        $atributStringUntukDB = empty($atributCustomArray) ? null : (is_string($atributCustomRaw) ? $atributCustomRaw : json_encode($atributCustomArray));
 
         $data = [
             'id_pesan' => $request->id_pesan,
@@ -723,7 +752,7 @@ class PesanController extends Controller
             'file_desain' => $fileDesainData,
 
             'catatan' => $request->catatan,
-            'atribut_custom_snapshot' => $atributCustomArray,
+            'atribut_custom_snapshot' => $atributStringUntukDB,
         ];
 
         if ($item) {
@@ -732,6 +761,7 @@ class PesanController extends Controller
             $item = PesananItem::create($data);
         }
 
+        // 6. FINISHING (Tambah tipe & kali_jumlah_pesan)
         $item->pesananItemFinishing()->delete();
         if (!empty($finishing)) {
             foreach ($finishing as $fin) {
@@ -744,10 +774,21 @@ class PesanController extends Controller
                     ->where('id_pilihan_finishing', $idPilihanFinishing)
                     ->sum('hpp');
 
+                $kaliQty = false;
+                if (array_key_exists('kali_jumlah_pesan', $fin)) {
+                    $kaliQty = filter_var($fin['kali_jumlah_pesan'], FILTER_VALIDATE_BOOLEAN);
+                } elseif ($skuFinishing) {
+                    $kaliQty = filter_var($skuFinishing->kali_jumlah_pesan, FILTER_VALIDATE_BOOLEAN);
+                }
+
                 $item->pesananItemFinishing()->create([
                     'id_sku_finishing' => $fin['id_sku_finishing'],
                     'nama_finishing_snapshot' => $fin['nama_finishing_snapshot'],
                     'harga_finishing_snapshot' => $fin['harga_finishing_snapshot'],
+
+                    'tipe' => $fin['tipe'] ?? ($skuFinishing->tipe ?? 'nominal'),
+                    'kali_jumlah_pesan' => $kaliQty,
+
                     'hpp_finishing_snapshot' => $hppFinishing,
                 ]);
             }
