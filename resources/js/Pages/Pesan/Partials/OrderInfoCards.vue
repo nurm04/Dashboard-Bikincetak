@@ -99,12 +99,14 @@ const ekspedisiOptions = [
 ];
 
 const manualLayananOptions = [
-    { id: 'Gojek / Grab (Instan)', nama: 'Gojek / Grab (Instan)' },
-    { id: 'Lalamove / Deliveree', nama: 'Lalamove / Deliveree' },
-    { id: 'Kurir Toko (Motor)', nama: 'Kurir Toko (Motor)' },
-    { id: 'Kurir Toko (Mobil)', nama: 'Kurir Toko (Mobil)' },
-    { id: 'Titip Travel / Bus', nama: 'Titip Travel / Bus' },
-    { id: 'Lainnya', nama: 'Lainnya' },
+    { id: 'Gojek / Grab - Bayar Langsung', nama: 'Gojek / Grab - Bayar Langsung' },
+    { id: 'Gojek / Grab - COD (Bayar di Tempat)', nama: 'Gojek / Grab - COD (Bayar di Tempat)' },
+    { id: 'Lalamove / Deliveree - Bayar Langsung', nama: 'Lalamove / Deliveree - Bayar Langsung' },
+    { id: 'Lalamove / Deliveree - COD (Bayar di Tempat)', nama: 'Lalamove / Deliveree - COD (Bayar di Tempat)' },
+    { id: 'Kurir Toko - Bayar Langsung', nama: 'Kurir Toko - Bayar Langsung' },
+    { id: 'Kurir Toko - COD (Bayar di Tempat)', nama: 'Kurir Toko - COD (Bayar di Tempat)' },
+    { id: 'J&T Cargo - Bayar Langsung', nama: 'J&T Cargo - Bayar Langsung' },
+    { id: 'J&T Cargo - COD (Bayar di Tempat)', nama: 'J&T Cargo - COD (Bayar di Tempat)' },
 ];
 
 const layananOptions = ref([]);
@@ -278,7 +280,7 @@ const statusPembayaranClass = (status) => {
 
 <template>
     <!-- DESAIN BARU: 1 Container Grid Utama -->
-    <div class="flex flex-col mb-8 overflow-hidden border shadow-sm lg:flex-row bg-base-100 rounded-3xl border-base-300 divide-y lg:divide-y-0 lg:divide-x divide-base-200">
+    <div class="flex flex-col mb-8 overflow-hidden border divide-y shadow-sm lg:flex-row bg-base-100 rounded-3xl border-base-300 lg:divide-y-0 lg:divide-x divide-base-200">
         <!-- KELOMPOK 1: PELANGGAN -->
         <div class="flex flex-col flex-1 p-5">
             <div class="flex items-center justify-between mb-3">
@@ -407,20 +409,23 @@ const statusPembayaranClass = (status) => {
 
     <!-- MODAL GANTI ALAMAT & PENGIRIMAN -->
     <dialog ref="modalAlamat" class="modal modal-bottom sm:modal-middle">
-        <div class="p-0 overflow-hidden border shadow-2xl modal-box bg-base-100 rounded-3xl border-base-200 w-11/12 max-w-4xl flex flex-col max-h-[90vh]">
+        <!-- UBAH: overflow-hidden dihapus, diganti jadi overflow-visible -->
+        <div class="p-0 overflow-visible border shadow-2xl modal-box bg-base-100 rounded-3xl border-base-200 w-11/12 max-w-4xl flex flex-col max-h-[90vh]">
 
             <!-- HEADER MODAL (STICKY) -->
-            <div class="flex items-center justify-between px-6 py-5 border-b border-base-200 bg-base-100 shrink-0">
+            <!-- UBAH: Tambah rounded-t-3xl -->
+            <div class="flex items-center justify-between px-6 py-5 border-b border-base-200 bg-base-100 shrink-0 rounded-t-3xl">
                 <div>
                     <h3 class="text-lg font-black tracking-tight text-base-content">Ubah Alamat & Pengiriman</h3>
                     <p class="text-xs font-medium opacity-60 mt-0.5">Pilih tujuan dan kalkulasi ulang layanan pengiriman.</p>
                 </div>
-                <button type="button" @click="closeModelAlamat()" class="btn btn-sm btn-circle btn-ghost opacity-50 hover:opacity-100">✕</button>
+                <button type="button" @click="closeModelAlamat()" class="opacity-50 btn btn-sm btn-circle btn-ghost hover:opacity-100">✕</button>
             </div>
 
             <!-- BODY MODAL (SCROLLABLE AREA) -->
-            <div class="flex-1 overflow-hidden bg-base-100">
-                <div class="flex flex-col h-full lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-base-200">
+            <!-- UBAH: overflow-hidden dihapus, diganti jadi overflow-visible -->
+            <div class="flex-1 overflow-visible bg-base-100">
+                <div class="flex flex-col h-full divide-y lg:flex-row lg:divide-y-0 lg:divide-x divide-base-200">
 
                     <!-- KIRI: DAFTAR ALAMAT -->
                     <div class="flex flex-col flex-1 h-full p-6 lg:w-3/5">
@@ -429,7 +434,7 @@ const statusPembayaranClass = (status) => {
                             <h4 class="text-xs font-bold tracking-widest uppercase text-base-content/70">Pilih Alamat Tujuan</h4>
                         </div>
 
-                        <!-- Area Scroll Khusus Alamat -->
+                        <!-- Area Scroll Khusus Alamat Tetap Aman Pakai overflow-y-auto -->
                         <div class="flex-1 pr-2 space-y-3 overflow-y-auto custom-scrollbar">
                             <label v-for="al in daftarAlamat" :key="al.id_alamat"
                                    class="flex items-start gap-4 p-4 transition-all border cursor-pointer rounded-2xl group"
@@ -460,7 +465,8 @@ const statusPembayaranClass = (status) => {
                     </div>
 
                     <!-- KANAN: EKSPEDISI & ONGKIR -->
-                    <div class="flex flex-col flex-1 h-full p-6 lg:w-2/5 bg-base-200/30">
+                    <!-- UBAH: Tambah relative z-20 biar layer form ongkir ada di posisi tertinggi saat dropdown terbuka -->
+                    <div class="relative z-20 flex flex-col flex-1 h-full p-6 lg:w-2/5 bg-base-200/30">
                         <div class="flex items-center gap-2 mb-4 shrink-0">
                             <div class="flex items-center justify-center w-6 h-6 text-xs font-black rounded-full bg-primary/10 text-primary">2</div>
                             <h4 class="text-xs font-bold tracking-widest uppercase text-base-content/70">Opsi Pengiriman</h4>
@@ -511,7 +517,8 @@ const statusPembayaranClass = (status) => {
             </div>
 
             <!-- FOOTER MODAL (ACTION BUTTONS) -->
-            <div class="flex items-center justify-end gap-3 px-6 py-4 border-t shrink-0 border-base-200 bg-base-100">
+            <!-- UBAH: Tambah rounded-b-3xl -->
+            <div class="flex items-center justify-end gap-3 px-6 py-4 border-t shrink-0 border-base-200 bg-base-100 rounded-b-3xl">
                 <button type="button" @click="closeModelAlamat()" class="px-6 font-bold tracking-wider uppercase btn btn-sm btn-ghost rounded-xl text-[10px]">Batal</button>
                 <button @click="submitAlamat" class="btn btn-sm btn-primary rounded-xl font-black tracking-widest text-[10px] uppercase shadow-md shadow-primary/20 px-8 h-10" :disabled="formAlamat.processing || !formAlamat.id_alamat || daftarAlamat.length === 0 || isLoadingOngkir">
                     <span v-if="formAlamat.processing" class="loading loading-spinner loading-xs"></span>

@@ -505,6 +505,20 @@ class PesanController extends Controller
         return back()->with('success', 'Nomor Resi berhasil disimpan!');
     }
 
+    public function cetakNota($id_pesan)
+    {
+        $pesanan = Pesan::with([
+            'pesananItem.pesananItemFinishing.skuFinishing',
+            'customer.user',
+            'alamat',
+            'pembayaran'
+        ])->where('id_pesan', $id_pesan)->firstOrFail();
+
+        return inertia('Pesan/CetakNota', [
+            'pesanan' => $pesanan
+        ]);
+    }
+
     public function cetakLabel($id_pesan)
     {
         $pesanan = Pesan::with([

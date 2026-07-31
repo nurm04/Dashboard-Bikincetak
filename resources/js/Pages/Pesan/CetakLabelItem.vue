@@ -30,9 +30,32 @@ const formatTanggal = (tgl) => {
 
     return `${year}-${month}-${day} ${hours}:${minutes}`;
 };
+
 const cleanProductName = (name) => {
     if (!name) return '';
     return name.replace(/^[A-Za-z]+-\d+-/, '').replace(/-/g, ' ');
+};
+
+// ==========================================
+// PARSING ATRIBUT CUSTOM (Untuk Label SPK)
+// ==========================================
+const parseAtribut = (atributStr) => {
+    if (!atributStr) return null;
+    if (typeof atributStr === 'object') return atributStr;
+    try {
+        return JSON.parse(atributStr);
+    } catch (e) {
+        return null;
+    }
+};
+
+const getValidAttributes = (atributStr) => {
+    const parsed = parseAtribut(atributStr);
+    if (!parsed || typeof parsed !== 'object') return [];
+
+    return Object.entries(parsed)
+        .filter(([key, value]) => value !== null && value !== undefined && value !== '')
+        .map(([key, value]) => ({ key, value }));
 };
 </script>
 
@@ -77,17 +100,28 @@ const cleanProductName = (name) => {
                     </div>
                 </div>
 
-                <!-- RINCIAN FINISHING & CATATAN -->
+                <!-- RINCIAN SPESIFIKASI & FINISHING -->
                 <div class="p-2 mb-3 border-2 border-black">
-                    <p class="text-[9px] uppercase font-black tracking-widest border-b border-black pb-1 mb-1">PANDUAN FINISHING:</p>
+                    <p class="text-[9px] uppercase font-black tracking-widest border-b border-black pb-1 mb-1">SPESIFIKASI & FINISHING:</p>
 
-                    <ul v-if="item?.pesanan_item_finishing?.length" class="pl-4 mb-2 text-xs font-black uppercase list-disc list-outside">
-                        <li v-for="fin in item.pesanan_item_finishing" :key="fin.id" class="leading-snug mb-0.5">
-                            {{ fin.nama_finishing_snapshot }}
+                    <!-- Render Atribut Custom Dulu (Misal: Jumlah Halaman) -->
+                    <ul v-if="getValidAttributes(item?.atribut_custom_snapshot).length > 0" class="pl-4 mb-1 text-xs font-black uppercase list-disc list-outside">
+                        <li v-for="(attr, idx) in getValidAttributes(item?.atribut_custom_snapshot)" :key="'attr'+idx" class="leading-snug mb-0.5">
+                            {{ attr.key }}: {{ attr.value }}
                         </li>
                     </ul>
-                    <p v-else class="text-[10px] font-bold italic mb-2 text-center">- STANDAR (Tanpa Tambahan) -</p>
 
+                    <!-- Render Pilihan Finishing -->
+                    <ul v-if="item?.pesanan_item_finishing?.length" class="pl-4 mb-2 text-xs font-black uppercase list-disc list-outside">
+                        <li v-for="fin in item.pesanan_item_finishing" :key="fin.id" class="leading-snug mb-0.5">
+                            {{ fin.kategori_finishing ? fin.kategori_finishing + ': ' : '' }}{{ fin.nama_finishing_snapshot }}
+                        </li>
+                    </ul>
+
+                    <!-- Jika Kosong Semua -->
+                    <p v-if="!item?.pesanan_item_finishing?.length && getValidAttributes(item?.atribut_custom_snapshot).length === 0" class="text-[10px] font-bold italic mb-2 text-center">- STANDAR (Tanpa Tambahan) -</p>
+
+                    <!-- Catatan Customer -->
                     <div v-if="item?.catatan" class="pt-1 mt-1 border-t border-black border-dashed">
                         <p class="text-[9px] font-black uppercase mb-0.5 tracking-widest">Catatan Customer:</p>
                         <p class="text-[11px] font-bold leading-tight italic">"{{ item?.catatan }}"</p>
@@ -96,7 +130,6 @@ const cleanProductName = (name) => {
 
                 <!-- INFO PENGIRIMAN FULL WIDTH -->
                 <div class="pt-2 pb-2 mb-2 text-xs border-b-2 border-black border-dashed">
-
                     <div class="mb-2">
                         <span class="font-black uppercase text-[9px] block mb-0.5">Customer / Penerima:</span>
                         <span class="font-black text-[13px] uppercase block leading-tight">

@@ -92,7 +92,7 @@ class VendorController extends Controller
             ]);
 
             DB::commit();
-            return back()->with('success', 'Data Vendor dan Akun berhasil ditambahkan!');
+            return redirect()->route('vendor.index')->with('success', 'Data Vendor dan Akun berhasil ditambahkan!');
 
         } catch (\Exception $e) {
             DB::rollBack();

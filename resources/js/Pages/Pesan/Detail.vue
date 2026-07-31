@@ -226,9 +226,14 @@ const handlePrintLabel = (itemId) => {
                 <h2 class="text-xl font-bold leading-tight text-base-content">
                     Detail Pesanan {{ pesanan.id_pesan }}
                 </h2>
-                <a :href="route('pesan.cetakLabel', pesanan.id_pesan)" target="_blank" class="btn btn-sm btn-outline shadow-sm font-black uppercase tracking-widest text-[10px]">
-                    🖨️ Cetak Label
-                </a>
+                <div class="flex gap-2">
+                    <a :href="route('pesan.cetakNota', pesanan.id_pesan)" target="_blank" class="btn btn-sm btn-outline shadow-sm font-black uppercase tracking-widest text-[10px]">
+                        🖨️ Cetak Nota
+                    </a>
+                    <a :href="route('pesan.cetakLabel', pesanan.id_pesan)" target="_blank" class="btn btn-sm btn-outline shadow-sm font-black uppercase tracking-widest text-[10px]">
+                        🖨️ Cetak Label
+                    </a>
+                </div>
             </div>
         </template>
 

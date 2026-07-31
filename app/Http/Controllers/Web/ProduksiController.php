@@ -294,7 +294,7 @@ class ProduksiController extends Controller
         return back()->with('success', 'Pesanan berhasil diproses dan masuk ke tahap pengantaran.');
     }
 
-    public function kirimPesanan($id_pesan)
+    public function kirimPesanan(Request $request, $id_pesan)
     {
         $pesanan = Pesan::with('pesananItem.pesananItemProduksi')->findOrFail($id_pesan);
 
@@ -314,8 +314,15 @@ class ProduksiController extends Controller
             return back()->with('error', 'Gagal! Masih ada item produksi yang belum selesai dikerjakan.');
         }
 
+        $request->validate([
+            'nomor_resi' => 'nullable|string|max:255'
+        ]);
 
         $pesanan->status_operasional = 'proses_pengantaran';
+
+        if ($request->filled('nomor_resi')) {
+            $pesanan->nomor_resi = $request->nomor_resi;
+        }
 
         $pesanan->save();
 

@@ -32,13 +32,32 @@ class ProfilController extends Controller
     {
         $request->user()->fill($request->validated());
 
+        // Jika yang update vendor, paksa nama user pakai nama_vendor biar sinkron
+        if ($request->user()->role === 'vendor' && $request->filled('nama_vendor')) {
+            $request->user()->name = $request->nama_vendor;
+        }
+
         if ($request->user()->isDirty('email')) {
             $request->user()->email_verified_at = null;
         }
 
         $request->user()->save();
 
-        return Redirect::route('profil.edit');
+        // --- TAMBAHAN KHUSUS VENDOR ---
+        if ($request->user()->role === 'vendor' && $request->user()->vendor) {
+            $request->user()->vendor->update([
+                'nama_vendor' => $request->nama_vendor,
+                'nama_pic' => $request->nama_pic,
+                'no_hp' => $request->no_hp,
+                'alamat_lengkap' => $request->alamat_lengkap,
+                'nama_bank' => $request->nama_bank,
+                'no_rekening' => $request->no_rekening,
+                'atas_nama' => $request->atas_nama,
+            ]);
+        }
+        // -------------------------------
+
+        return Redirect::route('profil.edit')->with('success', 'Profil berhasil diperbarui');
     }
 
     /**

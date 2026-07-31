@@ -477,10 +477,15 @@ const handleFormSubmit = () => {
 </script>
 
 <template>
-    <div class="relative overflow-hidden border shadow-xl bg-base-100 border-primary/20 rounded-2xl">
-        <div class="absolute inset-0 pointer-events-none opacity-[0.03] z-0" style="background-image: radial-gradient(currentColor 1.5px, transparent 1.5px); background-size: 24px 24px;"></div>
-        <div class="absolute top-0 left-0 w-full h-1.5 bg-primary z-10"></div>
-        <div v-if="isFetching || isSubmitting" class="absolute inset-0 z-50 flex items-center justify-center bg-base-100/60 backdrop-blur-sm">
+    <div class="relative border shadow-xl bg-base-100 border-primary/20 rounded-2xl">
+
+        <!-- Pindahkan overflow-hidden & rounded-2xl ke layer grid background -->
+        <div class="absolute inset-0 pointer-events-none opacity-[0.03] z-0 rounded-2xl overflow-hidden" style="background-image: radial-gradient(currentColor 1.5px, transparent 1.5px); background-size: 24px 24px;"></div>
+
+        <!-- Tambahkan rounded-t-2xl ke garis atas supaya siku-siku card tetap mulus -->
+        <div class="absolute top-0 left-0 w-full h-1.5 bg-primary z-10 rounded-t-2xl"></div>
+
+        <div v-if="isFetching || isSubmitting" class="absolute inset-0 z-50 flex items-center justify-center bg-base-100/60 backdrop-blur-sm rounded-2xl">
             <span class="loading loading-spinner loading-lg text-primary"></span>
         </div>
 
@@ -499,7 +504,8 @@ const handleFormSubmit = () => {
             </div>
         </div>
 
-        <div class="relative z-10 grid grid-cols-1 gap-8 px-8 lg:grid-cols-12 lg:gap-12">
+        <!-- UBAH DISINI: Naikkan z-index dari z-10 jadi z-30 supaya form melayang di atas panel bawah -->
+        <div class="relative z-30 grid grid-cols-1 gap-8 px-8 pt-6 pb-8 lg:grid-cols-12 lg:gap-12">
             <div :class="['space-y-6', isJasaDesain ? 'lg:col-span-12 max-w-2xl' : 'lg:col-span-6']">
                 <h3 class="flex items-center gap-2 mb-2 text-xs font-black tracking-widest uppercase text-primary">Spesifikasi Dasar</h3>
                 <div class="space-y-5">
@@ -579,7 +585,8 @@ const handleFormSubmit = () => {
             </div>
         </div>
 
-        <div class="relative z-10 flex flex-col items-center justify-between gap-4 px-8 py-5 border-t bg-base-100/90 backdrop-blur-md border-base-200 sm:flex-row">
+        <!-- Panel Bawah tetap z-10 (lebih rendah dari z-30 di atas) -->
+        <div class="relative z-10 flex flex-col items-center justify-between gap-4 px-8 py-5 border-t bg-base-100/90 backdrop-blur-md border-base-200 sm:flex-row rounded-b-2xl">
             <div class="text-center sm:text-left">
                 <p class="text-[10px] font-black uppercase tracking-widest text-base-content/40 mb-1">Subtotal Item Ini</p>
                 <p class="text-2xl font-black leading-none tracking-tighter text-primary">Rp {{ subtotalItem.toLocaleString('id-ID') }}</p>

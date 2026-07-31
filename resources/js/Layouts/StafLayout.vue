@@ -4,7 +4,7 @@ import ThemeSwitcher from '@/Components/ThemeSwitcher.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import CustomAlert from '@/Components/CustomAlert.vue';
 import { usePage, Link, router } from '@inertiajs/vue3';
-import { watch, onMounted, ref, computed } from 'vue';
+import { watch, onMounted, ref, computed, onUnmounted } from 'vue';
 import { alertStore } from '@/Utils/alertStore';
 import CustomInputSearch from '@/Components/Form/CustomInputSearch.vue';
 
@@ -19,7 +19,10 @@ watch(() => page.props.flash, (flash) => {
 }, { deep: true });
 
 const notifikasiBanyak = ref([]);
-const notifSound = new Audio('/sounds/notif.mp3');
+
+const soundKasir = new Audio('/sounds/notif kasir.mp3');
+const soundProduksi = new Audio('/sounds/notif produksi.mp3');
+
 let originalTitle = '';
 
 const isSidebarCollapsed = ref(localStorage.getItem('sidebar_collapsed') === 'true');
@@ -29,15 +32,20 @@ const toggleSidebar = () => {
     localStorage.setItem('sidebar_collapsed', isSidebarCollapsed.value);
 };
 
-const playNotificationSound = () => {
-    notifSound.currentTime = 0;
-    notifSound.play().catch(err => {
-        console.warn('Suara ke-blokir, kasir belum klik tombol logo Lonceng.', err);
+const playNotificationSound = (tipe) => {
+    const soundToPlay = tipe === 'pesanan' ? soundKasir : soundProduksi;
+
+    soundToPlay.currentTime = 0;
+    soundToPlay.play().catch(err => {
+        console.warn('Suara ke-blokir, user belum berinteraksi dengan halaman.', err);
     });
 };
 
 const tambahNotifKeLayar = (kodePesanan, judul, pesan, tipe) => {
-    playNotificationSound();
+    // ADMIN: Mute sound. Selain admin (Kasir/Produksi) baru di-play.
+    if (stafRole.value !== 'ROLE-STAF-ADMIN') {
+        playNotificationSound(tipe);
+    }
 
     if (document.hidden) {
         document.title = `(1) 🔔 ${judul}`;
@@ -68,25 +76,42 @@ onMounted(() => {
     });
 
     if (window.Echo) {
+        // Bersihin channel yang nyangkut dari sesi sebelumnya (mencegah ghost listener)
+        window.Echo.leave('pesanan-channel');
+        window.Echo.leave('produksi-channel');
 
-        if (['ROLE-STAF-ADMIN', 'ROLE-STAF-KASIR'].includes(stafRole.value)) {
-            window.Echo.channel('pesanan-channel')
-                .listen('.pesanan.baru', (e) => {
-                    const kodePesanan = e?.pesan?.id_pesan || e?.pesanan?.id_pesan || 'Cek Dashboard';
-                    tambahNotifKeLayar(kodePesanan, 'Pesanan Baru!', 'Ada order masuk baru', 'pesanan');
-                });
+        // PASTIKAN BUKAN VENDOR
+        if (!isVendor.value) {
+
+            // KASIR & ADMIN -> Dengerin channel pesanan
+            if (['ROLE-STAF-ADMIN', 'ROLE-STAF-KASIR'].includes(stafRole.value)) {
+                window.Echo.channel('pesanan-channel')
+                    .listen('.pesanan.baru', (e) => {
+                        const kodePesanan = e?.pesan?.id_pesan || e?.pesanan?.id_pesan || 'Cek Dashboard';
+                        tambahNotifKeLayar(kodePesanan, 'Pesanan Baru!', 'Ada order masuk baru', 'pesanan');
+                    });
+            }
+
+            // PRODUKSI & ADMIN -> Dengerin channel produksi
+            if (['ROLE-STAF-ADMIN', 'ROLE-STAF-PRODUKSI'].includes(stafRole.value)) {
+                window.Echo.channel('produksi-channel')
+                    .listen('.produksi.baru', (e) => {
+                        const kodePesanan = e?.pesan?.id_pesan || e?.pesanan?.id_pesan || 'Cek Dashboard';
+                        tambahNotifKeLayar(kodePesanan, 'Antrean Produksi!', 'Pesanan Lunas/DP, siap dikerjakan', 'produksi');
+                    });
+            }
+
         }
-
-        if (['ROLE-STAF-ADMIN', 'ROLE-STAF-PRODUKSI'].includes(stafRole.value)) {
-            window.Echo.channel('produksi-channel')
-                .listen('.produksi.baru', (e) => {
-                    const kodePesanan = e?.pesan?.id_pesan || e?.pesanan?.id_pesan || 'Cek Dashboard';
-                    tambahNotifKeLayar(kodePesanan, 'Antrean Produksi!', 'Pesanan Lunas/DP, siap dikerjakan', 'produksi');
-                });
-        }
-
     } else {
         console.error("Waduh, window.Echo belum aktif! Cek file bootstrap.js lu.");
+    }
+});
+
+// Bersihkan listener saat layout ini di-destroy / unmount (contoh saat pindah ke halaman vendor)
+onUnmounted(() => {
+    if (window.Echo) {
+        window.Echo.leave('pesanan-channel');
+        window.Echo.leave('produksi-channel');
     }
 });
 

@@ -133,6 +133,8 @@ Route::middleware('auth')->group(function () {
             Route::put('pesan/{id}/pembayaran', [PembayaranController::class, 'store'])->name('pesan.updatePembayaran');
             Route::put('/pesan/{id_pesan}/resi', [PesanController::class, 'updateResi'])->middleware('akses:pesan,ubah')->name('pesan.updateResi');
             Route::get('/pesan/{id_pesan}/cetak-label', [PesanController::class, 'cetakLabel'])->name('pesan.cetakLabel');
+            Route::get('/pesan/{id_pesan}/cetak-label', [PesanController::class, 'cetakLabel'])->name('pesan.cetakLabel');
+            Route::get('/pesan/{id_pesan}/cetak-nota', [PesanController::class, 'cetakNota'])->name('pesan.cetakNota');
             Route::get('/pesan/item/{id}/cetak-label', [PesanController::class, 'cetakLabelItem'])->name('pesan.cetakLabelItem');
             Route::put('/pesan/{id_pesan}/update-alamat', [PesanController::class, 'updateAlamat'])->middleware('akses:pesan,ubah')->name('pesan.updateAlamat');
             Route::post('/pesan/add-item/store', [PesanController::class, 'addItem'])->middleware('akses:pesan,tambah')->name('pesan.addItem');
