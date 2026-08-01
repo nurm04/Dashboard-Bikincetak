@@ -8,6 +8,7 @@ import CustomAlertConfirm from '@/Components/CustomAlertConfirm.vue';
 import CustomTableAction from '@/Components/CustomTableAction.vue';
 import CustomButton from '@/Components/Form/CustomButton.vue';
 import CustomSelect from '@/Components/Form/CustomSelect.vue';
+import { ArrowLeft } from 'lucide-vue-next';
 
 const props = defineProps({
     produk: Object,
@@ -195,13 +196,16 @@ const downloadTemplate = () => {
     <Head title="Detail Sku Produk" />
 
     <StafLayout>
-        <!-- Konten Sisa Layout Sama... -->
         <template #header>
             <div class="flex items-center justify-between w-full">
-                <h2 class="text-xl font-bold leading-tight text-base-content">
-                    Detail Sku Produk {{ props.produk.id_produk }}
-                </h2>
-                <!-- TOMBOL BUKA MODAL IMPORT -->
+                <div class="flex items-center gap-4">
+                    <Link :href="route('produk.index')" class="btn btn-sm btn-circle btn-ghost ring-1 ring-base-300">
+                        <ArrowLeft class="w-4 h-4" />
+                    </Link>
+                    <h2 class="text-xl font-semibold leading-tight text-base-content">
+                        Detail Sku Produk {{ props.produk.id_produk }}
+                    </h2>
+                </div>
                 <button @click="isImportModalOpen = true" class="btn btn-sm btn-primary rounded-xl text-xs font-black uppercase tracking-widest shadow-md shadow-primary/20">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>
                     Import CSV

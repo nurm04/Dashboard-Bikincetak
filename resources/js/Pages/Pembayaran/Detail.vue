@@ -1,6 +1,7 @@
 <script setup>
 import StafLayout from '@/Layouts/StafLayout.vue';
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
+import { ArrowLeft } from 'lucide-vue-next';
 
 const props = defineProps({
     pembayaran: Object,
@@ -53,10 +54,15 @@ const formatTanggalBayar = (id) => {
 
     <StafLayout>
         <template #header>
-            <div class="flex items-center justify-between">
-                <h2 class="text-xl font-bold leading-tight text-base-content">
-                    Detail Pembayaran
-                </h2>
+            <div class="flex items-center justify-between w-full">
+                <div class="flex items-center gap-4">
+                    <Link :href="route('pembayaran.index')" class="btn btn-sm btn-circle btn-ghost ring-1 ring-base-300">
+                        <ArrowLeft class="w-4 h-4" />
+                    </Link>
+                    <h2 class="text-xl font-semibold leading-tight text-base-content">
+                        Detail Pembayaran
+                    </h2>
+                </div>
             </div>
         </template>
 

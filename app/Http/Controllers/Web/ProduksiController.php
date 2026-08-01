@@ -136,7 +136,7 @@ class ProduksiController extends Controller
     public function selesaikanItemProduksi(Request $request, $id_item_produksi)
     {
         $request->validate([
-            'deskripsi_pengerjaan' => 'required|string',
+            'deskripsi_pengerjaan' => 'nullable|string',
             'total_tagihan_vendor' => 'nullable|numeric|min:0',
             'file_nota' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'hasil_desain' => 'nullable|file|mimes:pdf,cdr,ai,psd,jpg,jpeg,png,zip,rar|max:10240'

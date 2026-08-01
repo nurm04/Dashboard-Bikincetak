@@ -3,7 +3,8 @@ import StafLayout from '@/Layouts/StafLayout.vue';
 import CustomInput from '@/Components/Form/CustomInput.vue';
 import CustomButton from '@/Components/Form/CustomButton.vue';
 import CustomTableForm from '@/Components/CustomTableForm.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
+import { ArrowLeft } from 'lucide-vue-next';
 
 const props = defineProps({
     varian: Object,
@@ -13,11 +14,16 @@ const isEdit = !!props.varian;
 
 const form = useForm({
     nama_varian: props.varian?.nama_varian ?? '',
-    pilihans: props.varian?.pilihan_varian?.map(p => p.nama_pilihan) ?? [''],
+    // UBAH: Simpan sebagai array of objects untuk mempertahankan ID
+    pilihans: props.varian?.pilihan_varian?.map(p => ({
+        id_pilihan: p.id_pilihan,
+        nama_pilihan: p.nama_pilihan
+    })) ?? [{ id_pilihan: null, nama_pilihan: '' }],
 });
 
 const addRow = () => {
-    form.pilihans.push('');
+    // UBAH: Push object baru
+    form.pilihans.push({ id_pilihan: null, nama_pilihan: '' });
 };
 
 const submit = () => {
@@ -34,9 +40,16 @@ const submit = () => {
 
     <StafLayout>
         <template #header>
-            <h2 class="text-xl font-bold leading-tight text-base-content">
-                {{ isEdit ? 'Edit Varian: ' + varian.nama_varian : 'Master Varian Baru' }}
-            </h2>
+            <div class="flex items-center justify-between w-full">
+                <div class="flex items-center gap-4">
+                    <Link :href="route('varian.index')" class="btn btn-sm btn-circle btn-ghost ring-1 ring-base-300">
+                        <ArrowLeft class="w-4 h-4" />
+                    </Link>
+                    <h2 class="text-xl font-semibold leading-tight text-base-content">
+                        {{ isEdit ? 'Edit Varian: ' + varian.nama_varian : 'Master Varian Baru' }}
+                    </h2>
+                </div>
+            </div>
         </template>
 
         <div class="py-12">
@@ -61,8 +74,9 @@ const submit = () => {
                         >
                             <template #row="{ row, index }">
                                 <td class="px-4 py-2">
+                                    <!-- UBAH: v-model mengarah ke properti nama_pilihan -->
                                     <input
-                                        v-model="form.pilihans[index]"
+                                        v-model="form.pilihans[index].nama_pilihan"
                                         type="text"
                                         placeholder="Ketik pilihan..."
                                         class="w-full p-0 text-sm font-bold bg-transparent border-none focus:ring-0 text-base-content"

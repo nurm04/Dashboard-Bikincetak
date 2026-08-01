@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Events\ProduksiBaruEvent;
 use App\Http\Controllers\Web\BukuBesarController;
 use App\Models\Pembayaran;
 
@@ -57,6 +58,7 @@ class PembayaranService
             0,
             $nominalBayar
         );
+        event(new ProduksiBaruEvent($pesan));
 
         return $pembayaran;
     }

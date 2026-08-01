@@ -1,7 +1,8 @@
 <script setup>
 import StafLayout from '@/Layouts/StafLayout.vue';
 import CustomButton from '@/Components/Form/CustomButton.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
+import { ArrowLeft } from 'lucide-vue-next';
 
 const props = defineProps({
     modul: Object,
@@ -26,9 +27,16 @@ const submit = () => {
     <Head :title="isEdit ? 'Edit Modul' : 'Tambah Modul Baru'" />
     <StafLayout>
         <template #header>
-            <h2 class="text-xl font-bold leading-tight text-base-content">
-                {{ isEdit ? 'Edit Modul: ' + modul.nama_modul : 'Tambah Modul Sistem Baru' }}
-            </h2>
+            <div class="flex items-center justify-between w-full">
+                <div class="flex items-center gap-4">
+                    <Link :href="route('hak-akses.index')" class="btn btn-sm btn-circle btn-ghost ring-1 ring-base-300">
+                        <ArrowLeft class="w-4 h-4" />
+                    </Link>
+                    <h2 class="text-xl font-semibold leading-tight text-base-content">
+                        {{ isEdit ? 'Edit Modul: ' + modul.nama_modul : 'Tambah Modul Sistem Baru' }}
+                    </h2>
+                </div>
+            </div>
         </template>
 
         <div class="py-12 px-4 mx-auto max-w-3xl">

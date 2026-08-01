@@ -4,7 +4,8 @@ import CustomInput from '@/Components/Form/CustomInput.vue';
 import CustomSelect from '@/Components/Form/CustomSelect.vue';
 import CustomButton from '@/Components/Form/CustomButton.vue';
 import CustomTextarea from '@/Components/Form/CustomTextarea.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
+import { ArrowLeft } from 'lucide-vue-next';
 
 const props = defineProps({
     vendor: Object,
@@ -44,9 +45,16 @@ const submit = () => {
 
     <StafLayout>
         <template #header>
-            <h2 class="text-xl font-bold leading-tight text-base-content">
-                {{ isEdit ? 'Edit Data: ' + vendor.id_vendor : 'Tambah Vendor Baru' }}
-            </h2>
+            <div class="flex items-center justify-between w-full">
+                <div class="flex items-center gap-4">
+                    <Link :href="route('vendor.index')" class="btn btn-sm btn-circle btn-ghost ring-1 ring-base-300">
+                        <ArrowLeft class="w-4 h-4" />
+                    </Link>
+                    <h2 class="text-xl font-semibold leading-tight text-base-content">
+                        {{ isEdit ? 'Edit Data: ' + vendor.id_vendor : 'Tambah Vendor Baru' }}
+                    </h2>
+                </div>
+            </div>
         </template>
 
         <div class="py-12">

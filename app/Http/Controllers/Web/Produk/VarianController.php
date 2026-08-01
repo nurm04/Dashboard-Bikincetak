@@ -38,7 +38,8 @@ class VarianController extends Controller
     {
         $request->validate([
             'nama_varian' => 'required|string',
-            'pilihans' => 'required|array|min:1'
+            'pilihans' => 'required|array|min:1',
+            'pilihans.*.nama_pilihan' => 'required|string'
         ]);
 
         try {
@@ -51,11 +52,12 @@ class VarianController extends Controller
                 'nama_varian' => $request->nama_varian
             ]);
 
-            foreach ($request->pilihans as $index => $nama) {
+            // UBAH: Akses array key 'nama_pilihan'
+            foreach ($request->pilihans as $item) {
                 PilihanVarian::create([
                     'id_pilihan' => PilihanVarianService::generateId($idV),
                     'id_varian' => $idV,
-                    'nama_pilihan' => $nama
+                    'nama_pilihan' => $item['nama_pilihan']
                 ]);
             }
 
@@ -71,26 +73,49 @@ class VarianController extends Controller
     {
         $request->validate([
             'nama_varian' => 'required|string',
-            'pilihans' => 'required|array|min:1'
+            'pilihans' => 'required|array|min:1',
+            'pilihans.*.nama_pilihan' => 'required|string'
         ]);
 
         try {
             DB::beginTransaction();
 
             $varian = Varian::findOrFail($id);
-
             $varian->update([
                 'nama_varian' => $request->nama_varian
             ]);
 
-            PilihanVarian::where('id_varian', $id)->delete();
+            // 1. Kumpulkan semua id_pilihan yang dikirim dari form frontend
+            $requestedIds = collect($request->pilihans)->pluck('id_pilihan')->filter()->toArray();
 
-            foreach ($request->pilihans as $index => $nama) {
-                PilihanVarian::create([
-                    'id_pilihan' => PilihanVarianService::generateId($id),
-                    'id_varian' => $id,
-                    'nama_pilihan' => $nama
-                ]);
+            // 2. Cari pilihan lama di DB yang tidak dikirim lagi (artinya user hapus barisnya di frontend)
+            $pilihansToDelete = PilihanVarian::where('id_varian', $id)
+                                             ->whereNotIn('id_pilihan', $requestedIds)
+                                             ->get();
+
+            // 3. Proses hapus dengan try-catch khusus foreign key
+            foreach ($pilihansToDelete as $del) {
+                try {
+                    $del->delete();
+                } catch (\Illuminate\Database\QueryException $e) {
+                    // Jika kena error 1451 (dipakai di sku_detail_pilihan), lempar pesan user-friendly
+                    throw new \Exception("Pilihan '{$del->nama_pilihan}' tidak bisa dihapus karena sedang dipakai oleh produk.");
+                }
+            }
+
+            // 4. Update nama yang diubah, atau Create jika baris baru ditambahkan
+            foreach ($request->pilihans as $item) {
+                if (!empty($item['id_pilihan'])) {
+                    PilihanVarian::where('id_pilihan', $item['id_pilihan'])->update([
+                        'nama_pilihan' => $item['nama_pilihan']
+                    ]);
+                } else {
+                    PilihanVarian::create([
+                        'id_pilihan' => PilihanVarianService::generateId($id),
+                        'id_varian' => $id,
+                        'nama_pilihan' => $item['nama_pilihan']
+                    ]);
+                }
             }
 
             DB::commit();

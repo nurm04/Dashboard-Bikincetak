@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'; // <-- Tambahkan computed
-import { Head, useForm, usePage } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import StafLayout from '@/Layouts/StafLayout.vue';
 import CustomInput from '@/Components/Form/CustomInput.vue';
 import { alertStore } from '@/Utils/alertStore';
@@ -9,6 +9,7 @@ import OrderInfoCards from './Partials/OrderInfoCards.vue';
 import OrderItemsTable from './Partials/OrderItemsTable.vue';
 import OrderSummary from './Partials/OrderSummary.vue';
 import OrderFormCard from './Partials/OrderFormCard.vue';
+import { ArrowLeft } from 'lucide-vue-next';
 
 const page = usePage();
 
@@ -223,9 +224,14 @@ const handlePrintLabel = (itemId) => {
     <StafLayout>
         <template #header>
             <div class="flex items-center justify-between w-full">
-                <h2 class="text-xl font-bold leading-tight text-base-content">
-                    Detail Pesanan {{ pesanan.id_pesan }}
-                </h2>
+                <div class="flex items-center gap-4">
+                    <Link :href="route('pesan.index')" class="btn btn-sm btn-circle btn-ghost ring-1 ring-base-300">
+                        <ArrowLeft class="w-4 h-4" />
+                    </Link>
+                    <h2 class="text-xl font-semibold leading-tight text-base-content">
+                        Detail Pesanan {{ pesanan.id_pesan }}
+                    </h2>
+                </div>
                 <div class="flex gap-2">
                     <a :href="route('pesan.cetakNota', pesanan.id_pesan)" target="_blank" class="btn btn-sm btn-outline shadow-sm font-black uppercase tracking-widest text-[10px]">
                         🖨️ Cetak Nota

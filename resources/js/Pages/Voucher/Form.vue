@@ -5,8 +5,9 @@ import CustomSelect from '@/Components/Form/CustomSelect.vue';
 import CustomSelectSearch from '@/Components/Form/CustomSelectSearch.vue';
 import CustomRadioButton from '@/Components/Form/CustomRadioButton.vue';
 import CustomButton from '@/Components/Form/CustomButton.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 import { computed } from 'vue';
+import { ArrowLeft } from 'lucide-vue-next';
 
 const props = defineProps({
     voucher: Object,
@@ -70,9 +71,16 @@ const submit = () => {
 
     <StafLayout>
         <template #header>
-            <h2 class="text-xl font-bold leading-tight text-base-content">
-                {{ isEdit ? 'Edit Voucher: ' + voucher.kode_voucher : 'Buat Voucher Promo' }}
-            </h2>
+            <div class="flex items-center justify-between w-full">
+                <div class="flex items-center gap-4">
+                    <Link :href="route('voucher.index')" class="btn btn-sm btn-circle btn-ghost ring-1 ring-base-300">
+                        <ArrowLeft class="w-4 h-4" />
+                    </Link>
+                    <h2 class="text-xl font-semibold leading-tight text-base-content">
+                        {{ isEdit ? 'Edit Voucher: ' + voucher.kode_voucher : 'Buat Voucher Promo' }}
+                    </h2>
+                </div>
+            </div>
         </template>
 
         <div class="py-12">

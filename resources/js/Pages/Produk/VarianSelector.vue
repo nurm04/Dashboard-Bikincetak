@@ -2,7 +2,8 @@
 import StafLayout from '@/Layouts/StafLayout.vue';
 import CustomButton from '@/Components/Form/CustomButton.vue';
 import CustomCheckbox from '@/Components/Form/CustomCheckbox.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
+import { ArrowLeft } from 'lucide-vue-next';
 
 const props = defineProps({ produk: Object, master_varians: Array });
 
@@ -28,9 +29,16 @@ const submit = () => {
     <Head title="Pilih Varian Produk" />
     <StafLayout>
         <template #header>
-            <h2 class="text-xl font-bold leading-tight text-base-content">
-                Pilih Varian {{ produk.nama_produk }}
-            </h2>
+            <div class="flex items-center justify-between w-full">
+                <div class="flex items-center gap-4">
+                    <Link :href="route('produk.index')" class="btn btn-sm btn-circle btn-ghost ring-1 ring-base-300">
+                        <ArrowLeft class="w-4 h-4" />
+                    </Link>
+                    <h2 class="text-xl font-semibold leading-tight text-base-content">
+                        Generate SKU {{ produk.nama_produk }}
+                    </h2>
+                </div>
+            </div>
         </template>
         <div class="py-12">
             <div class="max-w-2xl mx-auto sm:px-6 lg:px-8">

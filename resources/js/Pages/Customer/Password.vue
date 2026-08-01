@@ -2,8 +2,9 @@
 import StafLayout from '@/Layouts/StafLayout.vue';
 import CustomInput from '@/Components/Form/CustomInput.vue';
 import CustomButton from '@/Components/Form/CustomButton.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 import { alertStore } from '@/Utils/alertStore';
+import { ArrowLeft } from 'lucide-vue-next';
 
 const props = defineProps({
     customer: Object,
@@ -40,11 +41,17 @@ const submit = () => {
 
     <StafLayout>
         <template #header>
-            <h2 class="text-xl font-bold leading-tight text-base-content">
-                Ubah Password Customer
-            </h2>
+            <div class="flex items-center justify-between w-full">
+                <div class="flex items-center gap-4">
+                    <Link :href="route('customer.index')" class="btn btn-sm btn-circle btn-ghost ring-1 ring-base-300">
+                        <ArrowLeft class="w-4 h-4" />
+                    </Link>
+                    <h2 class="text-xl font-semibold leading-tight text-base-content">
+                        Ubah Password Customer
+                    </h2>
+                </div>
+            </div>
         </template>
-
         <div class="py-12">
             <div class="max-w-2xl mx-auto sm:px-6 lg:px-8">
 

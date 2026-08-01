@@ -8,6 +8,7 @@ use App\Models\Pembayaran;
 use App\Models\Pesan;
 use App\Services\PembayaranService;
 use App\Services\PesanService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -169,7 +170,7 @@ class PembayaranController extends Controller
                     }
                 }
 
-                $pesan->waktu_deadline = \Carbon\Carbon::now()->addDays($maxHari);
+                $pesan->waktu_deadline = Carbon::now()->addDays($maxHari);
             }
 
             $pesan->save();

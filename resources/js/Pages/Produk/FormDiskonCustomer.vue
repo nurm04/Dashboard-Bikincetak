@@ -4,7 +4,8 @@ import CustomTableForm from '@/Components/CustomTableForm.vue';
 import CustomButton from '@/Components/Form/CustomButton.vue';
 import CustomInputNumber from '@/Components/Form/CustomInputNumber.vue';
 import CustomSelect from '@/Components/Form/CustomSelect.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
+import { ArrowLeft } from 'lucide-vue-next';
 
 const props = defineProps({
     sku: Object,
@@ -41,11 +42,17 @@ const tipeOptions = [
     <Head title="Atur Diskon Member" />
     <StafLayout>
         <template #header>
-            <h2 class="text-xl font-bold leading-tight text-base-content">
-                Diskon Member: {{ sku.nama_sku }}
-            </h2>
+            <div class="flex items-center justify-between w-full">
+                <div class="flex items-center gap-4">
+                    <Link :href="route('produk.detailSku', sku.id_produk)" class="btn btn-sm btn-circle btn-ghost ring-1 ring-base-300">
+                        <ArrowLeft class="w-4 h-4" />
+                    </Link>
+                    <h2 class="text-xl font-semibold leading-tight text-base-content">
+                        Diskon Member: {{ sku.nama_sku }}
+                    </h2>
+                </div>
+            </div>
         </template>
-
         <div class="py-12">
             <div class="max-w-5xl mx-auto sm:px-6 lg:px-8">
                 <div class="p-10 border rounded-lg shadow-xl bg-base-100 border-base-300">
