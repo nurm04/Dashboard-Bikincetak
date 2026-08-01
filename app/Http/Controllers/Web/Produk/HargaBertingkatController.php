@@ -15,7 +15,7 @@ class HargaBertingkatController extends Controller
         $request->validate([
             'hargas' => 'present|array',
             'hargas.*.min' => 'required|integer|min:1',
-            'hargas.*.max' => 'required|integer|gt:hargas.*.min',
+            'hargas.*.max' => 'required|integer|min:0',
             'hargas.*.tipe' => 'required|in:nominal,persen',
             'hargas.*.nilai' => 'required|numeric|min:0',
         ]);

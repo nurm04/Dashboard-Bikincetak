@@ -19,8 +19,11 @@ const form = useForm({
 });
 
 const addRow = () => {
-    const lastMax = form.hargas[form.hargas.length - 1].max;
-    form.hargas.push({ min: lastMax + 1, max: lastMax + 10, tipe: 'nominal', nilai: 0 });
+    const lastItem = form.hargas[form.hargas.length - 1];
+    const newMin = lastItem.max > 0 ? lastItem.max + 1 : lastItem.min + 50;
+    const newMax = lastItem.max > 0 ? lastItem.max + 50 : 0;
+
+    form.hargas.push({ min: newMin, max: newMax, tipe: 'nominal', nilai: 0 });
 };
 
 const submit = () => {
@@ -36,7 +39,7 @@ const tipeOptions = [
 <template>
     <Head title="Atur Harga Grosir" />
 
-    <StafLayout>x
+    <StafLayout>
         <template #header>
             <div class="flex items-center justify-between w-full">
                 <div class="flex items-center gap-4">
