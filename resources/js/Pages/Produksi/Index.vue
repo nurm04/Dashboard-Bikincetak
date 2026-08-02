@@ -61,7 +61,8 @@ const listPengantaran = computed(() =>
     <Head title="Dashboard Produksi" />
     <StafLayout>
         <template #header>
-            <div class="flex items-center justify-between w-full">
+            <!-- REVISI 1: Flex dirapikan agar numpuk (flex-col) di HP dan sejajar (flex-row) di PC -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between w-full gap-4">
                 <div>
                     <h2 class="text-xl font-semibold leading-tight text-base-content">
                         Produksi & Alokasi
@@ -69,7 +70,8 @@ const listPengantaran = computed(() =>
                     <p class="mt-1 text-sm text-base-content/60">Pantau antrean, pecah tugas ke vendor, dan perbarui progres.</p>
                 </div>
 
-                <CustomButton type="link" :href="route('produksi.histori')">
+                <!-- REVISI 2: Tambah w-full md:w-auto biar tombolnya pas dan gampang dipencet -->
+                <CustomButton type="link" :href="route('produksi.histori')" class="w-full md:w-auto shrink-0" block>
                     <template #icon>
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -82,36 +84,56 @@ const listPengantaran = computed(() =>
 
         <div class="px-4 py-8 mx-auto space-y-6 max-w-7xl sm:px-6 lg:px-8">
 
-            <!-- TABS NAVIGATION -->
-            <div class="tabs tabs-boxed bg-base-200/50 p-1.5 font-semibold border border-base-300 w-full md:w-max">
-                <a
-                    class="tab tab-lg transition-all"
-                    :class="activeTab === 'alokasi' ? 'tab-active bg-primary text-white shadow-sm' : 'text-base-content/60 hover:text-base-content'"
+            <!-- REVISI 3: Desain Tab diubah menyerupai halaman Tagihan Vendor -->
+            <div class="flex mb-2 border-b border-base-300 overflow-x-auto gap-2 sm:gap-6 pb-px custom-scrollbar">
+                <button
                     @click="activeTab = 'alokasi'"
+                    :class="[
+                        'pb-3 text-sm font-bold tracking-wide transition-colors border-b-2 whitespace-nowrap px-2 sm:px-0',
+                        activeTab === 'alokasi'
+                            ? 'text-primary border-primary'
+                            : 'text-base-content/50 border-transparent hover:text-base-content/80'
+                    ]"
                 >
                     Menunggu Alokasi
-                    <div class="badge badge-sm ml-2 border-none" :class="activeTab === 'alokasi' ? 'bg-white/20 text-white' : 'bg-base-300 text-base-content/60'">{{ listAlokasi.length }}</div>
-                </a>
-                <a
-                    class="tab tab-lg transition-all"
-                    :class="activeTab === 'pengerjaan' ? 'tab-active bg-primary text-white shadow-sm' : 'text-base-content/60 hover:text-base-content'"
+                    <span v-if="listAlokasi.length > 0" class="px-2 py-0.5 ml-1.5 text-xs text-white bg-error rounded-full">
+                        {{ listAlokasi.length }}
+                    </span>
+                </button>
+
+                <button
                     @click="activeTab = 'pengerjaan'"
+                    :class="[
+                        'pb-3 text-sm font-bold tracking-wide transition-colors border-b-2 whitespace-nowrap px-2 sm:px-0',
+                        activeTab === 'pengerjaan'
+                            ? 'text-primary border-primary'
+                            : 'text-base-content/50 border-transparent hover:text-base-content/80'
+                    ]"
                 >
                     Pengerjaan
-                    <div class="badge badge-sm ml-2 border-none" :class="activeTab === 'pengerjaan' ? 'bg-white/20 text-white' : 'bg-base-300 text-base-content/60'">{{ listPengerjaan.length }}</div>
-                </a>
-                <a
-                    class="tab tab-lg transition-all"
-                    :class="activeTab === 'pengantaran' ? 'tab-active bg-primary text-white shadow-sm' : 'text-base-content/60 hover:text-base-content'"
+                    <span v-if="listPengerjaan.length > 0" class="px-2 py-0.5 ml-1.5 text-xs text-white bg-error rounded-full">
+                        {{ listPengerjaan.length }}
+                    </span>
+                </button>
+
+                <button
                     @click="activeTab = 'pengantaran'"
+                    :class="[
+                        'pb-3 text-sm font-bold tracking-wide transition-colors border-b-2 whitespace-nowrap px-2 sm:px-0',
+                        activeTab === 'pengantaran'
+                            ? 'text-primary border-primary'
+                            : 'text-base-content/50 border-transparent hover:text-base-content/80'
+                    ]"
                 >
                     Pengantaran
-                    <div class="badge badge-sm ml-2 border-none" :class="activeTab === 'pengantaran' ? 'bg-white/20 text-white' : 'bg-base-300 text-base-content/60'">{{ listPengantaran.length }}</div>
-                </a>
+                    <span v-if="listPengantaran.length > 0" class="px-2 py-0.5 ml-1.5 text-xs text-white bg-error rounded-full">
+                        {{ listPengantaran.length }}
+                    </span>
+                </button>
             </div>
 
             <!-- TAB CONTENT -->
-            <div class="mt-6">
+            <div class="mt-4">
                 <TabMenungguAlokasi
                     v-if="activeTab === 'alokasi'"
                     :pesananList="listAlokasi"
@@ -136,3 +158,14 @@ const listPengantaran = computed(() =>
         </div>
     </StafLayout>
 </template>
+
+<style scoped>
+/* Opsional: Menyembunyikan scrollbar di tab saat mobile biar terlihat lebih rapi */
+.custom-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.custom-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+</style>

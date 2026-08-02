@@ -23,6 +23,8 @@ class SkuFinishing extends Model
         'kali_jumlah_pesan'
     ];
 
+    protected $touches = ['produkSku'];
+
     public function pesananItemFinishing(): HasMany
     {
         return $this->hasMany(PesananItemFinishing::class, 'id_sku_finishing', 'id');

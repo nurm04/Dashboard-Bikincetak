@@ -197,16 +197,20 @@ const downloadTemplate = () => {
 
     <StafLayout>
         <template #header>
-            <div class="flex items-center justify-between w-full">
+            <!-- REVISI: flex-col di mobile, flex-row di desktop, tambah gap-4 -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between w-full gap-4">
                 <div class="flex items-center gap-4">
-                    <Link :href="route('produk.index')" class="btn btn-sm btn-circle btn-ghost ring-1 ring-base-300">
+                    <!-- REVISI: Tambah shrink-0 biar tombol back ga penyok -->
+                    <Link :href="route('produk.index')" class="btn btn-sm btn-circle btn-ghost ring-1 ring-base-300 shrink-0">
                         <ArrowLeft class="w-4 h-4" />
                     </Link>
                     <h2 class="text-xl font-semibold leading-tight text-base-content">
                         Detail Sku Produk {{ props.produk.id_produk }}
                     </h2>
                 </div>
-                <button @click="isImportModalOpen = true" class="btn btn-sm btn-primary rounded-xl text-xs font-black uppercase tracking-widest shadow-md shadow-primary/20">
+
+                <!-- REVISI: Tambah w-full md:w-auto biar tombolnya menuhi layar pas di HP -->
+                <button @click="isImportModalOpen = true" class="w-full md:w-auto btn btn-sm btn-primary rounded-xl text-xs font-black uppercase tracking-widest shadow-md shadow-primary/20">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>
                     Import CSV
                 </button>
@@ -217,14 +221,14 @@ const downloadTemplate = () => {
             <div class="mx-auto max-w-7xl">
                 <!-- ISI TABLE -->
                 <CustomTable :headers="headers">
-                   <!-- Tr Looping Dibiarkan Sama -->
-                    <tr v-for="sku in props.produk.produk_sku" :key="sku.id_sku" class="transition-colors hover:bg-base-200/50">
-                        <td class="px-6 py-4">
+                   <tr v-for="sku in props.produk.produk_sku" :key="sku.id_sku" class="transition-colors hover:bg-base-200/50">
+                        <!-- REVISI: Tambah whitespace-nowrap di semua td biar tabel aman pas di-scroll mobile -->
+                        <td class="px-6 py-4 whitespace-nowrap">
                             <div class="font-bold text-base-content">{{ sku.nama_sku }}</div>
                             <div class="text-[10px] text-primary font-medium">{{ sku.id_sku }}</div>
                         </td>
 
-                        <td class="px-6 py-4">
+                        <td class="px-6 py-4 whitespace-nowrap">
                             <div v-if="sku.sku_finishing?.length > 0" class="flex items-center gap-2">
                                 <span class="font-black badge badge-primary badge-sm">{{ sku.sku_finishing.length }}</span>
                                 <span class="text-[10px] font-bold uppercase opacity-50">Finishing</span>
@@ -232,7 +236,7 @@ const downloadTemplate = () => {
                             <span v-else class="text-[10px] italic opacity-30">Belum diatur</span>
                         </td>
 
-                        <td class="px-6 py-4">
+                        <td class="px-6 py-4 whitespace-nowrap">
                             <div v-if="sku.harga_bertingkat?.length > 0" class="flex items-center gap-2">
                                 <span class="font-black badge badge-primary badge-sm">{{ sku.harga_bertingkat.length }}</span>
                                 <span class="text-[10px] font-bold uppercase opacity-50">Level Grosir</span>
@@ -240,7 +244,7 @@ const downloadTemplate = () => {
                             <span v-else class="text-[10px] italic opacity-30">Belum diatur</span>
                         </td>
 
-                        <td class="px-6 py-4">
+                        <td class="px-6 py-4 whitespace-nowrap">
                             <div v-if="sku.harga_pengerjaan?.length > 0" class="flex items-center gap-2">
                                 <span class="font-black text-white badge badge-info badge-sm">{{ sku.harga_pengerjaan.length }}</span>
                                 <span class="text-[10px] font-bold uppercase opacity-50">Opsi Estimasi</span>
@@ -248,7 +252,7 @@ const downloadTemplate = () => {
                             <span v-else class="text-[10px] italic opacity-30">Belum diatur</span>
                         </td>
 
-                        <td class="px-6 py-4">
+                        <td class="px-6 py-4 whitespace-nowrap">
                             <div v-if="sku.diskon_customer?.length > 0" class="flex items-center gap-2">
                                 <span class="font-black text-white badge badge-warning badge-sm">{{ sku.diskon_customer.length }}</span>
                                 <span class="text-[10px] font-bold uppercase opacity-50">Diskon Customer</span>
@@ -256,7 +260,7 @@ const downloadTemplate = () => {
                             <span v-else class="text-[10px] italic opacity-30">Belum diatur</span>
                         </td>
 
-                        <td class="px-6 py-4 text-center">
+                        <td class="px-6 py-4 text-center whitespace-nowrap">
                             <CustomTableAction v-slot="{ close }">
                                 <div class="px-4 py-2 text-[10px] font-black text-base-content/20 uppercase tracking-widest border-b border-base-300/50 mb-1">
                                     Menu Produk

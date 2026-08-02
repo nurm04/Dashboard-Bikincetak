@@ -20,6 +20,8 @@ class HargaPengerjaan extends Model
         'nilai'
     ];
 
+    protected $touches = ['produkSku'];
+
     public function produkSku(): BelongsTo
     {
         return $this->belongsTo(ProdukSku::class, 'id_sku', 'id_sku');

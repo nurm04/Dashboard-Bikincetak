@@ -6,7 +6,7 @@ defineProps({
 
 <template>
     <div class="border rounded-lg shadow-xl bg-base-100 border-base-300">
-        <div class="pb-4 overflow-x-visible">
+        <div class="pb-4 overflow-x-auto">
             <table class="w-full text-sm text-left border-collapse">
                 <thead class="bg-base-200/50 text-base-content/70 uppercase font-black text-[10px] tracking-[0.15em] border-b-2 border-base-300">
                     <tr>

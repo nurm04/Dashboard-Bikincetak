@@ -216,64 +216,78 @@ const formatEnum = (text) => {
 
         <div class="min-h-screen px-4 py-6 mx-auto sm:px-6 lg:px-8 max-w-7xl">
 
-            <div class="flex flex-col gap-4 mb-6 md:flex-row md:items-center md:justify-between">
-                <Link v-if="$can('pesan', 'tambah')" :href="route('pesan.pos-kasir')" class="font-black tracking-wider shadow-md btn btn-primary rounded-xl shrink-0">
-                    + Tambah Pesanan (POS)
-                </Link>
-            </div>
-            <div class="flex flex-col w-full gap-3 mb-3 sm:flex-row sm:items-center md:w-auto">
-                <CustomInputSearch
-                    v-model="search"
-                    class="w-full sm:w-64"
-                    placeholder="Cari ID / Nama Customer..."
-                />
-                <div class="w-full sm:w-48 md:w-56">
-                    <CustomSelect
-                        v-model="filterPembayaran"
-                        :options="pembayaranOptions"
-                        valueKey="value"
-                        labelKey="label"
-                        placeholder="Semua Pembayaran"
-                    />
+            <!-- BAGIAN ATAS: TOMBOL & FILTER YANG SUDAH DIRAPIKAN -->
+            <div class="flex flex-col gap-5 mb-6">
+
+                <!-- Wrapper Tombol POS -->
+                <div class="w-full md:w-auto">
+                    <Link v-if="$can('pesan', 'tambah')" :href="route('pesan.pos-kasir')" class="flex items-center justify-center w-full shadow-md md:w-auto btn btn-primary rounded-xl shrink-0">
+                        <span class="font-black tracking-wider">+ Tambah Pesanan (POS)</span>
+                    </Link>
                 </div>
-                <div class="w-full sm:w-48 md:w-56">
-                    <CustomSelect
-                        v-model="filterOperasional"
-                        :options="operasionalOptions"
-                        valueKey="value"
-                        labelKey="label"
-                        placeholder="Semua Operasional"
-                    />
+
+                <!-- Wrapper Filter & Search -->
+                <div class="flex flex-col gap-3 md:flex-row md:items-center">
+                    <!-- Search Input -->
+                    <div class="w-full md:w-72">
+                        <CustomInputSearch
+                            v-model="search"
+                            placeholder="Cari ID / Nama Customer..."
+                        />
+                    </div>
+
+                    <!-- Select Filters (Grid 2 kolom di mobile biar sejajar) -->
+                    <div class="grid grid-cols-2 gap-3 w-full md:flex md:w-auto md:gap-3">
+                        <div class="w-full md:w-56">
+                            <CustomSelect
+                                v-model="filterPembayaran"
+                                :options="pembayaranOptions"
+                                valueKey="value"
+                                labelKey="label"
+                                placeholder="Semua Pembayaran"
+                            />
+                        </div>
+                        <div class="w-full md:w-56">
+                            <CustomSelect
+                                v-model="filterOperasional"
+                                :options="operasionalOptions"
+                                valueKey="value"
+                                labelKey="label"
+                                placeholder="Semua Operasional"
+                            />
+                        </div>
+                    </div>
                 </div>
+
             </div>
+            <!-- END BAGIAN ATAS -->
 
             <CustomTable :headers="headers">
-                <!-- Ganti looping pesanan menjadi pesananAkurat -->
                 <tr
                     v-for="p in pesananAkurat"
                     :key="p.id_pesan"
                     :class="p.status_operasional === 'batal' ? 'bg-base-200/30' : 'hover:bg-base-200/50'"
                     class="transition-colors"
                 >
-                    <td class="px-6 py-4 font-mono text-xs font-bold" :class="p.status_operasional === 'batal' ? 'opacity-40 line-through' : 'text-primary'">
+                    <td class="px-4 py-4 font-mono text-xs font-bold whitespace-nowrap" :class="p.status_operasional === 'batal' ? 'opacity-40 line-through' : 'text-primary'">
                         {{ p.id_pesan }}
                     </td>
 
-                    <td class="px-6 py-4" :class="p.status_operasional === 'batal' ? 'opacity-40 line-through' : 'text-primary'">
+                    <td class="px-4 py-4 whitespace-nowrap" :class="p.status_operasional === 'batal' ? 'opacity-40 line-through' : 'text-primary'">
                         {{ p.kode_transaksi }}
                     </td>
 
-                    <td class="px-6 py-4" :class="p.status_operasional === 'batal' ? 'opacity-40 line-through' : ''">
+                    <td class="px-4 py-4 whitespace-nowrap" :class="p.status_operasional === 'batal' ? 'opacity-40 line-through' : ''">
                         <div class="font-bold text-base-content">{{ p.customer?.user?.name || 'Walk-in / Umum' }}</div>
                         <div class="text-[10px] opacity-40 font-mono tracking-wider">{{ p.id_customer }}</div>
                     </td>
 
-                    <!-- Ganti p.total_tagihan jadi p.total_tagihan_real -->
-                    <td class="px-6 py-4 text-sm font-black" :class="p.status_operasional === 'batal' ? 'opacity-40 line-through' : 'text-base-content'">
+                    <td class="px-4 py-4 text-sm font-black whitespace-nowrap" :class="p.status_operasional === 'batal' ? 'opacity-40 line-through' : 'text-base-content'">
                         {{ formatRupiah(p.total_tagihan_real ?? 0) }}
                     </td>
 
-                    <td class="px-6 py-4" :class="p.status_operasional === 'batal' ? 'opacity-50' : ''">
+                    <td class="px-4 py-4 whitespace-nowrap" :class="p.status_operasional === 'batal' ? 'opacity-50' : ''">
+                        <!-- class w-full md:w-auto dihapus dari select ini biar tabel gak melar -->
                         <select
                             class="select select-bordered select-sm text-[10px] font-black uppercase tracking-wider rounded-xl shadow-sm"
                             :class="
@@ -294,20 +308,17 @@ const formatEnum = (text) => {
                             </option>
                         </select>
                         <div class="mt-1 text-[10px] font-bold opacity-60" :class="p.status_operasional === 'batal' ? 'line-through' : ''">
-                            {{ formatRupiah(p.total_dibayar ?? 0) }}
-                            /
-                            <!-- Ganti p.total_tagihan jadi p.total_tagihan_real -->
-                            {{ formatRupiah(p.total_tagihan_real ?? 0) }}
+                            {{ formatRupiah(p.total_dibayar ?? 0) }} / {{ formatRupiah(p.total_tagihan_real ?? 0) }}
                         </div>
                     </td>
 
-                    <td class="px-6 py-4" :class="p.status_operasional === 'batal' ? 'opacity-50' : ''">
+                    <td class="px-4 py-4 whitespace-nowrap" :class="p.status_operasional === 'batal' ? 'opacity-50' : ''">
                         <div class="inline-flex items-center px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-xl shadow-sm border border-base-300 bg-base-100 text-base-content">
                             {{ formatEnum(p.status_operasional) }}
                         </div>
                     </td>
 
-                    <td class="px-6 py-4 text-center">
+                    <td class="px-4 py-4 text-center whitespace-nowrap">
                         <CustomButton v-if="$can('pesan')" type="link" :href="route('pesan.detail', p.id_pesan)" variant="info" size="sm">
                             Detail
                         </CustomButton>
@@ -315,7 +326,7 @@ const formatEnum = (text) => {
                 </tr>
 
                 <tr v-if="pesanan.length === 0">
-                    <td colspan="6" class="px-6 py-20 text-center">
+                    <td colspan="7" class="px-6 py-20 text-center">
                         <div class="flex flex-col items-center gap-2 opacity-30">
                             <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
@@ -330,10 +341,10 @@ const formatEnum = (text) => {
         </div>
 
         <dialog class="modal" :class="{ 'modal-open': showBayarSebagianModal }">
-            <div class="modal-box">
+            <div class="modal-box w-11/12 max-w-lg">
                 <h3 class="text-lg font-black">Pembayaran Sebagian</h3>
 
-                <div v-if="selectedPesan" class="space-y-4">
+                <div v-if="selectedPesan" class="space-y-4 mt-4">
                     <div>
                         <CustomInput
                             label="Total Tagihan"

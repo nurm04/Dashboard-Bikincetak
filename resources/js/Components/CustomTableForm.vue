@@ -38,12 +38,14 @@ const removeRow = (index) => {
             </button>
         </div>
 
-        <div class="overflow-visible border border-base-300 rounded-3xl bg-base-200/30">
+        <!-- UBAH DISINI: overflow-visible diganti jadi overflow-x-auto -->
+        <div class="overflow-x-auto border border-base-300 rounded-3xl bg-base-200/30">
             <table class="w-full text-left border-collapse rounded-3xl">
                 <thead class="bg-base-200/50">
                     <tr>
+                        <!-- UBAH DISINI: Tambah whitespace-nowrap -->
                         <th v-for="(header, index) in headers" :key="header"
-                            class="px-3 py-2 text-[10px] font-black text-base-content/40 uppercase tracking-widest"
+                            class="px-3 py-2 text-[10px] font-black text-base-content/40 uppercase tracking-widest whitespace-nowrap"
                             :class="{
                                 'first:rounded-tl-3xl': true,
                                 // Jika tidak bisa hapus, header terakhir dapet rounded kanan
@@ -52,7 +54,8 @@ const removeRow = (index) => {
                         >
                             {{ header }}
                         </th>
-                        <th v-if="canDelete" class="w-16 px-3 py-2 text-[10px] font-black text-base-content/40 uppercase tracking-widest last:rounded-tr-3xl text-center">
+                        <!-- UBAH DISINI: Tambah whitespace-nowrap -->
+                        <th v-if="canDelete" class="w-16 px-3 py-2 text-[10px] font-black text-base-content/40 uppercase tracking-widest last:rounded-tr-3xl text-center whitespace-nowrap">
                             Aksi
                         </th>
                     </tr>

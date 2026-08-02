@@ -1,5 +1,6 @@
 <script setup>
 import Sidebar from '@/Components/Sidebar.vue';
+import NavBottom from '@/Components/NavBottom.vue';
 import ThemeSwitcher from '@/Components/ThemeSwitcher.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import CustomAlert from '@/Components/CustomAlert.vue';
@@ -7,6 +8,7 @@ import { usePage, Link, router } from '@inertiajs/vue3';
 import { watch, onMounted, ref, computed, onUnmounted } from 'vue';
 import { alertStore } from '@/Utils/alertStore';
 import CustomInputSearch from '@/Components/Form/CustomInputSearch.vue';
+import { requestFirebaseNotificationPermission, onMessageListener } from '@/firebase.js';
 
 const page = usePage();
 
@@ -26,6 +28,9 @@ const soundProduksi = new Audio('/sounds/notif produksi.mp3');
 let originalTitle = '';
 
 const isSidebarCollapsed = ref(localStorage.getItem('sidebar_collapsed') === 'true');
+const isMobileSidebarOpen = ref(false);
+// BARU: State buat ngebuka/nutup pencarian di layar HP
+const isMobileSearchOpen = ref(false);
 
 const toggleSidebar = () => {
     isSidebarCollapsed.value = !isSidebarCollapsed.value;
@@ -42,7 +47,6 @@ const playNotificationSound = (tipe) => {
 };
 
 const tambahNotifKeLayar = (kodePesanan, judul, pesan, tipe) => {
-    // ADMIN: Mute sound. Selain admin (Kasir/Produksi) baru di-play.
     if (stafRole.value !== 'ROLE-STAF-ADMIN') {
         playNotificationSound(tipe);
     }
@@ -75,15 +79,33 @@ onMounted(() => {
         document.title = originalTitle;
     });
 
+    requestFirebaseNotificationPermission();
+
+    const listenToFCM = async () => {
+        try {
+            while (true) {
+                const payload = await onMessageListener();
+                console.log("Notif FCM masuk (Foreground):", payload);
+
+                const judul = payload.notification?.title || 'Notifikasi Baru';
+                const pesan = payload.notification?.body || '';
+
+                const tipe = payload.data?.tipe || 'pesanan';
+                const kode = payload.data?.kode || '';
+
+                tambahNotifKeLayar(kode, judul, pesan, tipe);
+            }
+        } catch (err) {
+            console.log('FCM Listener error: ', err);
+        }
+    };
+    listenToFCM();
+
     if (window.Echo) {
-        // Bersihin channel yang nyangkut dari sesi sebelumnya (mencegah ghost listener)
         window.Echo.leave('pesanan-channel');
         window.Echo.leave('produksi-channel');
 
-        // PASTIKAN BUKAN VENDOR
         if (!isVendor.value) {
-
-            // KASIR & ADMIN -> Dengerin channel pesanan
             if (['ROLE-STAF-ADMIN', 'ROLE-STAF-KASIR'].includes(stafRole.value)) {
                 window.Echo.channel('pesanan-channel')
                     .listen('.pesanan.baru', (e) => {
@@ -92,7 +114,6 @@ onMounted(() => {
                     });
             }
 
-            // PRODUKSI & ADMIN -> Dengerin channel produksi
             if (['ROLE-STAF-ADMIN', 'ROLE-STAF-PRODUKSI'].includes(stafRole.value)) {
                 window.Echo.channel('produksi-channel')
                     .listen('.produksi.baru', (e) => {
@@ -100,14 +121,12 @@ onMounted(() => {
                         tambahNotifKeLayar(kodePesanan, 'Antrean Produksi!', 'Pesanan Lunas/DP, siap dikerjakan', 'produksi');
                     });
             }
-
         }
     } else {
         console.error("Waduh, window.Echo belum aktif! Cek file bootstrap.js lu.");
     }
 });
 
-// Bersihkan listener saat layout ini di-destroy / unmount (contoh saat pindah ke halaman vendor)
 onUnmounted(() => {
     if (window.Echo) {
         window.Echo.leave('pesanan-channel');
@@ -120,23 +139,39 @@ const globalSearchKey = ref(new URLSearchParams(window.location.search).get('key
 const doGlobalSearch = () => {
     if (!globalSearchKey.value.trim()) return;
     router.get('/search', { key: globalSearchKey.value });
+    isMobileSearchOpen.value = false; // Otomatis tutup search bar mobile kalau udah nyari
 };
 </script>
 
 <template>
-    <div class="flex min-h-screen bg-base-200 text-base-content selection:bg-primary selection:text-white">
+    <div class="relative flex w-full min-h-screen overflow-x-hidden bg-base-200 text-base-content selection:bg-primary selection:text-white">
 
-        <Sidebar v-if="!isVendor" :isCollapsed="isSidebarCollapsed" />
+        <Sidebar
+            v-if="!isVendor"
+            :isCollapsed="isSidebarCollapsed"
+            :isMobileOpen="isMobileSidebarOpen"
+            @closeMobile="isMobileSidebarOpen = false"
+        />
 
-        <div class="flex flex-col flex-1 min-h-screen transition-all duration-300" :class="!isVendor ? (isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64') : ''">
+        <NavBottom v-if="!isVendor" />
 
-            <nav class="sticky top-0 flex items-center h-16 px-4 transition-colors border-b shadow-sm z-60 lg:px-8 bg-base-100/90 backdrop-blur-md border-base-300">
+        <div class="flex flex-col flex-1 min-w-0 min-h-screen transition-all duration-300" :class="!isVendor ? (isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64') : ''">
+
+            <!-- NAVBAR UTAMA -->
+            <nav class="top-0 flex items-center h-16 px-4 transition-colors border-b shadow-sm z-30 lg:px-8 bg-base-100/90 backdrop-blur-md border-base-300 relative">
                 <div class="flex items-center gap-3">
-
+                    <!-- Hamburger Desktop -->
                     <button v-if="!isVendor" @click="toggleSidebar" class="hidden lg:flex btn btn-ghost btn-sm btn-circle hover:bg-base-200 ring-1 ring-base-300/50">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
                             <path v-if="!isSidebarCollapsed" stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                             <path v-else stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M12 17.25h8.25" />
+                        </svg>
+                    </button>
+
+                    <!-- Hamburger Mobile -->
+                    <button v-if="!isVendor" @click="isMobileSidebarOpen = true" class="flex lg:hidden btn btn-ghost btn-sm btn-circle hover:bg-base-200 ring-1 ring-base-300/50">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                         </svg>
                     </button>
 
@@ -146,6 +181,7 @@ const doGlobalSearch = () => {
                         </span>
                     </div>
 
+                    <!-- Pencarian Desktop (Tetap ada di layar menengah ke atas) -->
                     <div v-if="!isVendor" class="flex-1 hidden max-w-md ml-2 md:block">
                         <form @submit.prevent="doGlobalSearch">
                             <CustomInputSearch
@@ -157,6 +193,13 @@ const doGlobalSearch = () => {
                 </div>
 
                 <div class="flex items-center ml-auto space-x-2 lg:space-x-4">
+                    <!-- REVISI: Tombol Buka Search khusus Mobile -->
+                    <button v-if="!isVendor" @click="isMobileSearchOpen = !isMobileSearchOpen" class="flex md:hidden btn btn-ghost btn-sm btn-circle text-base-content/70 hover:bg-base-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                        </svg>
+                    </button>
+
                     <ThemeSwitcher />
                     <div class="h-6 w-0.5 bg-base-300 mx-1"></div>
 
@@ -180,12 +223,10 @@ const doGlobalSearch = () => {
                             <div class="px-3 py-2 text-[10px] font-black text-base-content/40 uppercase tracking-widest border-b border-base-200 mb-1">
                                 Menu Pengguna
                             </div>
-
                             <Link :href="route('profil.edit')" class="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-bold text-base-content/80 rounded-lg hover:bg-base-200 hover:text-primary transition-colors">
                                 <svg class="w-4 h-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                                 Profil Saya
                             </Link>
-
                             <Link :href="route('logout')" method="post" as="button" class="flex items-center gap-3 w-full px-3 py-2.5 mt-1 text-sm font-bold text-error rounded-lg hover:bg-error/10 transition-colors">
                                 <svg class="w-4 h-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                                 Keluar Sistem
@@ -194,6 +235,20 @@ const doGlobalSearch = () => {
                     </Dropdown>
                 </div>
             </nav>
+
+            <!-- BAR PENCARIAN KHUSUS MOBILE -->
+            <div v-show="isMobileSearchOpen && !isVendor" class="md:hidden px-4 py-3 bg-base-100 border-b border-base-300 animate-in fade-in slide-in-from-top-2 z-20 sticky top-16 shadow-sm">
+                <form @submit.prevent="doGlobalSearch" class="relative">
+                    <CustomInputSearch
+                        v-model="globalSearchKey"
+                        placeholder="Cari data global..."
+                        class="w-full"
+                    />
+                    <button type="button" @click="isMobileSearchOpen = false" class="absolute right-1 top-1 btn btn-ghost btn-sm btn-circle text-base-content/50 hover:text-error">
+                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </form>
+            </div>
 
             <CustomAlert />
 
@@ -204,7 +259,7 @@ const doGlobalSearch = () => {
                 </div>
             </header>
 
-            <main class="flex-1 px-4 pb-12 lg:px-8">
+            <main class="flex-1 w-full min-w-0 px-4 pb-24 lg:px-8 md:pb-12">
                 <slot />
             </main>
         </div>
@@ -214,10 +269,7 @@ const doGlobalSearch = () => {
                 class="border-l-4 shadow-lg alert bg-base-100 animate-bounce"
                 :class="notif.tipe === 'produksi' ? 'border-warning' : 'border-success'">
 
-                <!-- Ikon Hijau untuk Pesanan Baru -->
                 <svg v-if="notif.tipe === 'pesanan'" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="w-6 h-6 stroke-success shrink-0"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-
-                <!-- Ikon Kuning/Warning untuk Produksi Baru -->
                 <svg v-else-if="notif.tipe === 'produksi'" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="w-6 h-6 stroke-warning shrink-0"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.83-5.83M15.17 11.42L21 5.58A2.652 2.652 0 0017.25 1.83l-5.83 5.83m-3.84 3.84L1.83 17.25A2.652 2.652 0 005.58 21l5.83-5.83m-3.84-3.84L1.83 5.58A2.652 2.652 0 015.58 1.83l5.83 5.83"></path></svg>
 
                 <div>
@@ -232,17 +284,5 @@ const doGlobalSearch = () => {
 </template>
 
 <style scoped>
-nav::-webkit-scrollbar {
-    width: 4px;
-}
-nav::-webkit-scrollbar-track {
-    background: transparent;
-}
-nav::-webkit-scrollbar-thumb {
-    background-color: oklch(var(--p) / 0.2);
-    border-radius: 10px;
-}
-nav:hover::-webkit-scrollbar-thumb {
-    background-color: oklch(var(--p) / 0.5);
-}
+/* Scoped styling dibiarkan bersih sesuai kebutuhan Tailwind */
 </style>

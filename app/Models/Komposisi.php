@@ -21,6 +21,8 @@ class Komposisi extends Model
         'hpp',
     ];
 
+    protected $touches = ['proprodukSkuduk'];
+
     public function produkSku(): BelongsTo
     {
         return $this->belongsTo(ProdukSku::class, 'id_sku', 'id_sku');

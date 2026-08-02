@@ -23,6 +23,8 @@ class ProdukSku extends Model
         'harga',
     ];
 
+    protected $touches = ['produk'];
+
     public function voucherTarget(): HasMany
     {
         return $this->hasMany(Voucher::class, 'id_sku_target', 'id_sku');

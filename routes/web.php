@@ -35,6 +35,7 @@ use App\Http\Controllers\Web\User\StafController;
 use App\Http\Controllers\Web\User\VendorController;
 use App\Http\Controllers\Web\VoucherController;
 use Illuminate\Foundation\Application;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -52,6 +53,36 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
     ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+
+    Route::get('/test-notif', function () {
+        $user = auth()->user();
+
+        $fcm = new class { use App\Traits\FcmNotificationTrait; };
+
+        $sukses = $fcm->sendFcmNotification(
+            $user,
+            'Test Notif BikinCetak! 🚀',
+            'Mantap, Service Worker FCM udah jalan di background!',
+            '/produksi'
+        );
+
+        return $sukses ? 'Notif berhasil ditembak, silakan cek pojok kanan bawah / HP!' : 'Gagal kirim notif, cek tab log Laravel.';
+    });
+
+    Route::post('/simpan-fcm-token', function (Request $request) {
+        $token = $request->input('token') ?? $request->input('fcm_token');
+
+        if ($token) {
+            $user = auth()->user();
+            $user->update([
+                'fcm_token' => $token
+            ]);
+
+            return response()->json(['message' => 'Token berhasil disimpan!']);
+        }
+
+        return response()->json(['message' => 'Token tidak ditemukan di request'], 400);
+    });
 
     Route::get('/shipping/provinces', [ShippingController::class, 'getProvinces']);
     Route::get('/shipping/cities/{provinceId}', [ShippingController::class, 'getCities']);

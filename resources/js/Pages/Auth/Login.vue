@@ -58,8 +58,8 @@ const submit = () => {
                         v-model="form.email"
                         required
                         autofocus
-                        autocomplete="username"
-                        placeholder="admin@bikincetak.com"
+                        autocomplete="email"
+                        placeholder="Email"
                     />
                     <p v-if="form.errors.email" class="mt-2 ml-1 text-[10px] font-bold text-error uppercase tracking-wider">
                         {{ form.errors.email }}

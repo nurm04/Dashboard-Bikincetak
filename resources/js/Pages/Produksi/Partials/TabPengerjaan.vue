@@ -2,7 +2,8 @@
 import { ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { alertStore } from '@/Utils/alertStore';
-import { Clock, CheckCircle, Paperclip, UploadCloud, Printer } from 'lucide-vue-next';
+// Tambahin Inbox dari lucide buat icon empty state
+import { Clock, CheckCircle, Paperclip, UploadCloud, Printer, Inbox } from 'lucide-vue-next';
 import CustomInput from '@/Components/Form/CustomInput.vue';
 import CustomTable from '@/Components/CustomTable.vue';
 import CustomInputFile from '@/Components/Form/CustomInputFile.vue';
@@ -75,7 +76,13 @@ const submitUpdate = () => {
 
 <template>
     <div class="space-y-6">
-        <div v-if="pesananList.length === 0" class="py-12 text-center text-base-content/50">Tidak ada pesanan yang sedang dikerjakan.</div>
+
+        <!-- DESAIN EMPTY STATE BARU SESUAI GAMBAR -->
+        <div v-if="pesananList.length === 0" class="flex flex-col items-center justify-center py-20 mt-4 border bg-base-200/20 border-base-300 rounded-3xl animate-in fade-in zoom-in-95 duration-500">
+            <Inbox class="w-12 h-12 mb-3 opacity-30 text-base-content" stroke-width="1.5" />
+            <h3 class="text-sm font-bold opacity-80 text-base-content">Tidak Ada Pekerjaan</h3>
+            <p class="mt-1 text-xs opacity-50 text-base-content">Belum ada pesanan yang sedang diproses saat ini.</p>
+        </div>
 
         <div v-for="pesanan in pesananList" :key="pesanan.id_pesan" class="overflow-hidden border rounded-xl border-base-200 bg-base-100 shadow-sm animate-in fade-in slide-in-from-bottom-2">
             <div class="flex flex-col items-start justify-between gap-4 p-5 border-b sm:flex-row sm:items-center border-base-200 bg-base-50/30">
@@ -154,7 +161,8 @@ const submitUpdate = () => {
 
                     <CustomTable :headers="headersProses" class="border-none shadow-none">
                         <tr v-for="schedule in item.pesanan_item_produksi" :key="schedule.id" class="border-b border-base-200/50 hover:bg-base-200/30">
-                            <td class="px-4 py-3 text-xs font-medium">
+                            <!-- REVISI: Tambah whitespace-nowrap biar tabel gak berantakan di layar kecil -->
+                            <td class="px-4 py-3 text-xs font-medium whitespace-nowrap">
                                 {{ schedule.tipe_pengerjaan === 'sendiri' ? 'In-House' : (schedule.vendor?.nama_vendor || 'Vendor') }}
                                 <div v-if="schedule.file_revisi" class="mt-1">
                                     <a :href="'/storage/' + schedule.file_revisi" target="_blank" class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 hover:underline bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
@@ -162,15 +170,15 @@ const submitUpdate = () => {
                                     </a>
                                 </div>
                             </td>
-                            <td class="px-4 py-3 text-xs text-base-content/70">{{ schedule.instruksi_pengerjaan || '-' }}</td>
-                            <td class="px-4 py-3 text-xs font-semibold text-center">{{ schedule.qty_dikerjakan }}</td>
-                            <td class="px-4 py-3 text-center">
+                            <td class="px-4 py-3 text-xs text-base-content/70 whitespace-nowrap">{{ schedule.instruksi_pengerjaan || '-' }}</td>
+                            <td class="px-4 py-3 text-xs font-semibold text-center whitespace-nowrap">{{ schedule.qty_dikerjakan }}</td>
+                            <td class="px-4 py-3 text-center whitespace-nowrap">
                                 <button v-if="schedule.status_pengerjaan === 'selesai'" @click="openUpdateModal(schedule, item)" class="inline-flex gap-1.5 text-xs font-medium text-green-600 hover:underline">
                                     <CheckCircle class="w-3.5 h-3.5" /> Selesai
                                 </button>
                                 <span v-else class="inline-flex gap-1.5 text-xs font-medium text-base-content/50"><span class="w-1.5 h-1.5 rounded-full bg-base-content/30"></span> Proses</span>
                             </td>
-                            <td class="px-4 py-3 text-center">
+                            <td class="px-4 py-3 text-center whitespace-nowrap">
                                 <button v-if="schedule.status_pengerjaan !== 'selesai'" @click="openUpdateModal(schedule, item)" class="text-xs font-medium text-blue-600 hover:underline" :disabled="checkAccess(schedule) !== 'edit'">
                                     Update
                                 </button>
