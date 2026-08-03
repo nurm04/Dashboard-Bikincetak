@@ -29,8 +29,10 @@ let originalTitle = '';
 
 const isSidebarCollapsed = ref(localStorage.getItem('sidebar_collapsed') === 'true');
 const isMobileSidebarOpen = ref(false);
-// BARU: State buat ngebuka/nutup pencarian di layar HP
 const isMobileSearchOpen = ref(false);
+
+const isKeyboardOpen = ref(false);
+let keyboardTimeout = null; // TAMBAHAN: Variabel untuk menampung timer delay
 
 const toggleSidebar = () => {
     isSidebarCollapsed.value = !isSidebarCollapsed.value;
@@ -70,6 +72,29 @@ const tambahNotifKeLayar = (kodePesanan, judul, pesan, tipe) => {
     router.reload({ preserveScroll: true, preserveState: true });
 };
 
+// REVISI: Fungsi deteksi fokus dengan penambahan clearTimeout
+const handleFocusIn = (e) => {
+    if (window.innerWidth >= 1024) return;
+
+    const target = e.target;
+    if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')) {
+        const ignoreTypes = ['checkbox', 'radio', 'button', 'submit', 'file', 'color', 'hidden', 'range'];
+        if (!ignoreTypes.includes(target.type)) {
+            // Hapus timer kalau pindah antar input agar NavBottom tidak berkedip muncul
+            if (keyboardTimeout) clearTimeout(keyboardTimeout);
+            isKeyboardOpen.value = true;
+        }
+    }
+};
+
+// REVISI: Fungsi kehilangan fokus dengan penundaan (delay) memunculkan NavBottom
+const handleFocusOut = () => {
+    // Delay 300ms adalah standar waktu animasi virtual keyboard Android & iOS turun
+    keyboardTimeout = setTimeout(() => {
+        isKeyboardOpen.value = false;
+    }, 300);
+};
+
 onMounted(() => {
     originalTitle = document.title;
 
@@ -78,6 +103,9 @@ onMounted(() => {
     window.addEventListener('focus', () => {
         document.title = originalTitle;
     });
+
+    window.addEventListener('focusin', handleFocusIn);
+    window.addEventListener('focusout', handleFocusOut);
 
     requestFirebaseNotificationPermission();
 
@@ -132,6 +160,10 @@ onUnmounted(() => {
         window.Echo.leave('pesanan-channel');
         window.Echo.leave('produksi-channel');
     }
+    // Hapus timer yang nyangkut dan listener untuk menghindari memory leak
+    if (keyboardTimeout) clearTimeout(keyboardTimeout);
+    window.removeEventListener('focusin', handleFocusIn);
+    window.removeEventListener('focusout', handleFocusOut);
 });
 
 const globalSearchKey = ref(new URLSearchParams(window.location.search).get('key') || '');
@@ -139,7 +171,7 @@ const globalSearchKey = ref(new URLSearchParams(window.location.search).get('key
 const doGlobalSearch = () => {
     if (!globalSearchKey.value.trim()) return;
     router.get('/search', { key: globalSearchKey.value });
-    isMobileSearchOpen.value = false; // Otomatis tutup search bar mobile kalau udah nyari
+    isMobileSearchOpen.value = false;
 };
 </script>
 
@@ -153,12 +185,15 @@ const doGlobalSearch = () => {
             @closeMobile="isMobileSidebarOpen = false"
         />
 
-        <NavBottom v-if="!isVendor" />
+        <!-- REVISI: Bungkus NavBottom dan tambahkan class hidden saat isKeyboardOpen true -->
+        <div :class="{ 'hidden': isKeyboardOpen }">
+            <NavBottom v-if="!isVendor" />
+        </div>
 
         <div class="flex flex-col flex-1 min-w-0 min-h-screen transition-all duration-300" :class="!isVendor ? (isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64') : ''">
 
             <!-- NAVBAR UTAMA -->
-            <nav class="top-0 flex items-center h-16 px-4 transition-colors border-b shadow-sm z-30 lg:px-8 bg-base-100/90 backdrop-blur-md border-base-300 relative">
+            <nav class="relative top-0 z-30 flex items-center h-16 px-4 transition-colors border-b shadow-sm lg:px-8 bg-base-100/90 backdrop-blur-md border-base-300">
                 <div class="flex items-center gap-3">
                     <!-- Hamburger Desktop -->
                     <button v-if="!isVendor" @click="toggleSidebar" class="hidden lg:flex btn btn-ghost btn-sm btn-circle hover:bg-base-200 ring-1 ring-base-300/50">
@@ -181,7 +216,7 @@ const doGlobalSearch = () => {
                         </span>
                     </div>
 
-                    <!-- Pencarian Desktop (Tetap ada di layar menengah ke atas) -->
+                    <!-- Pencarian Desktop -->
                     <div v-if="!isVendor" class="flex-1 hidden max-w-md ml-2 md:block">
                         <form @submit.prevent="doGlobalSearch">
                             <CustomInputSearch
@@ -193,7 +228,7 @@ const doGlobalSearch = () => {
                 </div>
 
                 <div class="flex items-center ml-auto space-x-2 lg:space-x-4">
-                    <!-- REVISI: Tombol Buka Search khusus Mobile -->
+                    <!-- Tombol Buka Search khusus Mobile -->
                     <button v-if="!isVendor" @click="isMobileSearchOpen = !isMobileSearchOpen" class="flex md:hidden btn btn-ghost btn-sm btn-circle text-base-content/70 hover:bg-base-200">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
@@ -237,7 +272,7 @@ const doGlobalSearch = () => {
             </nav>
 
             <!-- BAR PENCARIAN KHUSUS MOBILE -->
-            <div v-show="isMobileSearchOpen && !isVendor" class="md:hidden px-4 py-3 bg-base-100 border-b border-base-300 animate-in fade-in slide-in-from-top-2 z-20 sticky top-16 shadow-sm">
+            <div v-show="isMobileSearchOpen && !isVendor" class="sticky z-20 px-4 py-3 border-b shadow-sm md:hidden bg-base-100 border-base-300 animate-in fade-in slide-in-from-top-2 top-16">
                 <form @submit.prevent="doGlobalSearch" class="relative">
                     <CustomInputSearch
                         v-model="globalSearchKey"
@@ -282,7 +317,3 @@ const doGlobalSearch = () => {
         </div>
     </div>
 </template>
-
-<style scoped>
-/* Scoped styling dibiarkan bersih sesuai kebutuhan Tailwind */
-</style>

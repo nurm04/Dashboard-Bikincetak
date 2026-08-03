@@ -165,109 +165,123 @@ const handleProsesPengantaran = (pesanan) => {
 
 <template>
     <div class="space-y-6">
-        <div v-if="pesananList.length === 0" class="py-12 text-center border border-dashed rounded-xl border-base-300 bg-base-50/50">
-            <Truck class="w-12 h-12 mx-auto mb-4 text-base-content/20" />
-            <h3 class="text-base font-semibold text-base-content">Belum Ada Pesanan Siap Kirim</h3>
-            <p class="mt-1 text-sm text-base-content/50">Pesanan yang semua itemnya selesai akan otomatis muncul di sini.</p>
+
+        <!-- DESAIN EMPTY STATE KONSISTEN -->
+        <div v-if="pesananList.length === 0" class="flex flex-col items-center justify-center py-20 mt-4 duration-500 border bg-base-200/20 border-base-300 rounded-3xl animate-in fade-in zoom-in-95">
+            <Truck class="w-12 h-12 mb-3 opacity-30 text-base-content" stroke-width="1.5" />
+            <h3 class="text-sm font-bold opacity-80 text-base-content">Belum Ada Pesanan Siap Kirim</h3>
+            <p class="mt-1 text-xs text-center opacity-50 text-base-content">Pesanan yang semua itemnya selesai akan otomatis muncul di sini.</p>
         </div>
 
-        <div v-for="pesanan in pesananList" :key="pesanan.id_pesan" class="overflow-hidden border rounded-xl border-base-200 bg-base-100 shadow-sm animate-in fade-in slide-in-from-bottom-2">
-            <div class="flex flex-col items-start justify-between gap-4 p-5 border-b sm:flex-row sm:items-center border-base-200 bg-base-50/30">
-                <div class="flex items-center gap-4">
-                    <div v-if="currentUser?.role !== 'vendor'" class="px-3 py-1.5 border rounded-md border-base-300 bg-base-100 flex flex-col items-center justify-center">
-                        <span class="text-[10px] font-medium text-base-content/50 uppercase">ID Pesan</span>
-                        <span class="text-sm font-bold text-base-content">{{ pesanan.id_pesan }}</span>
+        <div v-for="pesanan in pesananList" :key="pesanan.id_pesan" class="overflow-hidden border shadow-sm rounded-xl border-base-200 bg-base-100 animate-in fade-in slide-in-from-bottom-2">
+
+            <!-- HEADER PESANAN RESPONSIVE -->
+            <div class="flex flex-col items-start justify-between gap-4 p-4 border-b sm:p-5 sm:flex-row sm:items-center border-base-200 bg-base-50/30">
+                <div class="flex items-start w-full gap-3 sm:items-center sm:w-auto">
+                    <!-- shrink-0 agar kotak ID tidak gepeng -->
+                    <div v-if="currentUser?.role !== 'vendor'" class="shrink-0 px-3 py-1.5 border rounded-lg border-base-300 bg-base-100 flex flex-col items-center justify-center">
+                        <span class="text-[9px] sm:text-[10px] font-black text-base-content/50 uppercase tracking-widest">ID Pesan</span>
+                        <span class="text-xs font-black sm:text-sm text-base-content">{{ pesanan.id_pesan }}</span>
                     </div>
-                    <div>
-                        <h3 v-if="currentUser?.role !== 'vendor'" class="text-base font-semibold text-base-content">{{ pesanan.customer?.user?.name }}</h3>
-                        <span class="flex items-center gap-1.5 mt-1 text-xs font-medium px-2 py-0.5 rounded-full border border-green-200 text-green-600 bg-green-50">
-                            <span class="w-1.5 h-1.5 rounded-full bg-green-600"></span> Produksi Selesai
-                        </span>
+                    <div class="flex-1 min-w-0">
+                        <h3 v-if="currentUser?.role !== 'vendor'" class="text-sm font-bold truncate sm:text-base text-base-content">{{ pesanan.customer?.user?.name }}</h3>
+                        <div class="flex flex-wrap items-center gap-2 mt-1">
+                            <span class="flex items-center gap-1.5 text-[10px] sm:text-xs font-bold px-2.5 py-1 rounded-full border border-green-200 text-green-600 bg-green-50">
+                                <span class="w-1.5 h-1.5 rounded-full bg-green-600 animate-pulse"></span> Produksi Selesai
+                            </span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="flex flex-col gap-2 sm:items-end">
-                    <div class="flex items-center gap-2 text-sm">
-                        <Clock class="w-4 h-4 text-base-content/40" />
-                        <span class="text-base-content/60">Tgl Pesan:</span>
-                        <span class="font-semibold text-base-content">{{ formatTanggal(pesanan.tanggal_pesan) }}</span>
+                <!-- Bagian Kanan Header (Deadline & Tombol) -->
+                <div class="flex flex-col w-full gap-3 pt-3 border-t sm:border-t-0 sm:pt-0 border-base-200 sm:w-auto sm:items-end shrink-0">
+                    <div class="flex items-center gap-2 text-xs sm:text-sm">
+                        <Clock class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-base-content/40" />
+                        <span class="font-medium text-base-content/60">Tgl Pesan:</span>
+                        <span class="font-black tracking-tight text-base-content">{{ formatTanggal(pesanan.tanggal_pesan) }}</span>
                     </div>
-                    <div class="flex items-center gap-2 mt-1" v-if="currentUser?.role !== 'vendor'">
-                        <a :href="route('pesan.cetakLabel', pesanan.id_pesan)" target="_blank" class="font-medium btn btn-xs btn-outline hover:bg-base-200 hover:text-base-content hover:border-base-300 border-base-300 text-base-content/70"><Printer class="w-3 h-3" /> Cetak Label</a>
+                    <!-- Tombol flex-1 / full width di HP -->
+                    <div class="flex items-center w-full gap-2 mt-1 sm:w-auto" v-if="currentUser?.role !== 'vendor'">
+                        <a :href="route('pesan.cetakLabel', pesanan.id_pesan)" target="_blank" class="w-full font-bold tracking-wider uppercase sm:w-auto btn btn-xs sm:btn-sm btn-outline hover:bg-base-200 hover:text-base-content hover:border-base-300 border-base-300 text-base-content/70 text-[9px] sm:text-[10px]">
+                            <Printer class="w-3.5 h-3.5" /> Cetak Label
+                        </a>
                     </div>
                 </div>
             </div>
 
-            <div class="p-5 flex flex-col md:flex-row gap-6">
+            <!-- BODY KONTEN PENGANTARAN RESPONSIVE -->
+            <div class="flex flex-col gap-6 p-4 sm:p-5 md:flex-row">
                 <!-- Info Produk Ringkas -->
                 <div class="flex-1 space-y-3">
-                    <h4 class="text-xs font-bold text-base-content/50 uppercase tracking-widest">Produk Siap Kirim</h4>
+                    <h4 class="text-[9px] sm:text-[10px] font-black text-base-content/50 uppercase tracking-widest block mb-1.5">Produk Siap Kirim</h4>
                     <div class="space-y-2">
-                        <div v-for="item in pesanan.pesanan_item" :key="item.id" class="flex justify-between items-center bg-base-200/50 p-2.5 rounded-lg border border-base-200">
-                            <span class="text-sm font-medium capitalize">{{ cleanProductName(item.nama_produk_snapshot) }}</span>
-                            <span class="text-xs font-bold bg-base-100 px-2 py-1 rounded shadow-sm border border-base-300">Qty: {{ item.jumlah }}</span>
+                        <div v-for="item in pesanan.pesanan_item" :key="item.id" class="flex items-center justify-between p-3 border shadow-sm bg-base-50/50 rounded-xl border-base-200">
+                            <span class="text-xs font-bold capitalize sm:text-sm text-base-content">{{ cleanProductName(item.nama_produk_snapshot) }}</span>
+                            <span class="text-[10px] sm:text-xs font-black bg-base-100 px-2.5 py-1 rounded-md border border-base-300">Qty: {{ item.jumlah }}</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Info Ekspedisi Awal -->
-                <div class="w-full md:w-1/3 space-y-3 border-l-0 md:border-l-2 border-base-200 md:pl-6">
-                    <h4 class="text-xs font-bold text-base-content/50 uppercase tracking-widest">Informasi Ekspedisi</h4>
-                    <div class="bg-orange-50 border border-orange-100 p-4 rounded-xl">
-                        <p class="text-[10px] font-bold text-orange-600 uppercase mb-1">Pilihan Customer</p>
+                <div class="w-full pt-4 space-y-3 border-t md:w-1/3 md:border-t-0 md:border-l-2 border-base-200 md:pt-0 md:pl-6 shrink-0">
+                    <h4 class="text-[9px] sm:text-[10px] font-black text-base-content/50 uppercase tracking-widest block mb-1.5">Informasi Ekspedisi</h4>
+                    <div class="p-4 border border-orange-100 bg-orange-50 rounded-xl">
+                        <p class="text-[9px] sm:text-[10px] font-black text-orange-600/70 uppercase tracking-widest mb-1">Pilihan Customer</p>
                         <p class="text-sm font-black text-orange-900">{{ pesanan.ekspedisi_nama || 'Kurir Toko' }} <span v-if="pesanan.ekspedisi_layanan">- {{ pesanan.ekspedisi_layanan }}</span></p>
                     </div>
                 </div>
             </div>
 
-            <!-- Tombol Proses Pengantaran dipindah kesini -->
-            <div class="flex items-center justify-between p-5 border-t border-base-200 bg-base-50/50" v-if="currentUser?.role !== 'vendor'">
-                <p class="text-xs text-base-content/50">Klik tombol di samping untuk memasukkan nomor resi atau ongkir aktual sebelum lempar ke histori.</p>
-                <button v-if="$can('produksi', 'ubah')" @click="handleProsesPengantaran(pesanan)" class="px-6 font-medium btn btn-sm btn-neutral">
-                    <Truck class="w-4 h-4 mr-1.5" /> Input Resi / Proses Pengantaran
+            <!-- TOMBOL PROSES PENGANTARAN (Dipindah & Responsif) -->
+            <div class="flex flex-col gap-4 p-4 border-t sm:p-5 sm:flex-row sm:items-center sm:justify-between border-base-200 bg-base-50/50" v-if="currentUser?.role !== 'vendor'">
+                <p class="text-[10px] sm:text-xs font-medium text-base-content/60 leading-relaxed text-center sm:text-left">Klik tombol untuk memasukkan nomor resi atau ongkir aktual sebelum memindahkan pesanan ke histori.</p>
+                <button v-if="$can('produksi', 'ubah')" @click="handleProsesPengantaran(pesanan)" class="w-full font-bold tracking-wider uppercase sm:w-auto btn btn-sm btn-neutral rounded-xl text-[10px] sm:text-xs shrink-0">
+                    <Truck class="w-4 h-4 sm:mr-1.5" />
+                    <span class="sm:hidden">Proses Kirim</span>
+                    <span class="hidden sm:inline">Input Resi / Proses Pengantaran</span>
                 </button>
             </div>
         </div>
 
         <!-- ============================================== -->
-        <!-- MODAL TENTUKAN BERAT CUSTOM -->
+        <!-- MODAL TENTUKAN BERAT CUSTOM (KONSISTEN) -->
         <!-- ============================================== -->
         <dialog class="modal" :class="{'modal-open': isModalBeratOpen}">
-            <div class="flex flex-col max-w-lg p-0 overflow-hidden modal-box rounded-xl">
-                <div class="flex items-center justify-between p-5 border-b border-base-200">
+            <div class="flex flex-col max-w-lg p-0 overflow-hidden modal-box rounded-2xl">
+                <!-- Header Modal -->
+                <div class="flex items-start justify-between p-4 border-b sm:items-center sm:p-5 border-base-200">
                     <div>
-                        <h3 class="text-base font-semibold">Tentukan Berat Item Custom</h3>
-                        <p class="text-sm text-base-content/50 mt-0.5">Berat harus disimpan sebelum cek ongkir.</p>
+                        <h3 class="text-base font-bold text-base-content">Tentukan Berat Item Custom</h3>
+                        <p class="text-[11px] sm:text-sm font-medium text-base-content/50 mt-0.5">Berat harus disimpan sebelum cek ongkir.</p>
                     </div>
-                    <button @click="closeModalBerat" class="text-base-content/40 hover:text-base-content">✕</button>
+                    <button @click="closeModalBerat" class="btn btn-sm btn-circle btn-ghost text-base-content/40 hover:text-error">✕</button>
                 </div>
 
-                <div class="p-5 max-h-[70vh] overflow-y-auto space-y-4 bg-base-50/50">
-                    <div v-if="selectedPengantaran?.ekspedisi_nama" class="flex items-start gap-3 p-4 mb-2 border border-blue-100 rounded-lg shadow-sm bg-blue-50">
-                        <Truck class="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
+                <!-- Body Modal -->
+                <div class="p-4 sm:p-5 max-h-[70vh] overflow-y-auto space-y-4 bg-base-50/50 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-base-300 [&::-webkit-scrollbar-thumb]:rounded-full">
+                    <div v-if="selectedPengantaran?.ekspedisi_nama" class="flex items-start gap-3 p-4 mb-2 border border-blue-100 shadow-sm rounded-xl bg-blue-50">
+                        <Truck class="w-5 h-5 mt-0.5 shrink-0 text-blue-500" />
                         <div>
                             <p class="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-1">Ekspedisi Pilihan Customer</p>
-                            <p class="text-sm font-bold text-blue-900">
+                            <p class="text-sm font-black text-blue-900">
                                 {{ selectedPengantaran.ekspedisi_nama }}
                                 <span v-if="selectedPengantaran.ekspedisi_layanan">- {{ selectedPengantaran.ekspedisi_layanan }}</span>
                             </p>
-                            <p v-if="selectedPengantaran.harga_ongkir" class="text-xs text-blue-700 font-medium mt-0.5">
+                            <p v-if="selectedPengantaran.harga_ongkir" class="mt-1 text-xs font-bold text-blue-700">
                                 Tarif Ongkir Awal: Rp {{ Number(selectedPengantaran.harga_ongkir).toLocaleString('id-ID') }}
                             </p>
                         </div>
                     </div>
 
                     <form @submit.prevent="submitBerat" class="space-y-4">
-                        <div v-for="(item, index) in formBerat.items" :key="index" class="p-4 border rounded-lg shadow-sm bg-base-100 border-base-200">
-                            <div class="mb-2">
+                        <div v-for="(item, index) in formBerat.items" :key="index" class="p-4 border shadow-sm rounded-xl bg-base-100 border-base-200">
+                            <div class="mb-3">
                                 <h4 class="text-sm font-black capitalize">{{ item.nama_produk }}</h4>
                             </div>
                             <div class="w-full form-control">
-                                <label class="pb-1 label">
-                                    <span class="text-xs font-bold uppercase label-text opacity-60">Total Berat (Gram)</span>
-                                </label>
+                                <label class="block mb-1.5 text-[11px] font-black uppercase tracking-widest text-base-content/50">Total Berat (Gram)</label>
                                 <div class="relative flex items-center">
-                                    <input type="number" v-model="formBerat.items[index].berat" required min="1" class="w-full pr-10 font-bold input input-bordered" placeholder="Contoh: 150000" />
+                                    <input type="number" v-model="formBerat.items[index].berat" required min="1" class="w-full pr-10 font-bold input input-bordered rounded-xl" placeholder="Contoh: 150000" />
                                     <span class="absolute text-xs font-black pointer-events-none right-4 text-base-content/40">g</span>
                                 </div>
                             </div>
@@ -275,9 +289,10 @@ const handleProsesPengantaran = (pesanan) => {
                     </form>
                 </div>
 
-                <div class="flex justify-end gap-3 p-5 border-t border-base-200">
-                    <button type="button" @click="closeModalBerat" class="font-medium btn btn-sm btn-ghost">Batal</button>
-                    <button type="button" @click="submitBerat" :disabled="formBerat.processing" class="px-6 font-black btn btn-sm btn-primary">
+                <!-- Footer Modal -->
+                <div class="flex flex-col-reverse gap-3 p-4 border-t sm:p-5 sm:flex-row sm:justify-end border-base-200 bg-base-50/50 rounded-b-2xl">
+                    <button type="button" @click="closeModalBerat" class="w-full font-bold tracking-wider uppercase sm:w-auto btn btn-sm btn-ghost rounded-xl text-[10px] sm:text-xs">Batal</button>
+                    <button type="button" @click="submitBerat" :disabled="formBerat.processing" class="w-full px-8 font-bold tracking-wider uppercase sm:w-auto btn btn-sm btn-primary rounded-xl text-[10px] sm:text-xs">
                         <span v-if="formBerat.processing" class="loading loading-spinner loading-xs"></span>
                         Simpan Berat & Lanjut
                     </button>
@@ -287,27 +302,30 @@ const handleProsesPengantaran = (pesanan) => {
         </dialog>
 
         <!-- ============================================== -->
-        <!-- MODAL PENGANTARAN & CEK ONGKIR -->
+        <!-- MODAL PENGANTARAN & CEK ONGKIR (KONSISTEN) -->
         <!-- ============================================== -->
         <dialog class="modal" :class="{'modal-open': isPengantaranModalOpen}">
-            <div class="flex flex-col max-w-xl p-0 overflow-hidden modal-box rounded-xl">
-                <div class="flex items-center justify-between p-5 border-b border-base-200">
+            <div class="flex flex-col max-w-xl p-0 overflow-hidden modal-box rounded-2xl">
+                <!-- Header Modal -->
+                <div class="flex items-start justify-between p-4 border-b sm:items-center sm:p-5 border-base-200">
                     <div>
-                        <h3 class="text-base font-semibold">Proses Pengantaran</h3>
-                        <p class="text-sm text-base-content/50 mt-0.5">Pilih ekspedisi dan hitung ongkir pesanan {{ selectedPengantaran?.id_pesan }}</p>
+                        <h3 class="text-base font-bold text-base-content">Proses Pengantaran</h3>
+                        <p class="text-[11px] sm:text-sm font-medium text-base-content/50 mt-0.5">Pilih ekspedisi dan hitung ongkir pesanan <span class="font-bold">{{ selectedPengantaran?.id_pesan }}</span></p>
                     </div>
-                    <button @click="closePengantaranModal" class="text-base-content/40 hover:text-base-content">✕</button>
+                    <button @click="closePengantaranModal" class="btn btn-sm btn-circle btn-ghost text-base-content/40 hover:text-error">✕</button>
                 </div>
 
-                <div class="p-5 max-h-[70vh] overflow-y-auto space-y-6">
+                <!-- Body Modal -->
+                <div class="p-4 sm:p-5 max-h-[70vh] overflow-y-auto space-y-6 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-base-300 [&::-webkit-scrollbar-thumb]:rounded-full">
                     <div class="grid grid-cols-1 gap-4 p-4 border sm:grid-cols-2 bg-base-200/30 rounded-xl border-base-200">
+
                         <div class="col-span-1 sm:col-span-2">
-                            <CustomSelect v-model="formPengantaran.ekspedisi_nama" label="Kurir / Ekspedisi" :options="ekspedisiOptions" valueKey="id" labelKey="nama" />
+                            <CustomSelect v-model="formPengantaran.ekspedisi_nama" label="Kurir / Ekspedisi" :options="ekspedisiOptions" valueKey="id" labelKey="nama" class="[&_select]:rounded-xl" />
                         </div>
 
                         <div v-if="formPengantaran.ekspedisi_nama !== 'Ambil di Toko'" class="col-span-1 space-y-4 sm:col-span-2">
                             <template v-if="isManualEkspedisi">
-                                <CustomSelect v-model="formPengantaran.ekspedisi_layanan" label="Layanan Lokal" :options="manualLayananOptions" valueKey="id" labelKey="nama" placeholder="Pilih Instan/Lokal..." />
+                                <CustomSelect v-model="formPengantaran.ekspedisi_layanan" label="Layanan Lokal" :options="manualLayananOptions" valueKey="id" labelKey="nama" placeholder="Pilih Instan/Lokal..." class="[&_select]:rounded-xl" />
                             </template>
 
                             <template v-else>
@@ -315,7 +333,7 @@ const handleProsesPengantaran = (pesanan) => {
                                     <span class="loading loading-spinner loading-xs"></span> Mengkalkulasi Tarif dari Database...
                                 </div>
                                 <div v-else class="flex flex-col gap-2">
-                                    <CustomSelect v-model="formPengantaran.ekspedisi_layanan" label="Layanan Ongkir" :options="layananOptions" valueKey="id" labelKey="nama" placeholder="Pilih Layanan Ekspedisi..." />
+                                    <CustomSelect v-model="formPengantaran.ekspedisi_layanan" label="Layanan Ongkir" :options="layananOptions" valueKey="id" labelKey="nama" placeholder="Pilih Layanan Ekspedisi..." class="[&_select]:rounded-xl" />
                                     <button type="button" @click="fetchOngkir" class="text-[10px] text-blue-500 font-bold hover:underline self-end">
                                         ↻ Hitung Ulang Tarif
                                     </button>
@@ -323,7 +341,7 @@ const handleProsesPengantaran = (pesanan) => {
                             </template>
 
                             <div>
-                                <label class="text-[10px] font-bold uppercase opacity-70 block mb-1">Total Biaya Ongkir</label>
+                                <label class="block mb-1.5 text-[11px] font-black uppercase tracking-widest text-base-content/50">Total Biaya Ongkir</label>
                                 <div class="relative flex items-center">
                                     <span class="absolute text-xs font-black left-4 text-base-content/50">Rp</span>
                                     <input
@@ -337,23 +355,27 @@ const handleProsesPengantaran = (pesanan) => {
                             </div>
                         </div>
 
+                        <!-- Info Pick up Toko -->
                         <div v-else class="flex flex-col items-center justify-center col-span-1 p-4 border border-dashed sm:col-span-2 rounded-xl border-base-300 opacity-60 bg-base-100">
                             <span class="text-[10px] font-bold uppercase tracking-widest text-center leading-relaxed">Pesanan akan diambil<br>langsung di Toko</span>
                         </div>
 
-                        <div class="col-span-1 pt-2 mt-2 border-t sm:col-span-2 border-base-200">
+                        <!-- Resi Input -->
+                        <div class="col-span-1 pt-4 border-t sm:col-span-2 border-base-200">
                             <CustomInput
                                 v-model="formPengantaran.nomor_resi"
                                 label="Nomor Resi / Kurir (Opsional)"
                                 placeholder="Contoh: JX1234567890 / Budi Gojek"
+                                class="[&_input]:rounded-xl"
                             />
                         </div>
                     </div>
                 </div>
 
-                <div class="flex justify-end gap-3 p-5 border-t border-base-200 bg-base-50/50">
-                    <button type="button" @click="closePengantaranModal" class="font-medium btn btn-sm btn-ghost">Batal</button>
-                    <button type="button" @click="submitPengantaran" :disabled="formPengantaran.processing || isLoadingOngkir" class="px-6 font-medium btn btn-sm btn-neutral">
+                <!-- Footer Modal -->
+                <div class="flex flex-col-reverse gap-3 p-4 border-t sm:p-5 sm:flex-row sm:justify-end border-base-200 bg-base-50/50 rounded-b-2xl">
+                    <button type="button" @click="closePengantaranModal" class="w-full font-bold tracking-wider uppercase sm:w-auto btn btn-sm btn-ghost rounded-xl text-[10px] sm:text-xs">Batal</button>
+                    <button type="button" @click="submitPengantaran" :disabled="formPengantaran.processing || isLoadingOngkir" class="w-full px-8 font-bold tracking-wider uppercase sm:w-auto btn btn-sm btn-neutral rounded-xl text-[10px] sm:text-xs">
                         <span v-if="formPengantaran.processing" class="loading loading-spinner loading-xs"></span>
                         Simpan & Kirim
                     </button>
@@ -363,27 +385,40 @@ const handleProsesPengantaran = (pesanan) => {
         </dialog>
 
         <!-- ============================================== -->
-        <!-- MODAL KIRIM REGULER (LANGSUNG ISI RESI) -->
+        <!-- MODAL KIRIM REGULER (KONSISTEN) -->
         <!-- ============================================== -->
         <dialog class="modal" :class="{'modal-open': isConfirmKirimOpen}">
-            <div class="max-w-sm p-6 modal-box rounded-xl">
-                <h3 class="mb-1 text-base font-semibold">Proses Pengantaran</h3>
-                <p class="mb-6 text-sm text-base-content/50">Pastikan semua item telah dikemas. Silakan masukkan nomor resi atau nama kurir jika ada.</p>
-
-                <form @submit.prevent="executeKirimPesanan" class="space-y-4">
-                    <CustomInput
-                        v-model="formKirim.nomor_resi"
-                        label="Nomor Resi / Kurir (Opsional)"
-                        placeholder="Contoh: JX1234567890 / Budi Gojek"
-                    />
-                    <div class="flex justify-end gap-3 pt-4 mt-6 border-t border-base-200">
-                        <button type="button" @click="closeKirimModal" class="font-medium btn btn-sm btn-ghost">Batal</button>
-                        <button type="submit" :disabled="formKirim.processing" class="px-6 font-medium btn btn-sm btn-primary">
-                            <span v-if="formKirim.processing" class="loading loading-spinner loading-xs"></span>
-                            Kirim Pesanan
-                        </button>
+            <div class="max-w-sm p-0 modal-box rounded-2xl">
+                <!-- Header Modal -->
+                <div class="flex items-start justify-between p-4 border-b sm:items-center sm:p-5 border-base-200">
+                    <div>
+                        <h3 class="text-base font-bold text-base-content">Proses Pengantaran</h3>
                     </div>
-                </form>
+                    <button @click="closeKirimModal" class="btn btn-sm btn-circle btn-ghost text-base-content/40 hover:text-error">✕</button>
+                </div>
+
+                <!-- Body Modal -->
+                <div class="p-4 sm:p-5">
+                    <p class="mb-5 text-[11px] sm:text-sm font-medium leading-relaxed text-base-content/60">Pastikan semua item telah dikemas. Silakan masukkan nomor resi atau nama kurir jika ada.</p>
+
+                    <form @submit.prevent="executeKirimPesanan" class="space-y-4">
+                        <CustomInput
+                            v-model="formKirim.nomor_resi"
+                            label="Nomor Resi / Kurir (Opsional)"
+                            placeholder="Contoh: JX1234567890 / Budi Gojek"
+                            class="[&_input]:rounded-xl"
+                        />
+
+                        <!-- Footer Modal -->
+                        <div class="flex flex-col-reverse gap-3 pt-5 mt-6 border-t sm:flex-row sm:justify-end border-base-200">
+                            <button type="button" @click="closeKirimModal" class="w-full font-bold tracking-wider uppercase sm:w-auto btn btn-sm btn-ghost rounded-xl text-[10px] sm:text-xs">Batal</button>
+                            <button type="submit" :disabled="formKirim.processing" class="w-full px-6 font-bold tracking-wider uppercase sm:w-auto btn btn-sm btn-primary rounded-xl text-[10px] sm:text-xs">
+                                <span v-if="formKirim.processing" class="loading loading-spinner loading-xs"></span>
+                                Kirim Pesanan
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
             <form method="dialog" class="modal-backdrop bg-base-content/20"><button @click="closeKirimModal">close</button></form>
         </dialog>

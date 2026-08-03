@@ -1,12 +1,34 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 
 const isOpen = ref(false);
 const actionRef = ref(null);
+const dropdownRef = ref(null); // Tambahan ref untuk menu dropdown
+const dropdownStyle = ref({});
 
-const toggle = () => {
+const calculatePosition = () => {
+    if (!actionRef.value) return;
+
+    // Ambil posisi tombol Aksi di layar saat ini
+    const rect = actionRef.value.getBoundingClientRect();
+
+    // Hitung posisi dropdown (w-52 = 13rem = 208px)
+    // Kita kurangi lebar dropdown agar posisinya rata kanan dengan tombol
+    let leftPos = rect.right - 208;
+
+    // Set posisi menggunakan 'fixed' berdasarkan layar, bukan relative ke tabel
+    dropdownStyle.value = {
+        top: `${rect.bottom + 8}px`, // Jarak 8px dari bawah tombol
+        left: `${leftPos}px`,
+    };
+};
+
+const toggle = async () => {
     if (!isOpen.value) {
         window.dispatchEvent(new CustomEvent('close-all-dropdowns'));
+        // Tunggu DOM update, lalu hitung posisi kordinatnya
+        await nextTick();
+        calculatePosition();
     }
     isOpen.value = !isOpen.value;
 };
@@ -14,7 +36,12 @@ const toggle = () => {
 const close = () => (isOpen.value = false);
 
 const handleClickOutside = (event) => {
-    if (actionRef.value && !actionRef.value.contains(event.target)) {
+    // Cek apakah klik terjadi di dalam tombol toggle
+    const isClickInsideButton = actionRef.value && actionRef.value.contains(event.target);
+    // Cek apakah klik terjadi di dalam menu dropdown yang di-teleport
+    const isClickInsideDropdown = dropdownRef.value && dropdownRef.value.contains(event.target);
+
+    if (!isClickInsideButton && !isClickInsideDropdown) {
         close();
     }
 };
@@ -23,18 +50,28 @@ const handleCloseAll = () => {
     close();
 };
 
+const handleScroll = () => {
+    // WAJIB: Tutup dropdown otomatis jika tabel atau halaman di-scroll.
+    // Ini mencegah dropdown melayang lepas dari tombolnya.
+    if (isOpen.value) close();
+};
+
 onMounted(() => {
     document.addEventListener('click', handleClickOutside);
     window.addEventListener('close-all-dropdowns', handleCloseAll);
+    // Angka "true" di bawah ini wajib ada untuk menangkap scroll dari dalam tabel
+    window.addEventListener('scroll', handleScroll, true);
 });
 
 onUnmounted(() => {
     document.removeEventListener('click', handleClickOutside);
     window.removeEventListener('close-all-dropdowns', handleCloseAll);
+    window.removeEventListener('scroll', handleScroll, true);
 });
 </script>
 
 <template>
+    <!-- ref actionRef dipindah ke div pembungkus utama -->
     <div class="relative inline-block" ref="actionRef">
         <button
             @click.stop="toggle"
@@ -47,20 +84,25 @@ onUnmounted(() => {
             </svg>
         </button>
 
-        <Transition
-            enter-active-class="transition duration-200 ease-out"
-            enter-from-class="scale-95 translate-y-2 opacity-0"
-            enter-to-class="scale-100 translate-y-0 opacity-100"
-            leave-active-class="transition duration-150 ease-in"
-            leave-from-class="scale-100 translate-y-0 opacity-100"
-            leave-to-class="scale-95 translate-y-2 opacity-0"
-        >
-            <div
-                v-if="isOpen"
-                class="absolute right-0 top-full mt-2 w-52 z-999 bg-base-100 border border-base-300 shadow-2xl rounded-2xl overflow-hidden py-2"
+        <!-- AJAIBNYA VUE 3: Teleport akan memindahkan elemen ini keluar dari tabel langsung ke <body> -->
+        <Teleport to="body">
+            <Transition
+                enter-active-class="transition duration-200 ease-out"
+                enter-from-class="scale-95 translate-y-2 opacity-0"
+                enter-to-class="scale-100 translate-y-0 opacity-100"
+                leave-active-class="transition duration-150 ease-in"
+                leave-from-class="scale-100 translate-y-0 opacity-100"
+                leave-to-class="scale-95 translate-y-2 opacity-0"
             >
-                <slot :close="close" />
-            </div>
-        </Transition>
+                <div
+                    v-if="isOpen"
+                    ref="dropdownRef"
+                    class="fixed py-2 overflow-hidden border shadow-2xl w-52 z-9999 bg-base-100 border-base-300 rounded-2xl"
+                    :style="dropdownStyle"
+                >
+                    <slot :close="close" />
+                </div>
+            </Transition>
+        </Teleport>
     </div>
 </template>

@@ -91,111 +91,121 @@ const submitAlokasi = () => {
 
 <template>
     <div class="space-y-6">
-        <div v-if="pesananList.length === 0" class="flex flex-col items-center justify-center py-20 text-center border rounded-xl border-base-200 bg-base-100">
+        <div v-if="pesananList.length === 0" class="flex flex-col items-center justify-center py-20 text-center border rounded-xl border-base-200">
             <Inbox class="w-12 h-12 mb-4 text-base-content/20" />
             <h3 class="text-base font-semibold text-base-content">Tidak Ada Antrean</h3>
             <p class="mt-1 text-sm text-base-content/50">Semua pesanan baru sudah dialokasikan.</p>
         </div>
 
         <div v-for="pesanan in pesananList" :key="pesanan.id_pesan" class="overflow-hidden border shadow-sm rounded-xl border-base-200 bg-base-100 animate-in fade-in slide-in-from-bottom-2">
-            <div class="flex flex-col items-start justify-between gap-4 p-5 border-b sm:flex-row sm:items-center border-base-200 bg-base-50/30">
-                <div class="flex items-center gap-4">
-                    <div v-if="currentUser?.role !== 'vendor'" class="px-3 py-1.5 border rounded-md border-base-300 bg-base-100 flex flex-col items-center justify-center">
-                        <span class="text-[10px] font-medium text-base-content/50 uppercase">ID Pesan</span>
-                        <span class="text-sm font-bold text-base-content">{{ pesanan.id_pesan }}</span>
+
+            <!-- REVISI HEADER: flex-col di mobile, flex-row di sm (Desktop) -->
+            <div class="flex flex-col items-start justify-between gap-4 p-4 border-b sm:p-5 sm:flex-row sm:items-center border-base-200 bg-base-50/30">
+                <div class="flex items-start w-full gap-3 sm:items-center sm:w-auto">
+                    <!-- shrink-0 agar kotak ID tidak gepeng saat nama terlalu panjang -->
+                    <div v-if="currentUser?.role !== 'vendor'" class="shrink-0 px-3 py-1.5 border rounded-lg border-base-300 bg-base-100 flex flex-col items-center justify-center">
+                        <span class="text-[9px] sm:text-[10px] font-black text-base-content/50 uppercase tracking-widest">ID Pesan</span>
+                        <span class="text-xs font-black sm:text-sm text-base-content">{{ pesanan.id_pesan }}</span>
                     </div>
-                    <div>
-                        <h3 v-if="currentUser?.role !== 'vendor'" class="text-base font-semibold text-base-content">{{ pesanan.customer?.user?.name }}</h3>
-                        <div class="flex items-center gap-2 mt-1">
-                            <span class="flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full border border-base-300 text-base-content/70">
-                                <span class="w-1.5 h-1.5 rounded-full bg-base-content/40"></span> Menunggu Alokasi
+                    <div class="flex-1 min-w-0">
+                        <h3 v-if="currentUser?.role !== 'vendor'" class="text-sm font-bold truncate sm:text-base text-base-content">{{ pesanan.customer?.user?.name }}</h3>
+                        <div class="flex flex-wrap items-center gap-2 mt-1">
+                            <span class="flex items-center gap-1.5 text-[10px] sm:text-xs font-bold px-2.5 py-1 rounded-full border border-base-300 text-base-content/70 bg-base-100">
+                                <span class="w-1.5 h-1.5 rounded-full bg-warning animate-pulse"></span> Menunggu Alokasi
                             </span>
                         </div>
                     </div>
                 </div>
 
-                <div class="flex flex-col gap-2 sm:items-end">
-                    <div class="flex items-center gap-2 text-sm">
-                        <Clock class="w-4 h-4 text-base-content/40" />
-                        <span class="text-base-content/60">Deadline:</span>
-                        <span class="font-semibold" :class="isDeadlinePassed(pesanan.waktu_deadline) ? 'text-red-600' : 'text-base-content'">
+                <!-- Bagian Kanan Header (Deadline & Tombol) -->
+                <div class="flex flex-col w-full gap-3 pt-3 border-t sm:border-t-0 sm:pt-0 border-base-200 sm:w-auto sm:items-end shrink-0">
+                    <div class="flex items-center gap-2 text-xs sm:text-sm">
+                        <Clock class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-base-content/40" />
+                        <span class="font-medium text-base-content/60">Deadline:</span>
+                        <span class="font-black tracking-tight" :class="isDeadlinePassed(pesanan.waktu_deadline) ? 'text-error' : 'text-base-content'">
                             {{ formatTanggal(pesanan.waktu_deadline) }}
                         </span>
                     </div>
-                    <div class="flex items-center gap-2 mt-1" v-if="currentUser?.role !== 'vendor'">
-                        <a :href="route('pesan.cetakLabel', pesanan.id_pesan)" target="_blank" class="font-medium btn btn-xs btn-outline hover:bg-base-200 hover:text-base-content hover:border-base-300 border-base-300 text-base-content/70"><Printer class="w-3 h-3" /> Label</a>
-                        <a :href="route('pesan.cetakNota', pesanan.id_pesan)" target="_blank" class="font-medium btn btn-xs btn-outline hover:bg-base-200 hover:text-base-content hover:border-base-300 border-base-300 text-base-content/70"><Printer class="w-3 h-3" /> Nota</a>
+                    <!-- flex-1 pada tombol agar ukurannya membagi rata layar HP -->
+                    <div class="flex items-center w-full gap-2 mt-1 sm:w-auto" v-if="currentUser?.role !== 'vendor'">
+                        <a :href="route('pesan.cetakLabel', pesanan.id_pesan)" target="_blank" class="flex-1 font-bold tracking-wider uppercase sm:flex-none btn btn-xs sm:btn-sm btn-outline hover:bg-base-200 hover:text-base-content hover:border-base-300 border-base-300 text-base-content/70 text-[9px] sm:text-[10px]"><Printer class="w-3.5 h-3.5" /> Label</a>
+                        <a :href="route('pesan.cetakNota', pesanan.id_pesan)" target="_blank" class="flex-1 font-bold tracking-wider uppercase sm:flex-none btn btn-xs sm:btn-sm btn-outline hover:bg-base-200 hover:text-base-content hover:border-base-300 border-base-300 text-base-content/70 text-[9px] sm:text-[10px]"><Printer class="w-3.5 h-3.5" /> Nota</a>
                     </div>
                 </div>
             </div>
 
-            <div class="p-5">
-                <table class="w-full text-sm text-left">
-                    <thead class="text-xs border-b-2 text-base-content/50 border-base-300">
-                        <tr>
-                            <th class="w-1/3 pb-3 font-medium">Item Produk</th>
-                            <th class="pb-3 font-medium">Spesifikasi / Catatan</th>
-                            <th class="w-24 pb-3 font-medium text-right">Kuantitas</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-base-100">
-                        <tr v-for="item in pesanan.pesanan_item" :key="item.id" class="group">
-                            <td class="py-4 font-medium align-top">
-                                <span class="font-semibold capitalize">{{ cleanProductName(item.nama_produk_snapshot) }}</span>
-                                <div v-if="getValidAttributes(item.atribut_custom_snapshot).length > 0" class="mt-1 text-[10px] font-bold text-primary flex flex-wrap gap-1">
-                                    <span v-for="(attr, idx) in getValidAttributes(item.atribut_custom_snapshot)" :key="attr.key">
-                                        <span v-if="idx > 0" class="mx-1 opacity-40 text-base-content">|</span><span class="opacity-70">{{ attr.key }}:</span> {{ attr.value }}
-                                    </span>
-                                </div>
-                                <div v-if="item.id_sku?.startsWith('PRD-0002')" class="ml-2 inline-flex mt-1.5 items-center gap-1 text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">Auto In-House</div>
-                                <div v-if="item.pesanan_item_finishing?.length" class="flex flex-col gap-0.5 mt-2 mb-2">
-                                    <div v-for="(fin, fIdx) in item.pesanan_item_finishing" :key="'fin'+fIdx" class="flex items-start gap-1"><span class="mt-px opacity-50">▸</span><span class="font-medium text-base-content">{{ fin.nama_finishing_snapshot }}</span></div>
-                                </div>
-                            </td>
-                            <td class="py-4 text-xs align-top text-base-content/70">
-                                <div v-if="getFileDisplay(item)" class="mb-2">
-                                    <template v-if="getFileDisplay(item).tipe === 'upload'">
-                                        <a v-if="item.file_desain" :href="'/storage/' + getFileDisplay(item).nilai" target="_blank" class="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 hover:underline bg-blue-50 px-2 py-0.5 rounded border border-blue-100">📁 Download File</a>
-                                        <span v-else class="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 max-w-40 truncate">📁 {{ getFileDisplay(item).nilai }}</span>
-                                    </template>
-                                    <template v-else-if="getFileDisplay(item).tipe === 'link'">
-                                        <a :href="getFileDisplay(item).nilai.startsWith('http') ? getFileDisplay(item).nilai : 'https://' + getFileDisplay(item).nilai" target="_blank" class="inline-flex items-center gap-1 text-[10px] font-bold text-purple-600 hover:underline bg-purple-50 px-2 py-0.5 rounded border border-purple-100">🔗 GDrive Link</a>
-                                    </template>
-                                </div>
-                                <div v-else class="mb-2 inline-flex items-center gap-1 text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-100">❌ File Belum Ada</div>
-                                <p class="text-[11px] italic opacity-80 leading-tight border-l-2 border-base-300 pl-2 mt-1">"{{ item.catatan ?? "Tidak ada Catatan" }}"</p>
-                            </td>
-                            <td class="py-4 font-semibold text-right align-top">{{ item.jumlah }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-                <div class="flex justify-end mt-5" v-if="currentUser?.role !== 'vendor'">
-                    <button v-if="$can('produksi', 'ubah')" @click="openAlokasiModal(pesanan)" class="px-6 font-medium btn btn-sm btn-neutral">Alokasikan Pengerjaan</button>
+            <div class="p-4 sm:p-5">
+                <!-- REVISI TABEL: overflow-x-auto dan min-w-[600px] -->
+                <div class="overflow-x-auto pb-2 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:bg-base-300 [&::-webkit-scrollbar-thumb]:rounded-full">
+                    <table class="w-full text-sm text-left min-w-150">
+                        <thead class="text-[10px] uppercase tracking-widest border-b-2 text-base-content/50 border-base-300">
+                            <tr>
+                                <th class="w-2/5 pb-3 font-bold">Item Produk</th>
+                                <th class="pb-3 font-bold">Spesifikasi / Catatan</th>
+                                <th class="w-24 pb-3 font-bold text-center">Kuantitas</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-base-200/50">
+                            <tr v-for="item in pesanan.pesanan_item" :key="item.id" class="transition-colors group hover:bg-base-50/50">
+                                <td class="py-4 pr-4 font-medium align-top">
+                                    <span class="font-bold capitalize">{{ cleanProductName(item.nama_produk_snapshot) }}</span>
+                                    <div v-if="getValidAttributes(item.atribut_custom_snapshot).length > 0" class="mt-1 text-[10px] font-bold text-primary flex flex-wrap gap-1">
+                                        <span v-for="(attr, idx) in getValidAttributes(item.atribut_custom_snapshot)" :key="attr.key">
+                                            <span v-if="idx > 0" class="mx-1 opacity-40 text-base-content">|</span><span class="opacity-70">{{ attr.key }}:</span> {{ attr.value }}
+                                        </span>
+                                    </div>
+                                    <div v-if="item.id_sku?.startsWith('PRD-0002')" class="ml-2 inline-flex mt-1.5 items-center gap-1 text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">Auto In-House</div>
+                                    <div v-if="item.pesanan_item_finishing?.length" class="flex flex-col gap-0.5 mt-2 mb-2">
+                                        <div v-for="(fin, fIdx) in item.pesanan_item_finishing" :key="'fin'+fIdx" class="flex items-start gap-1"><span class="mt-px opacity-50">▸</span><span class="font-medium text-base-content">{{ fin.nama_finishing_snapshot }}</span></div>
+                                    </div>
+                                </td>
+                                <td class="py-4 pr-4 text-xs align-top text-base-content/70">
+                                    <div v-if="getFileDisplay(item)" class="mb-2">
+                                        <template v-if="getFileDisplay(item).tipe === 'upload'">
+                                            <a v-if="item.file_desain" :href="'/storage/' + getFileDisplay(item).nilai" target="_blank" class="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 hover:underline bg-blue-50 px-2 py-0.5 rounded border border-blue-100">📁 Download File</a>
+                                            <span v-else class="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 max-w-40 truncate">📁 {{ getFileDisplay(item).nilai }}</span>
+                                        </template>
+                                        <template v-else-if="getFileDisplay(item).tipe === 'link'">
+                                            <a :href="getFileDisplay(item).nilai.startsWith('http') ? getFileDisplay(item).nilai : 'https://' + getFileDisplay(item).nilai" target="_blank" class="inline-flex items-center gap-1 text-[10px] font-bold text-purple-600 hover:underline bg-purple-50 px-2 py-0.5 rounded border border-purple-100">🔗 GDrive Link</a>
+                                        </template>
+                                    </div>
+                                    <div v-else class="mb-2 inline-flex items-center gap-1 text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-100">❌ File Belum Ada</div>
+                                    <p class="text-[11px] italic opacity-80 leading-tight border-l-2 border-base-300 pl-2 mt-1">"{{ item.catatan ?? "Tidak ada Catatan" }}"</p>
+                                </td>
+                                <td class="py-4 text-lg font-black text-center align-top">{{ item.jumlah }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- REVISI TOMBOL BAWAH: w-full di HP -->
+                <div class="flex flex-col justify-end pt-4 mt-6 border-t sm:flex-row border-base-200" v-if="currentUser?.role !== 'vendor'">
+                    <button v-if="$can('produksi', 'ubah')" @click="openAlokasiModal(pesanan)" class="w-full px-8 font-bold tracking-wide sm:w-auto btn btn-neutral rounded-xl">Alokasikan Pengerjaan</button>
                 </div>
             </div>
         </div>
 
         <!-- MODAL ALOKASI -->
         <dialog class="modal" :class="{'modal-open': isAlokasiModalOpen}">
-            <div class="max-w-4xl p-0 modal-box rounded-xl">
-                <div class="flex items-center justify-between p-5 border-b border-base-200">
+            <div class="max-w-4xl p-0 modal-box rounded-2xl">
+                <div class="flex items-center justify-between p-4 border-b sm:p-5 border-base-200">
                     <div>
-                        <h3 class="text-base font-semibold">Alokasi Pengerjaan</h3>
-                        <p class="text-sm text-base-content/50 mt-0.5">Tentukan pelaksana (In-house/Vendor) untuk pesanan {{ selectedOrderAlokasi?.id_pesan }}</p>
+                        <h3 class="text-base font-bold text-base-content">Alokasi Pengerjaan</h3>
+                        <p class="text-[11px] sm:text-sm font-medium text-base-content/50 mt-0.5">Tentukan pelaksana (In-house/Vendor) untuk pesanan <span class="font-bold">{{ selectedOrderAlokasi?.id_pesan }}</span></p>
                     </div>
-                    <button @click="closeAlokasiModal" class="text-base-content/40 hover:text-base-content">✕</button>
+                    <button @click="closeAlokasiModal" class="btn btn-sm btn-circle btn-ghost text-base-content/40 hover:text-error">✕</button>
                 </div>
-                <div class="p-5 max-h-[70vh] overflow-y-auto">
+                <div class="p-4 sm:p-5 max-h-[70vh] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-base-300 [&::-webkit-scrollbar-thumb]:rounded-full">
                     <div v-if="alokasiForm.alokasi.filter(i => !i.is_desain).length === 0" class="py-6 text-sm text-center text-base-content/60">
                         Semua item dalam pesanan ini akan otomatis dialokasikan ke pengerjaan In-House.<br>Silakan klik "Simpan Alokasi" untuk melanjutkan.
                     </div>
                     <form @submit.prevent="submitAlokasi" class="space-y-8">
                         <template v-for="(item, itemIndex) in alokasiForm.alokasi" :key="item.id_pesanan_item">
                             <div v-show="!item.is_desain">
-                                <div class="flex items-center justify-between mb-3 border-b border-base-200 pb-2">
-                                    <h4 class="text-sm font-bold capitalize">{{ cleanProductName(item.nama_produk) }}</h4>
+                                <div class="flex flex-col gap-2 pb-3 mb-4 border-b sm:flex-row sm:items-center sm:justify-between sm:pb-2 border-base-200">
+                                    <h4 class="text-sm font-black capitalize sm:text-base">{{ cleanProductName(item.nama_produk) }}</h4>
                                     <div class="flex items-center gap-3 text-xs">
-                                        <span class="text-base-content/60">
+                                        <span class="px-2 py-1 font-medium border rounded-md border-base-300 bg-base-100 text-base-content/60">
                                             Teralokasi:
                                             <span class="font-black" :class="getSisaQty(item) === 0 ? 'text-success' : 'text-warning'">
                                                 {{ getTeralokasiQty(item) }}
@@ -203,24 +213,24 @@ const submitAlokasi = () => {
                                         </span>
                                     </div>
                                 </div>
-                                <div class="space-y-3">
-                                    <div v-for="(skema, skemaIndex) in item.skema" :key="skemaIndex" class="flex flex-col items-start gap-3 sm:flex-row sm:items-end">
+                                <div class="space-y-4 sm:space-y-3">
+                                    <div v-for="(skema, skemaIndex) in item.skema" :key="skemaIndex" class="flex flex-col items-start gap-3 p-3 border sm:p-0 sm:border-none rounded-xl border-base-200 bg-base-50/50 sm:bg-transparent sm:flex-row sm:items-end">
                                         <div class="w-full sm:w-1/4">
-                                            <label class="block mb-1 text-xs font-medium text-base-content/70">Pelaksana</label>
-                                            <select v-model="skema.tipe_pengerjaan" class="w-full font-medium select select-sm select-bordered">
+                                            <label class="block mb-1 text-[11px] font-black uppercase tracking-widest text-base-content/50">Pelaksana</label>
+                                            <select v-model="skema.tipe_pengerjaan" class="w-full font-bold select select-sm select-bordered rounded-xl">
                                                 <option value="sendiri">In-House</option>
                                                 <option value="vendor">Vendor</option>
                                             </select>
                                         </div>
                                         <div v-if="skema.tipe_pengerjaan === 'vendor'" class="w-full sm:w-1/4">
-                                            <label class="block mb-1 text-xs font-medium text-base-content/70">Pilih Vendor</label>
-                                            <select v-model="skema.id_vendor" required class="w-full font-medium select select-sm select-bordered">
-                                                <option :value="null" disabled>Pilih...</option>
+                                            <label class="block mb-1 text-[11px] font-black uppercase tracking-widest text-base-content/50">Pilih Vendor</label>
+                                            <select v-model="skema.id_vendor" required class="w-full font-bold select select-sm select-bordered rounded-xl">
+                                                <option :value="null" disabled>Pilih Vendor...</option>
                                                 <option v-for="v in vendors" :key="v.id_vendor" :value="v.id_vendor">{{ v.nama_vendor }}</option>
                                             </select>
                                         </div>
                                         <div class="w-full sm:w-24">
-                                            <label class="block mb-1 text-xs font-medium text-base-content/70">Qty <span class="text-[10px] opacity-50">(Maks: {{ getMaxQty(item, skemaIndex) }})</span></label>
+                                            <label class="block mb-1 text-[11px] font-black uppercase tracking-widest text-base-content/50">Qty <span class="text-[9px] normal-case tracking-normal opacity-70">(Maks: {{ getMaxQty(item, skemaIndex) }})</span></label>
                                             <input
                                                 type="number"
                                                 v-model="skema.qty_dikerjakan"
@@ -228,29 +238,33 @@ const submitAlokasi = () => {
                                                 min="1"
                                                 :max="getMaxQty(item, skemaIndex)"
                                                 @input="enforceMaxQty(item, skemaIndex)"
-                                                class="w-full input input-sm input-bordered"
+                                                class="w-full font-bold text-center input input-sm input-bordered rounded-xl"
                                             />
                                         </div>
                                         <div class="flex-1 w-full">
-                                            <label class="block mb-1 text-xs font-medium text-base-content/70">Instruksi</label>
-                                            <input type="text" v-model="skema.instruksi_pengerjaan" placeholder="Opsional..." class="w-full input input-sm input-bordered" />
+                                            <label class="block mb-1 text-[11px] font-black uppercase tracking-widest text-base-content/50">Instruksi</label>
+                                            <input type="text" v-model="skema.instruksi_pengerjaan" placeholder="Opsional (Catatan khusus)..." class="w-full font-medium input input-sm input-bordered rounded-xl" />
                                         </div>
-                                        <div class="pb-0.5" v-if="item.skema.length > 1">
-                                            <button type="button" @click="removeSkema(itemIndex, skemaIndex)" class="text-red-500 btn btn-sm btn-square btn-ghost hover:bg-red-50"><Trash2 class="w-4 h-4" /></button>
+                                        <div class="w-full pt-2 border-t sm:border-none sm:pt-0 sm:w-auto border-base-200" v-if="item.skema.length > 1">
+                                            <button type="button" @click="removeSkema(itemIndex, skemaIndex)" class="w-full font-bold tracking-wider uppercase text-error btn btn-sm btn-ghost hover:bg-error/10 sm:w-auto sm:btn-square rounded-xl">
+                                                <Trash2 class="w-4 h-4 sm:mr-0 mr-1.5" /> <span class="sm:hidden">Hapus Pelaksana</span>
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
-                                <button type="button" @click="addSkema(itemIndex)" class="flex items-center gap-1 mt-3 text-xs font-medium text-blue-600 hover:underline">
+                                <button type="button" @click="addSkema(itemIndex)" class="flex items-center gap-1.5 mt-4 text-[11px] font-black tracking-widest uppercase text-primary hover:text-primary-focus transition-colors">
                                     <Plus class="w-3.5 h-3.5" /> Tambah Pelaksana (Sisa Qty: {{ getSisaQty(item) }})
                                 </button>
-                                <div v-if="itemIndex !== alokasiForm.alokasi.length - 1" class="mt-6"></div>
+                                <div v-if="itemIndex !== alokasiForm.alokasi.length - 1" class="mt-8"></div>
                             </div>
                         </template>
                     </form>
                 </div>
-                <div class="flex justify-end gap-3 p-5 border-t border-base-200 bg-base-50/50 rounded-b-xl">
-                    <button type="button" @click="closeAlokasiModal" class="font-medium btn btn-sm btn-ghost">Batal</button>
-                    <button type="button" @click="submitAlokasi" :disabled="alokasiForm.processing" class="px-6 font-medium btn btn-sm btn-neutral">Simpan Alokasi</button>
+
+                <!-- REVISI TOMBOL MODAL: flex-col-reverse di HP -->
+                <div class="flex flex-col-reverse gap-3 p-4 border-t sm:p-5 sm:flex-row sm:justify-end border-base-200 bg-base-50/50 rounded-b-2xl">
+                    <button type="button" @click="closeAlokasiModal" class="w-full font-bold tracking-wider uppercase sm:w-auto btn btn-sm btn-ghost rounded-xl text-[10px] sm:text-xs">Batal</button>
+                    <button type="button" @click="submitAlokasi" :disabled="alokasiForm.processing" class="w-full px-8 font-bold tracking-wider uppercase sm:w-auto btn btn-sm btn-neutral rounded-xl text-[10px] sm:text-xs">Simpan Alokasi</button>
                 </div>
             </div>
             <form method="dialog" class="modal-backdrop bg-base-content/20"><button @click="closeAlokasiModal">close</button></form>

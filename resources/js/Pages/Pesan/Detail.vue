@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'; // <-- Tambahkan computed
+import { ref, computed } from 'vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import StafLayout from '@/Layouts/StafLayout.vue';
 import CustomInput from '@/Components/Form/CustomInput.vue';
@@ -9,7 +9,7 @@ import OrderInfoCards from './Partials/OrderInfoCards.vue';
 import OrderItemsTable from './Partials/OrderItemsTable.vue';
 import OrderSummary from './Partials/OrderSummary.vue';
 import OrderFormCard from './Partials/OrderFormCard.vue';
-import { ArrowLeft } from 'lucide-vue-next';
+import { ArrowLeft, Printer } from 'lucide-vue-next';
 
 const page = usePage();
 
@@ -223,23 +223,42 @@ const handlePrintLabel = (itemId) => {
 
     <StafLayout>
         <template #header>
-            <div class="flex items-center justify-between w-full">
-                <div class="flex items-center gap-4">
-                    <Link :href="route('pesan.index')" class="btn btn-sm btn-circle btn-ghost ring-1 ring-base-300">
+            <!-- REVISI UTAMA: flex-col di HP (tumpuk atas-bawah), md:flex-row di desktop (sejajar) -->
+            <div class="flex flex-col w-full gap-4 md:flex-row md:items-center md:justify-between">
+
+                <!-- Sisi Kiri: Judul dan Tombol Back -->
+                <div class="flex items-center w-full gap-4">
+                    <!-- Ditambahkan shrink-0 biar tombol back ngga kepencet gepeng pas judulnya kepanjangan -->
+                    <Link :href="route('pesan.index')" class="btn btn-sm btn-circle btn-ghost ring-1 ring-base-300 shrink-0">
                         <ArrowLeft class="w-4 h-4" />
                     </Link>
-                    <h2 class="text-xl font-semibold leading-tight text-base-content">
+                    <h2 class="text-lg font-semibold leading-tight truncate md:text-xl text-base-content">
                         Detail Pesanan {{ pesanan.id_pesan }}
                     </h2>
                 </div>
-                <div class="flex gap-2">
-                    <a :href="route('pesan.cetakNota', pesanan.id_pesan)" target="_blank" class="btn btn-sm btn-outline shadow-sm font-black uppercase tracking-widest text-[10px]">
-                        🖨️ Cetak Nota
+
+                <!-- Sisi Kanan: Tombol Cetak yang Dipercantik & Responsif -->
+                <div class="flex w-full gap-2 md:w-auto shrink-0">
+                    <!-- flex-1 di HP biar tombol berbagi lebar 50:50, md:flex-none biar ngepas konten di desktop -->
+                    <a
+                        :href="route('pesan.cetakNota', pesanan.id_pesan)"
+                        target="_blank"
+                        class="flex-1 md:flex-none flex justify-center items-center gap-2 px-3 md:px-4 py-2 transition-all border shadow-sm rounded-xl bg-base-100 border-base-300 hover:bg-primary/10 hover:border-primary/30 hover:text-primary group text-[9px] md:text-[10px] font-black tracking-widest uppercase"
+                    >
+                        <Printer class="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 transition-opacity" />
+                        <span>Cetak Nota</span>
                     </a>
-                    <a :href="route('pesan.cetakLabel', pesanan.id_pesan)" target="_blank" class="btn btn-sm btn-outline shadow-sm font-black uppercase tracking-widest text-[10px]">
-                        🖨️ Cetak Label
+
+                    <a
+                        :href="route('pesan.cetakLabel', pesanan.id_pesan)"
+                        target="_blank"
+                        class="flex-1 md:flex-none flex justify-center items-center gap-2 px-3 md:px-4 py-2 transition-all border shadow-sm rounded-xl bg-base-100 border-base-300 hover:bg-primary/10 hover:border-primary/30 hover:text-primary group text-[9px] md:text-[10px] font-black tracking-widest uppercase"
+                    >
+                        <Printer class="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 transition-opacity" />
+                        <span>Cetak Label</span>
                     </a>
                 </div>
+
             </div>
         </template>
 
@@ -279,7 +298,6 @@ const handlePrintLabel = (itemId) => {
 
                 <div class="lg:col-span-4 xl:col-span-3">
                     <div class="sticky top-24">
-                        <!-- LEMPAR COMPUTED PROPERTIES KE SINI -->
                         <OrderSummary
                             :total_tagihan="computedTotalTagihan"
                             :harga_ongkir="pesanan.harga_ongkir"

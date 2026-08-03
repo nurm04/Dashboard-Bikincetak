@@ -3,7 +3,14 @@ import { Head } from '@inertiajs/vue3';
 import { onMounted, computed } from 'vue';
 
 const props = defineProps({
-    pesanan: Object
+    pesanan: Object,
+    kode_unik: Number,
+    grand_total: Number,
+    total_dibayar: Number,
+    sisa_tagihan: Number,
+    bank_name: String,
+    bank_number: String,
+    bank_owner: String
 });
 
 const formatRupiah = (angka) => {
@@ -33,20 +40,17 @@ const formatSimpleDate = (dateStr) => {
 };
 
 // ==========================================
-// 1. LOGIKA PARSING ATRIBUT & SISI (Mirip OrderItemsTable.vue)
+// 1. LOGIKA PARSING ATRIBUT & SISI (TETAP SAMA)
 // ==========================================
 const getCustomAttributes = (item) => {
     let attr = item.atribut_custom_snapshot;
     if (!attr) return null;
-
     if (typeof attr === 'string') {
         try { attr = JSON.parse(attr); } catch (e) { return null; }
     }
-
     if (typeof attr === 'object' && attr !== null) {
         const validAttrs = {};
         let hasValidData = false;
-
         for (const [key, value] of Object.entries(attr)) {
             if (value !== null && value !== undefined && value !== '') {
                 validAttrs[key] = value;
@@ -73,24 +77,20 @@ const getSisiFromFinishing = (item) => {
 const isKaliJumlahPesan = (fin) => Boolean(fin.sku_finishing?.kali_jumlah_pesan);
 
 // ==========================================
-// 2. KALKULASI HARGA (SINKRON DENGAN ADMIN DASHBOARD)
+// 2. KALKULASI HARGA ITEM (TETAP SAMA)
 // ==========================================
-
-// Kalkulasi Harga Satuan per Item
 const getDisplayHargaSatuan = (item) => {
     let hargaAwal = Number(item.harga_satuan_snapshot) || 0;
     const attr = getCustomAttributes(item);
     const finishings = item.pesanan_item_finishing || [];
     const sisi = getSisiFromFinishing(item);
 
-    // Hitung Kertas Tambahan (Cetak Buku)
     if (attr && attr['Jumlah Halaman'] !== undefined) {
         let hal = parseInt(attr['Jumlah Halaman'], 10);
         if (isNaN(hal) || hal < 1) hal = 1;
         hargaAwal += (Math.max(0, hal - 1) * sisi * 1500);
     }
 
-    // Tambah Finishing (HANYA YANG KALI QTY)
     finishings.forEach(f => {
         const isKaliQty = isKaliJumlahPesan(f);
         if (isKaliQty) {
@@ -100,18 +100,15 @@ const getDisplayHargaSatuan = (item) => {
             hargaAwal += val;
         }
     });
-
     return hargaAwal;
 };
 
-// Kalkulasi Subtotal Total (Produk + Flat Finishing + SLA Pengerjaan)
 const getDisplaySubtotal = (item) => {
     let hargaAwal = Number(item.harga_satuan_snapshot) || 0;
     const attr = getCustomAttributes(item);
     const finishings = item.pesanan_item_finishing || [];
     const sisi = getSisiFromFinishing(item);
 
-    // Hitung Kertas Tambahan (Cetak Buku)
     if (attr && attr['Jumlah Halaman'] !== undefined) {
         let hal = parseInt(attr['Jumlah Halaman'], 10);
         if (isNaN(hal) || hal < 1) hal = 1;
@@ -120,23 +117,18 @@ const getDisplaySubtotal = (item) => {
 
     let total = hargaAwal * Number(item.jumlah || 1);
 
-    // Hitung Finishing
     finishings.forEach(f => {
         const isKaliQty = isKaliJumlahPesan(f);
         let val = f.tipe === 'persen'
             ? (hargaAwal * (Number(f.harga_finishing_snapshot) / 100))
             : (Number(f.harga_finishing_snapshot) || 0);
-
         total += (isKaliQty ? val * item.jumlah : val);
     });
 
-    // Tambahkan SLA ke Total Item Subtotal di Nota
     const sla = Number(item.harga_pengerjaan_snapshot || 0);
-
     return total + sla;
 };
 
-// Hitung khusus Jasa Tambahan Flat (Hanya untuk Display di Nota)
 const getFlatFinishingTotal = (item) => {
     let hargaAwal = Number(item.harga_satuan_snapshot) || 0;
     const attr = getCustomAttributes(item);
@@ -162,42 +154,43 @@ const getFlatFinishingTotal = (item) => {
 };
 
 // ==========================================
-// 3. GRAND TOTAL KESELURUHAN
+// 3. SUMMARY BINDING (LANGSUNG DARI BACKEND)
 // ==========================================
 const totalHargaSeluruhBarang = computed(() => {
     if (!props.pesanan || !props.pesanan.pesanan_item) return 0;
     return props.pesanan.pesanan_item.reduce((sum, item) => sum + getDisplaySubtotal(item), 0);
 });
 
-const kodeUnik = computed(() => Number(props.pesanan?.kode_unik || 0));
 const totalOngkir = computed(() => Number(props.pesanan?.harga_ongkir || 0));
 
-// Total Harga = Seluruh Produk (+ Finishing + SLA) + Kode Unik
-const totalHarga = computed(() => totalHargaSeluruhBarang.value + kodeUnik.value);
-// Total Bayar = Total Harga + Ongkir
-const totalBayar = computed(() => totalHarga.value + totalOngkir.value);
+// Semua total di bawah ini mutlak ngambil dari PesanService (Backend)
+const kodeUnik = computed(() => Number(props.kode_unik || 0));
+const totalTagihan = computed(() => Number(props.grand_total || 0));
+const telahDibayar = computed(() => Number(props.total_dibayar || 0));
+const sisaTagihan = computed(() => Number(props.sisa_tagihan || 0));
 
 onMounted(() => {
-    // window.print();
+    setTimeout(() => {
+        window.print();
+    }, 500);
 });
 </script>
 
 <template>
     <Head :title="`Nota - ${pesanan.id_pesan}`" />
 
-    <div class="max-w-xl mx-auto p-6 bg-white text-black font-sans text-xs print:p-0 print:max-w-none">
-        <div class="mb-6 flex justify-end gap-2 print:hidden">
-            <button @click="window.print()" class="px-4 py-2 bg-neutral text-white rounded font-medium text-xs shadow hover:bg-neutral/80 transition-colors">
+    <div class="max-w-xl p-6 mx-auto font-sans text-xs text-black bg-white print:p-0 print:max-w-none">
+        <div class="flex justify-end gap-2 mb-6 print:hidden">
+            <button @click="window.print()" class="px-4 py-2 text-xs font-medium text-white transition-colors rounded shadow bg-neutral hover:bg-neutral/80">
                 🖨️ Cetak Nota
             </button>
         </div>
 
-        <!-- Layout Nota Portrait -->
-        <div class="border border-black p-5 space-y-4 bg-white">
+        <div class="p-5 space-y-4 bg-white border border-black">
             <!-- Header Toko & Tujuan -->
-            <div class="flex justify-between items-start border-b border-black pb-4">
+            <div class="flex items-start justify-between pb-4 border-b border-black">
                 <div>
-                    <h1 class="text-2xl font-black tracking-tight text-blue-950 font-serif">bikincetak</h1>
+                    <h1 class="font-serif text-2xl font-black tracking-tight text-blue-950">bikincetak</h1>
                     <p class="text-[10px] italic text-gray-700">Digital Printing, Offset, Merchandise</p>
                     <p class="text-[9px] mt-1.5 text-gray-800 leading-tight">
                         WA : 083831862770 | Email : bikinkancetak@gmail.com <br>
@@ -206,39 +199,37 @@ onMounted(() => {
                 </div>
                 <div class="text-right text-xs space-y-0.5">
                     <p>Surabaya, {{ formatSimpleDate(pesanan.created_at) }}</p>
-                    <p class="font-medium pt-1">Kepada Yth.</p>
+                    <p class="pt-1 font-medium">Kepada Yth.</p>
                     <p class="font-bold uppercase">{{ pesanan.customer?.user?.name || '-' }}</p>
                     <p class="text-[11px] text-gray-700 max-w-50 truncate uppercase">{{ pesanan.alamat?.kota || pesanan.alamat?.detail_alamat || 'Surabaya' }}</p>
-                    <p class="font-bold mt-1 text-sm tracking-wide uppercase">SO {{ pesanan.id_pesan }}</p>
+                    <p class="mt-1 text-sm font-bold tracking-wide uppercase">SO {{ pesanan.id_pesan }}</p>
                 </div>
             </div>
 
-            <div class="font-bold text-xs tracking-wider uppercase">INVOICE</div>
+            <div class="text-xs font-bold tracking-wider uppercase">INVOICE</div>
 
             <!-- Tabel Barang -->
-            <table class="w-full border-collapse border border-black text-xs">
+            <table class="w-full text-xs border border-collapse border-black">
                 <thead>
                     <tr class="border-b border-black bg-gray-50">
-                        <th class="border-r border-black p-2 text-left font-bold">Nama Barang</th>
-                        <th class="border-r border-black p-2 text-center font-bold w-12">Qty</th>
-                        <th class="border-r border-black p-2 text-right font-bold w-24">Satuan Rp.</th>
-                        <th class="p-2 text-right font-bold w-24">Total Rp.</th>
+                        <th class="p-2 font-bold text-left border-r border-black">Nama Barang</th>
+                        <th class="w-12 p-2 font-bold text-center border-r border-black">Qty</th>
+                        <th class="w-24 p-2 font-bold text-right border-r border-black">Satuan Rp.</th>
+                        <th class="w-24 p-2 font-bold text-right">Total Rp.</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="item in pesanan.pesanan_item" :key="item.id" class="border-b border-black align-top">
-                        <td class="border-r border-black p-2">
+                    <tr v-for="item in pesanan.pesanan_item" :key="item.id" class="align-top border-b border-black">
+                        <td class="p-2 border-r border-black">
                             <div class="font-semibold">{{ item.nama_produk_snapshot }}</div>
 
                             <div class="text-[9.5px] text-gray-800 mt-1.5 leading-tight space-y-0.5">
-                                <!-- Render Atribut Custom -->
                                 <div v-if="getCustomAttributes(item)">
                                     <span v-for="(val, key) in getCustomAttributes(item)" :key="key" class="block">
                                         • {{ key.toUpperCase() }}: {{ val }}
                                     </span>
                                 </div>
 
-                                <!-- Render Pilihan Finishing -->
                                 <div v-if="item.pesanan_item_finishing?.length">
                                     <span v-for="(fin, fIdx) in item.pesanan_item_finishing" :key="fIdx" class="block">
                                         • {{ fin.kategori_finishing ? fin.kategori_finishing.toUpperCase() + ': ' : '' }}{{ fin.nama_finishing_snapshot }}
@@ -249,7 +240,6 @@ onMounted(() => {
                                 </div>
                             </div>
 
-                            <!-- Notice SLA & Finishing Flat -->
                             <div v-if="Number(item.harga_pengerjaan_snapshot || 0) > 0" class="mt-2 text-[10px] font-bold text-gray-900">
                                 + SLA ({{ item.estimasi_pengerjaan_snapshot || item.estimasi_pengerjaan }}): Rp {{ formatRupiah(item.harga_pengerjaan_snapshot) }}
                             </div>
@@ -257,17 +247,16 @@ onMounted(() => {
                                 + Jasa Tambahan (Flat): Rp {{ formatRupiah(getFlatFinishingTotal(item)) }}
                             </div>
                         </td>
-                        <td class="border-r border-black p-2 text-center font-semibold">{{ item.jumlah }}</td>
-                        <!-- Satuan sudah termasuk (Base + Sisi Halaman) + Finishing (yang di-kali Qty) -->
-                        <td class="border-r border-black p-2 text-right">{{ formatRupiah(getDisplayHargaSatuan(item)) }}</td>
-                        <!-- Total = (Satuan x Qty) + Finishing Flat + SLA -->
-                        <td class="p-2 text-right font-semibold">{{ formatRupiah(getDisplaySubtotal(item)) }}</td>
+                        <td class="p-2 font-semibold text-center border-r border-black">{{ item.jumlah }}</td>
+                        <td class="p-2 text-right border-r border-black">{{ formatRupiah(getDisplayHargaSatuan(item)) }}</td>
+                        <td class="p-2 font-semibold text-right">{{ formatRupiah(getDisplaySubtotal(item)) }}</td>
                     </tr>
                 </tbody>
             </table>
 
-            <!-- Bagian Bawah (Delivery, Info Pembayaran & Rincian Total) -->
+            <!-- Bagian Bawah -->
             <div class="grid grid-cols-2 gap-4 pt-2">
+
                 <!-- Kolom Kiri: Kurir & Rekening -->
                 <div class="space-y-4 text-xs">
                     <div>
@@ -276,38 +265,48 @@ onMounted(() => {
                     </div>
                     <div class="space-y-0.5 pt-2">
                         <p class="font-medium">Pembayaran :</p>
-                        <p class="font-bold">BCA 1930566086 | MANDIRI 9000043545889</p>
-                        <p class="italic text-[10px]">an/ Mohammad Chairul Anam</p>
+                        <p class="font-bold">{{ bank_name }} {{ bank_number }}</p>
+                        <p class="italic text-[10px]">an/ {{ bank_owner }}</p>
                     </div>
                 </div>
 
-                <!-- Kolom Kanan: Rincian Nominal & Stempel Lunas -->
+                <!-- Kolom Kanan: Rincian Nominal Dinamis -->
                 <div class="space-y-1 text-xs">
-                    <div class="flex justify-between py-1 border-b border-gray-300">
-                        <span class="font-medium">Ongkir</span>
+                    <div class="flex justify-between py-1 text-gray-700 border-b border-gray-300">
+                        <span>Subtotal Produk</span>
+                        <span>{{ formatRupiah(totalHargaSeluruhBarang) }}</span>
+                    </div>
+                    <div class="flex justify-between py-1 text-gray-700 border-b border-gray-300">
+                        <span>Ongkos Kirim</span>
                         <span>{{ formatRupiah(totalOngkir) }}</span>
                     </div>
-                    <div v-if="kodeUnik > 0" class="flex justify-between py-1 border-b border-gray-300">
-                        <span class="font-medium">Kode Unik</span>
+                    <div v-if="kodeUnik > 0" class="flex justify-between py-1 text-gray-700 border-b border-gray-300">
+                        <span>Kode Unik</span>
                         <span>{{ formatRupiah(kodeUnik) }}</span>
                     </div>
-                    <div class="flex justify-between py-1 border-b border-gray-300 font-bold">
-                        <span>Total Harga</span>
-                        <span>{{ formatRupiah(totalHarga) }}</span>
+                    <div class="flex justify-between py-1.5 border-b-2 border-black font-black text-[13px]">
+                        <span>GRAND TOTAL</span>
+                        <span>{{ formatRupiah(totalTagihan) }}</span>
                     </div>
-                    <div class="flex justify-between py-1 border-b border-gray-300 font-bold">
-                        <span>Total Bayar</span>
-                        <span>{{ formatRupiah(totalBayar) }}</span>
+                    <div class="flex justify-between py-1 font-bold text-green-700">
+                        <span>Telah Dibayar</span>
+                        <span>{{ formatRupiah(telahDibayar) }}</span>
                     </div>
-                    <div class="flex justify-between py-1 font-bold">
-                        <span>Sisa</span>
-                        <span>0</span>
+                    <div class="flex justify-between py-1 font-bold" :class="sisaTagihan > 0 ? 'text-red-600' : ''">
+                        <span>Sisa Tagihan</span>
+                        <span>{{ formatRupiah(sisaTagihan) }}</span>
                     </div>
 
-                    <!-- Stempel Status Lunas -->
-                    <div class="pt-3 flex justify-end">
-                        <span class="text-red-600 font-black text-sm border-2 border-red-600 px-4 py-0.5 rotate-[-4deg] inline-block tracking-widest uppercase">
-                            Lunas
+                    <!-- STEMPEL STATUS DINAMIS -->
+                    <div class="flex justify-end pt-4">
+                        <span v-if="sisaTagihan <= 0" class="text-green-600 font-black text-sm border-2 border-green-600 px-4 py-0.5 rotate-[-4deg] inline-block tracking-widest uppercase">
+                            LUNAS
+                        </span>
+                        <span v-else-if="telahDibayar > 0" class="text-orange-500 font-black text-sm border-2 border-orange-500 px-4 py-0.5 rotate-[-4deg] inline-block tracking-widest uppercase">
+                            DP / SEBAGIAN
+                        </span>
+                        <span v-else class="text-red-600 font-black text-sm border-2 border-red-600 px-4 py-0.5 rotate-[-4deg] inline-block tracking-widest uppercase">
+                            BELUM BAYAR
                         </span>
                     </div>
                 </div>
@@ -319,7 +318,6 @@ onMounted(() => {
             </div>
         </div>
     </div>
-
 </template>
 <style>
 @media print {

@@ -61,8 +61,7 @@ const listPengantaran = computed(() =>
     <Head title="Dashboard Produksi" />
     <StafLayout>
         <template #header>
-            <!-- REVISI 1: Flex dirapikan agar numpuk (flex-col) di HP dan sejajar (flex-row) di PC -->
-            <div class="flex flex-col md:flex-row md:items-center justify-between w-full gap-4">
+            <div class="flex flex-col justify-between w-full gap-4 md:flex-row md:items-center">
                 <div>
                     <h2 class="text-xl font-semibold leading-tight text-base-content">
                         Produksi & Alokasi
@@ -70,7 +69,6 @@ const listPengantaran = computed(() =>
                     <p class="mt-1 text-sm text-base-content/60">Pantau antrean, pecah tugas ke vendor, dan perbarui progres.</p>
                 </div>
 
-                <!-- REVISI 2: Tambah w-full md:w-auto biar tombolnya pas dan gampang dipencet -->
                 <CustomButton type="link" :href="route('produksi.histori')" class="w-full md:w-auto shrink-0" block>
                     <template #icon>
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -84,12 +82,12 @@ const listPengantaran = computed(() =>
 
         <div class="px-4 py-8 mx-auto space-y-6 max-w-7xl sm:px-6 lg:px-8">
 
-            <!-- REVISI 3: Desain Tab diubah menyerupai halaman Tagihan Vendor -->
-            <div class="flex mb-2 border-b border-base-300 overflow-x-auto gap-2 sm:gap-6 pb-px custom-scrollbar">
+            <!-- REVISI TAB BAR: Ditambahkan flex-nowrap dan shrink-0 pada button -->
+            <div class="flex gap-4 pb-px mb-2 overflow-x-auto border-b flex-nowrap border-base-300 sm:gap-6 custom-scrollbar">
                 <button
                     @click="activeTab = 'alokasi'"
                     :class="[
-                        'pb-3 text-sm font-bold tracking-wide transition-colors border-b-2 whitespace-nowrap px-2 sm:px-0',
+                        'pb-3 text-sm font-bold tracking-wide transition-colors border-b-2 whitespace-nowrap px-4 sm:px-0 shrink-0',
                         activeTab === 'alokasi'
                             ? 'text-primary border-primary'
                             : 'text-base-content/50 border-transparent hover:text-base-content/80'
@@ -104,7 +102,7 @@ const listPengantaran = computed(() =>
                 <button
                     @click="activeTab = 'pengerjaan'"
                     :class="[
-                        'pb-3 text-sm font-bold tracking-wide transition-colors border-b-2 whitespace-nowrap px-2 sm:px-0',
+                        'pb-3 text-sm font-bold tracking-wide transition-colors border-b-2 whitespace-nowrap px-4 sm:px-0 shrink-0',
                         activeTab === 'pengerjaan'
                             ? 'text-primary border-primary'
                             : 'text-base-content/50 border-transparent hover:text-base-content/80'
@@ -119,7 +117,7 @@ const listPengantaran = computed(() =>
                 <button
                     @click="activeTab = 'pengantaran'"
                     :class="[
-                        'pb-3 text-sm font-bold tracking-wide transition-colors border-b-2 whitespace-nowrap px-2 sm:px-0',
+                        'pb-3 text-sm font-bold tracking-wide transition-colors border-b-2 whitespace-nowrap px-4 sm:px-0 shrink-0',
                         activeTab === 'pengantaran'
                             ? 'text-primary border-primary'
                             : 'text-base-content/50 border-transparent hover:text-base-content/80'

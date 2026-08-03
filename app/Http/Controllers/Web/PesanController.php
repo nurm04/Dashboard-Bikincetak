@@ -514,8 +514,18 @@ class PesanController extends Controller
             'pembayaran'
         ])->where('id_pesan', $id_pesan)->firstOrFail();
 
+        $rincian = PesanService::kalkulasiRincianPesanan($pesanan);
+
         return inertia('Pesan/CetakNota', [
-            'pesanan' => $pesanan
+            'pesanan'       => $pesanan,
+            'kode_unik'     => $rincian['kode_unik'],
+            'grand_total'   => $rincian['grand_total'],
+            'total_dibayar' => $rincian['total_dibayar'],
+            'sisa_tagihan'  => $rincian['sisa_tagihan'],
+
+            'bank_name'     => env('BANK_NAME', 'BCA'),
+            'bank_number'   => env('BANK_NUMBER', '1930566086'),
+            'bank_owner'    => env('BANK_OWNER', 'Mohammad Chairul Anam'),
         ]);
     }
 

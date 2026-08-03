@@ -585,10 +585,10 @@ const pembayaranOptionsForm = [
         <template #header>
             <div class="flex items-center justify-between w-full">
                 <div class="flex items-center gap-4">
-                    <Link :href="route('produk.index')" class="btn btn-sm btn-circle btn-ghost ring-1 ring-base-300">
+                    <Link :href="route('pesan.index')" class="btn btn-sm btn-circle btn-ghost ring-1 ring-base-300">
                         <ArrowLeft class="w-4 h-4" />
                     </Link>
-                    <h2 class="text-xl font-bold leading-tight text-base-content flex items-center gap-2">
+                    <h2 class="flex items-center gap-2 text-xl font-bold leading-tight text-base-content">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6 text-primary"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.015a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 1.189a3 3 0 01-.621 4.72m-13.5 8.65h3.75a.75.75 0 00.75-.75V13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75v3.75c0 .415.336.75.75.75z" /></svg>
                         Point of Sale (POS)
                     </h2>
@@ -606,14 +606,14 @@ const pembayaranOptionsForm = [
                 <div class="space-y-6 lg:col-span-8 xl:col-span-9">
 
                     <!-- CARD: INFORMASI PEMESAN & PENGIRIMAN -->
-                    <div class="p-6 bg-base-100 border border-base-200/80 shadow-sm rounded-3xl">
-                        <div class="flex items-center gap-2 mb-4 pb-3 border-b border-base-200/50">
+                    <div class="p-6 border shadow-sm bg-base-100 border-base-200/80 rounded-3xl">
+                        <div class="flex items-center gap-2 pb-3 mb-4 border-b border-base-200/50">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 text-primary opacity-80"><path d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41 1.412A9.957 9.957 0 0010 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 00-13.074.003z" /></svg>
                             <h3 class="text-[10px] font-black tracking-widest uppercase opacity-50">Informasi Pemesan & Pengiriman</h3>
                         </div>
 
                         <!-- GRID PELANGGAN -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div class="grid grid-cols-1 gap-6 mb-6 md:grid-cols-2">
                             <CustomSelectSearch
                                 v-model="form.id_customer"
                                 label="Pilih Pelanggan"
@@ -633,7 +633,7 @@ const pembayaranOptionsForm = [
                         </div>
 
                         <!-- GRID KURIR & ONGKIR -->
-                        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 pt-6 border-t border-dashed border-base-200/80">
+                        <div class="grid grid-cols-1 gap-6 pt-6 border-t border-dashed md:grid-cols-12 border-base-200/80">
                             <div class="md:col-span-4">
                                 <CustomSelect v-model="form.ekspedisi_nama" label="Kurir / Ekspedisi" :options="ekspedisiOptions" valueKey="id" labelKey="nama" />
                             </div>
@@ -645,7 +645,7 @@ const pembayaranOptionsForm = [
                                 <template v-else>
                                     <div v-if="isLoadingOngkir" class="flex flex-col gap-1">
                                         <label class="text-[10px] font-bold uppercase opacity-70 ml-1 block">Layanan Ongkir</label>
-                                        <div class="flex items-center gap-2 h-11 px-3 border border-base-300 bg-base-200/50 rounded-xl text-xs font-bold text-primary animate-pulse">
+                                        <div class="flex items-center gap-2 px-3 text-xs font-bold border h-11 border-base-300 bg-base-200/50 rounded-xl text-primary animate-pulse">
                                             <span class="loading loading-spinner loading-xs"></span> Mengambil Tarif...
                                         </div>
                                     </div>
@@ -682,22 +682,22 @@ const pembayaranOptionsForm = [
 
                 <!-- KOLOM KANAN: SUMMARY & BAYAR -->
                 <div class="lg:col-span-4 xl:col-span-3">
-                    <div class="sticky top-24 space-y-6">
+                    <div class="sticky space-y-6 top-24">
 
                         <!-- Pilihan Status Pembayaran -->
-                        <div class="p-5 bg-base-100 border border-base-200/80 shadow-sm rounded-3xl">
+                        <div class="p-5 border shadow-sm bg-base-100 border-base-200/80 rounded-3xl">
                             <h3 class="text-[10px] font-black tracking-widest uppercase opacity-40 mb-3 border-b border-base-200/50 pb-2">Opsi Pembayaran</h3>
 
                             <div class="flex flex-col gap-2.5 mt-4">
                                 <label v-for="opt in pembayaranOptionsForm" :key="opt.value"
-                                       class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-all duration-200"
+                                       class="flex items-center gap-3 p-3 transition-all duration-200 border cursor-pointer rounded-xl"
                                        :class="form.status_pembayaran === opt.value ? 'border-primary bg-primary/5' : 'border-base-200 hover:border-base-300'">
                                     <input type="radio" v-model="form.status_pembayaran" :value="opt.value" class="radio radio-primary radio-sm" />
                                     <span class="text-[11px] font-black uppercase">{{ opt.label }}</span>
                                 </label>
                             </div>
 
-                            <div v-if="form.status_pembayaran === 'dibayar_sebagian'" class="mt-4 pt-4 border-t border-dashed border-base-200/80">
+                            <div v-if="form.status_pembayaran === 'dibayar_sebagian'" class="pt-4 mt-4 border-t border-dashed border-base-200/80">
                                 <CustomInputNumber
                                     v-model="form.nominal_bayar"
                                     label="Nominal DP Sekarang"
@@ -706,7 +706,7 @@ const pembayaranOptionsForm = [
                                 />
                             </div>
 
-                            <div class="mt-4 pt-4 border-t border-dashed border-base-200/80">
+                            <div class="pt-4 mt-4 border-t border-dashed border-base-200/80">
                                 <CustomSelectSearch
                                     v-model="form.kode_voucher"
                                     :options="voucherOptions"
@@ -732,7 +732,7 @@ const pembayaranOptionsForm = [
                         <!-- Tombol Eksekusi -->
                         <CustomButton
                             variant="primary"
-                            class="w-full h-14 rounded-2xl shadow-xl shadow-primary/20 text-sm tracking-widest font-black uppercase"
+                            class="w-full text-sm font-black tracking-widest uppercase shadow-xl h-14 rounded-2xl shadow-primary/20"
                             @click="submitCheckout"
                             :disabled="form.processing || cartItems.length === 0"
                         >

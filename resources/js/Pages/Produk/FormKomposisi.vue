@@ -82,20 +82,22 @@ const submit = () => {
                 </div>
             </div>
         </template>
-        <div class="max-w-6xl mx-auto py-8 px-4">
-            <!-- REVISI 1: Responsive padding p-4 untuk mobile, p-8 untuk desktop -->
-            <div class="p-4 md:p-8 border rounded-3xl shadow-xl bg-base-100 border-base-300">
 
-                <!-- REVISI 2: Flexbox responsif (flex-col di mobile, flex-row di desktop) -->
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+        <!-- Padding luar disamakan dengan halaman finishing -->
+        <div class="max-w-6xl px-4 py-8 mx-auto sm:px-6 lg:px-8">
+
+            <!-- Menggunakan p-4 di mobile, p-10 di desktop, serta rounded-2xl dan shadow-xl -->
+            <div class="p-4 border shadow-xl md:p-10 rounded-2xl bg-base-100 border-base-300">
+
+                <div class="flex flex-col justify-between gap-6 mb-8 md:flex-row md:items-center">
                     <div>
-                        <h2 class="text-lg font-black uppercase tracking-tight">Resep Bahan Baku (BOM)</h2>
+                        <h2 class="text-lg font-black tracking-tight uppercase">Resep Bahan Baku (BOM)</h2>
                         <p class="text-[10px] opacity-50 uppercase font-bold tracking-widest mt-1">Input jumlah pemakaian bahan untuk 1 Pcs / Lembar produk ini</p>
                     </div>
 
-                    <div class="px-6 py-4 w-full md:w-auto border bg-base-200 border-base-300 rounded-2xl md:text-right">
+                    <div class="w-full px-6 py-4 border md:w-auto bg-base-200 border-base-300 rounded-2xl md:text-right">
                         <p class="text-[9px] font-black uppercase tracking-widest opacity-50">Estimasi Total HPP Keseluruhan</p>
-                        <p class="text-xl md:text-lg font-black text-primary mt-1 md:mt-0">Rp {{ totalHPP.toLocaleString() }}</p>
+                        <p class="mt-1 text-xl font-black md:text-lg text-primary md:mt-0">Rp {{ totalHPP.toLocaleString() }}</p>
                     </div>
                 </div>
 
@@ -106,8 +108,8 @@ const submit = () => {
                         @add="addRow"
                     >
                         <template #row="{ row, index }">
-                            <!-- REVISI 3: Ganti class width mutlak jadi min-width biar solid saat discroll -->
-                            <td class="px-4 py-4 min-w-62.5">
+                            <!-- Lebar kolom diperbaiki menggunakan min-w yang baku agar scroll table rapi -->
+                            <td class="px-4 py-4 min-w-60">
                                 <CustomSelectSearch
                                     v-model="form.komposisi[index].id_bahan_baku"
                                     :options="bahan_baku"
@@ -128,7 +130,7 @@ const submit = () => {
                                 />
                             </td>
 
-                            <td class="px-4 py-4 min-w-37.5">
+                            <td class="px-4 py-4 min-w-40">
                                 <div class="flex items-center gap-2">
                                     <CustomInputNumber
                                         v-model="form.komposisi[index].jumlah_pakai"
@@ -142,7 +144,7 @@ const submit = () => {
                             </td>
 
                             <td class="px-4 py-4 text-right min-w-45">
-                                <div class="text-sm font-bold text-base-content/50 flex flex-col">
+                                <div class="flex flex-col text-sm font-bold text-base-content/50">
                                     <span>Rp {{ (row.jumlah_pakai * getHargaBahan(row.id_bahan_baku)).toLocaleString() }}</span>
                                     <span class="text-[8px] opacity-50 mt-1 uppercase">@ Rp {{ getHargaBahan(row.id_bahan_baku).toLocaleString() }} / {{ getSatuanBahan(row.id_bahan_baku) }}</span>
                                 </div>
@@ -150,13 +152,23 @@ const submit = () => {
                         </template>
                     </CustomTableForm>
 
-                    <!-- REVISI 4: Tata letak tombol jadi flex-col-reverse (mobile) dan flex-row (desktop) -->
-                    <div class="flex flex-col-reverse md:flex-row gap-4 pt-8 mt-10 border-t border-base-300">
-                        <CustomButton type="link" :href="route('produk.detailSku', sku.id_produk)" variant="secondary" class="w-full md:w-auto py-4 rounded-2xl md:px-10" block>
-                            Kembali
-                        </CustomButton>
-                        <CustomButton @click="submit" variant="primary" class="w-full md:flex-1 py-4 rounded-2xl" :disabled="form.processing" block>
+                    <!-- REVISI UTAMA: Posisi dan styling tombol disamakan persis dengan halaman Finishing -->
+                    <div class="flex flex-col items-center gap-4 pt-8 mt-10 border-t border-base-300 sm:flex-row">
+                        <CustomButton
+                            @click="submit"
+                            variant="primary"
+                            class="flex-1 w-full py-4 sm:w-auto rounded-2xl"
+                            :disabled="form.processing"
+                        >
                             Simpan Komposisi & Kalkulasi HPP
+                        </CustomButton>
+                        <CustomButton
+                            type="link"
+                            :href="route('produk.detailSku', sku.id_produk)"
+                            variant="secondary"
+                            class="w-full py-4 sm:w-auto rounded-2xl"
+                        >
+                            Kembali
                         </CustomButton>
                     </div>
                 </form>
