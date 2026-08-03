@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Traits;
 
 use Kreait\Firebase\Messaging\CloudMessage;
@@ -8,34 +7,56 @@ use Illuminate\Support\Facades\Log;
 
 trait FcmNotificationTrait
 {
-    /**
-     * Kirim Push Notification via FCM
-     */
-    public function sendFcmNotification($user, $title, $body, $url = '/')
+    public function sendFcmNotification($user, $title, $body, $url = '/', $data = [])
     {
-        // Cek apakah user punya token
-        if (!$user->fcm_token) {
-            Log::warning("User ID {$user->id} tidak memiliki FCM Token.");
+        $tokens = $user->fcm_token;
+
+        // Pastikan token ada dan bentuknya array
+        if (empty($tokens) || !is_array($tokens)) {
+            Log::warning("User ID {$user->id} tidak memiliki FCM Token yang valid.");
             return false;
         }
 
         try {
             $messaging = Firebase::messaging();
 
-            // === INI YANG DIUBAH (Pakai fromArray) ===
             $message = CloudMessage::fromArray([
-                'token' => $user->fcm_token,
-                'notification' => [
-                    'title' => $title,
-                    'body' => $body,
-                ],
-                'data' => [
+                // HAPUS KEY 'notification' DI SINI
+                'data' => array_merge([
+                    'title' => $title, // Pindahkan title ke sini
+                    'body' => $body,   // Pindahkan body ke sini
                     'url' => $url,
-                    'tipe' => 'notif_sistem' // Bisa disesuaikan buat trigger warna toast di Vue
+                    'tipe' => 'pesanan',
+                    'kode' => ''
+                ], $data),
+                'webpush' => [
+                    'headers' => [
+                        'Urgency' => 'high'
+                    ]
                 ],
             ]);
 
-            $messaging->send($message);
+            // Tembak ke SEMUA device sekaligus
+            $report = $messaging->sendMulticast($message, $tokens);
+
+            // Tembak ke SEMUA device sekaligus
+            $report = $messaging->sendMulticast($message, $tokens);
+
+            // BONUS: Auto-Cleanup Token Mati (Biar database gak penuh sama token invalid)
+            if ($report->hasFailures()) {
+                $invalidTokens = [];
+                
+                foreach ($report->failures()->getItems() as $failure) {
+                    $invalidTokens[] = $failure->target()->value();
+                }
+
+                // Hapus token yang gagal dari database
+                if (!empty($invalidTokens)) {
+                    $validTokens = array_diff($tokens, $invalidTokens);
+                    $user->update(['fcm_token' => array_values($validTokens)]);
+                    Log::info("Menghapus " . count($invalidTokens) . " token FCM invalid untuk User ID {$user->id}");
+                }
+            }
 
             return true;
         } catch (\Exception $e) {

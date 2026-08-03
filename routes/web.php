@@ -54,19 +54,44 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
 
 Route::middleware('auth')->group(function () {
 
-    Route::get('/test-notif', function () {
+    Route::get('/test-notif/pesanan', function () {
+        $user = auth()->user();
+        
+        if (!in_array($user->staf->id_role_staf ?? null, ['ROLE-STAF-ADMIN', 'ROLE-STAF-KASIR'])) {
+            return 'Akses ditolak: Route ini khusus Admin dan Kasir.';
+        }
+
+        // Ambil 1 data pesanan terbaru dari database sebagai dumi
+        // Pastikan model lu bener App\Models\Pesan (sesuaikan kalau beda)
+        $pesan = \App\Models\Pesan::latest()->first();
+
+        if (!$pesan) {
+            return 'Gagal: Belum ada satupun data pesanan di database untuk ditest.';
+        }
+
+        // Tembak Event aslinya! Ini akan memicu Echo (WebSocket) & Listener FCM lu
+        event(new \App\Events\PesananBaruEvent($pesan));
+
+        return "Event PesananBaruEvent berhasil ditembak pakai data {$pesan->id_pesan}! Cek HP & Laptop sekarang.";
+    });
+
+    Route::get('/test-notif/produksi', function () {
         $user = auth()->user();
 
-        $fcm = new class { use App\Traits\FcmNotificationTrait; };
+        if (!in_array($user->staf->id_role_staf ?? null, ['ROLE-STAF-ADMIN', 'ROLE-STAF-PRODUKSI'])) {
+            return 'Akses ditolak: Route ini khusus Admin dan Produksi.';
+        }
 
-        $sukses = $fcm->sendFcmNotification(
-            $user,
-            'Test Notif BikinCetak! 🚀',
-            'Mantap, Service Worker FCM udah jalan di background!',
-            '/produksi'
-        );
+        $pesan = \App\Models\Pesan::latest()->first();
 
-        return $sukses ? 'Notif berhasil ditembak, silakan cek pojok kanan bawah / HP!' : 'Gagal kirim notif, cek tab log Laravel.';
+        if (!$pesan) {
+            return 'Gagal: Belum ada satupun data pesanan di database untuk ditest.';
+        }
+
+        // Tembak Event aslinya!
+        event(new \App\Events\ProduksiBaruEvent($pesan));
+
+        return "Event ProduksiBaruEvent berhasil ditembak pakai data {$pesan->id_pesan}! Cek HP & Laptop sekarang.";
     });
 
     Route::post('/simpan-fcm-token', function (Request $request) {
@@ -74,9 +99,16 @@ Route::middleware('auth')->group(function () {
 
         if ($token) {
             $user = auth()->user();
-            $user->update([
-                'fcm_token' => $token
-            ]);
+            
+            $tokens = is_array($user->fcm_token) ? $user->fcm_token : [];
+
+            if (!in_array($token, $tokens)) {
+                $tokens[] = $token;
+                
+                $user->update([
+                    'fcm_token' => $tokens
+                ]);
+            }
 
             return response()->json(['message' => 'Token berhasil disimpan!']);
         }

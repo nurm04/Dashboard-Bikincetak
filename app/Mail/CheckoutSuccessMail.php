@@ -44,7 +44,7 @@ class CheckoutSuccessMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.checkout_success',
+            view: 'emails.checkout-success',
         );
     }
 }
