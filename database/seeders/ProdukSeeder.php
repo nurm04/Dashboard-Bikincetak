@@ -69,7 +69,7 @@ class ProdukSeeder extends Seeder
             ['id_varian' => 'VAR-044', 'nama_varian' => 'Event Desk Meja Promosi', 'created_at' => $now, 'updated_at' => $now],
             ['id_varian' => 'VAR-045', 'nama_varian' => 'Ukuran Human Standee', 'created_at' => $now, 'updated_at' => $now],
             ['id_varian' => 'VAR-047', 'nama_varian' => 'Jenis Banner', 'created_at' => $now, 'updated_at' => $now],
-            ['id_varian' => 'VAR-048', 'nama_varian' => 'Ukuran dan waktu Brosur Flyer', 'created_at' => $now, 'updated_at' => $now],
+            ['id_varian' => 'VAR-048', 'nama_varian' => 'Bahan Bendera Umbul Umbul', 'created_at' => $now, 'updated_at' => $now],
 
             ['id_varian' => 'VAR-000', 'nama_varian' => 'Bahan Customer/BikinCetak', 'created_at' => $now, 'updated_at' => $now],
         ]);
@@ -272,6 +272,9 @@ class ProdukSeeder extends Seeder
             ['id_pilihan' => 'VAR-047-001', 'id_varian' => 'VAR-047', 'nama_pilihan' => 'Impraboard / Foamboard', 'created_at' => $now, 'updated_at' => $now],
             ['id_pilihan' => 'VAR-047-002', 'id_varian' => 'VAR-047', 'nama_pilihan' => 'Tripod', 'created_at' => $now, 'updated_at' => $now],
 
+            ['id_pilihan' => 'VAR-048-001', 'id_varian' => 'VAR-048', 'nama_pilihan' => 'Kain Satin', 'created_at' => $now, 'updated_at' => $now],
+            ['id_pilihan' => 'VAR-048-002', 'id_varian' => 'VAR-048', 'nama_pilihan' => 'Kain TC', 'created_at' => $now, 'updated_at' => $now],
+
             ['id_pilihan' => 'VAR-000-002', 'id_varian' => 'VAR-000', 'nama_pilihan' => 'Bahan dari Pelanggan', 'created_at' => $now, 'updated_at' => $now],
             ['id_pilihan' => 'VAR-000-001', 'id_varian' => 'VAR-000', 'nama_pilihan' => 'Bahan dari Bikincetak', 'created_at' => $now, 'updated_at' => $now],
         ]);
@@ -299,6 +302,7 @@ class ProdukSeeder extends Seeder
             ['id_produk' => 'PRD-3008', 'id_kategori' => 'KAT-003', 'nama_produk' => 'Human Standee', 'gambar' => null, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
             ['id_produk' => 'PRD-3009', 'id_kategori' => 'KAT-003', 'nama_produk' => 'Tripod Banner', 'gambar' => null, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
             ['id_produk' => 'PRD-3010', 'id_kategori' => 'KAT-003', 'nama_produk' => 'Brosur Flyer', 'gambar' => null, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
+            ['id_produk' => 'PRD-3011', 'id_kategori' => 'KAT-003', 'nama_produk' => 'Bendera Umbul-Umbul', 'gambar' => null, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
 
             ['id_produk' => 'PRD-4001', 'id_kategori' => 'KAT-004', 'nama_produk' => 'Kalender Meja', 'gambar' => null, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
             ['id_produk' => 'PRD-4002', 'id_kategori' => 'KAT-004', 'nama_produk' => 'Kalender Dinding', 'gambar' => null, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
@@ -367,6 +371,7 @@ class ProdukSeeder extends Seeder
             ['id_produk' => 'PRD-3009', 'id_varian' => 'VAR-006', 'created_at' => $now, 'updated_at' => $now],
             ['id_produk' => 'PRD-3009', 'id_varian' => 'VAR-047', 'created_at' => $now, 'updated_at' => $now],
             ['id_produk' => 'PRD-3010', 'id_varian' => 'VAR-002', 'created_at' => $now, 'updated_at' => $now],
+            ['id_produk' => 'PRD-3011', 'id_varian' => 'VAR-048', 'created_at' => $now, 'updated_at' => $now],
 
             ['id_produk' => 'PRD-4001', 'id_varian' => 'VAR-001', 'created_at' => $now, 'updated_at' => $now],
             ['id_produk' => 'PRD-4001', 'id_varian' => 'VAR-008', 'created_at' => $now, 'updated_at' => $now],

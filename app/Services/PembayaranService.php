@@ -58,7 +58,7 @@ class PembayaranService
             0,
             $nominalBayar
         );
-        event(new ProduksiBaruEvent($pesan));
+        event(new ProduksiBaruEvent($pesanan));
 
         return $pembayaran;
     }

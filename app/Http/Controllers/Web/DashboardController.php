@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\BahanBaku;
-use App\Models\Pembayaran; // Tambahan import model Pembayaran
+use App\Models\Pembayaran;
 use App\Models\Pesan;
 use App\Models\PesananItemProduksi;
 use App\Services\PesanService;
@@ -38,7 +38,6 @@ class DashboardController extends Controller
             }
 
             return Inertia::render('Dashboard/Index', $data);
-
         }
 
         abort(403, 'Akses Dashboard Utama hanya untuk Staf Internal.');
@@ -74,12 +73,9 @@ class DashboardController extends Controller
 
         $hariIni = Carbon::today();
 
-        // Optimasi: Langsung hitung jumlah tanpa me-load data relasi
         $pesananHariIniCount = Pesan::whereDate('tanggal_pesan', $hariIni)
             ->whereNotIn('status_operasional', ['keranjang', 'batal'])->count();
 
-        // Mengambil omzet dari total pembayaran hari ini yang berhasil
-        // Catatan: Ubah 'updated_at' menjadi 'created_at' atau 'tanggal_bayar' jika skema database Anda berbeda
         $omzetHariIni = Pembayaran::whereDate('updated_at', $hariIni)
             ->where('status_pembayaran', 'berhasil')
             ->sum('nominal_bayar');
@@ -108,11 +104,9 @@ class DashboardController extends Controller
     {
         $hariIni = Carbon::today();
 
-        // Optimasi: Langsung hitung jumlah tanpa me-load data relasi
         $pesananHariIniCount = Pesan::whereDate('tanggal_pesan', $hariIni)
             ->whereNotIn('status_operasional', ['keranjang', 'batal'])->count();
 
-        // Mengambil omzet dari total pembayaran hari ini yang berhasil
         $omzetHariIni = Pembayaran::whereDate('updated_at', $hariIni)
             ->where('status_pembayaran', 'berhasil')
             ->sum('nominal_bayar');
@@ -161,9 +155,21 @@ class DashboardController extends Controller
     }
 
     private function getPesananBaru() {
-        return Pesan::with(['customer.user', 'alamat'])->where('status_operasional', 'menunggu_diproses')
-            ->orderBy('tanggal_pesan', 'asc')->take(5)->get()->map(function ($pesan) {
-                $pesan->total_tagihan = PesanService::hitungTotalPesanan($pesan);
+        // Load relasi sampai ke skuFinishing agar logic $isKaliQty di PesanService dapet datanya
+        return Pesan::with([
+                'customer.user',
+                'alamat',
+                'pesananItem.pesananItemFinishing.skuFinishing'
+            ])
+            ->where('status_operasional', 'menunggu_diproses')
+            ->orderBy('tanggal_pesan', 'asc')
+            ->take(5)
+            ->get()
+            ->map(function ($pesan) {
+                // Panggil 1 pintu dari PesanService biar akurat & konsisten sama halaman Detail
+                $kalkulasi = PesanService::kalkulasiRincianPesanan($pesan);
+                $pesan->total_tagihan = $kalkulasi['grand_total'];
+
                 return $pesan;
             });
     }

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, computed, onMounted, nextTick } from 'vue';
+import { ref, watch, computed, onMounted, nextTick, defineAsyncComponent } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import axios from 'axios';
 import CustomInput from '@/Components/Form/CustomInput.vue';
@@ -15,6 +15,19 @@ const props = defineProps({
     isPosMode: { type: Boolean, default: false }
 });
 const emit = defineEmits(['cancel', 'submit']);
+
+// ==== REGISTRASI KOMPONEN DINAMIS ====
+const FormCetakBuku = defineAsyncComponent(() => import('./FormCetakBuku.vue'));
+const FormCetakMeteran = defineAsyncComponent(() => import('./FormCetakMeteran.vue'));
+
+const formKalkulatorMap = {
+    'cetak_buku': FormCetakBuku,
+    'cetak_meteran': FormCetakMeteran,
+};
+
+const activeFormKalkulator = computed(() => formKalkulatorMap[tipeKalkulasi.value] || null);
+const biayaTambahanCustom = ref(0);
+// =====================================
 
 const listProduks = ref([]);
 const detailProduk = ref(null);
@@ -132,6 +145,11 @@ const skuOptions = computed(() => (detailProduk.value?.skus || []).map(s => ({ v
 const selectedSku = computed(() => (detailProduk.value?.skus || []).find(s => s.id_sku === form.value.id_sku) || null);
 const tipeKalkulasi = computed(() => selectedSku.value?.tipe_kalkulasi || 'standard');
 
+// Reset tambahan biaya ketika SKU/Tipe diganti
+watch(tipeKalkulasi, () => {
+    biayaTambahanCustom.value = 0;
+});
+
 const finishingPayload = computed(() => {
     if (isCustomProduct.value || isJasaDesain.value) return [];
 
@@ -183,43 +201,10 @@ const diskonMember = computed(() => {
 const totalDiskonSatuan = computed(() => diskonGrosir.value + diskonMember.value);
 const hargaSatuanSnapshot = computed(() => Math.max(0, hargaDasarAwal.value - totalDiskonSatuan.value));
 
-// ==== RUMUS CETAK BUKU (SINKRON DENGAN NEXT.JS) ====
-const sisiCetakMultiplier = computed(() => {
-    if (tipeKalkulasi.value === 'cetak_buku') {
-        let sisi = 1; // Default 1 Sisi
-        Object.values(form.value.finishings).forEach(idSkuFin => {
-            if (!idSkuFin) return;
-            const fin = selectedSku.value?.opsi_finishing?.find(f => String(f.id_sku_finishing) === String(idSkuFin));
-            if (fin) {
-                const label = fin.nama_pilihan.toLowerCase();
-                if (label.includes('2 sisi') || label.includes('dua sisi') || label.includes('bolak')) {
-                    sisi = 2; // Ganti jadi pengali 2
-                }
-            }
-        });
-        return sisi;
-    }
-    return 1;
-});
-
-const biayaHalamanPerBuku = computed(() => {
-    if (tipeKalkulasi.value === 'cetak_buku') {
-        let inputHal = parseInt(form.value.custom_attributes['Jumlah Halaman'], 10);
-        if (isNaN(inputHal) || inputHal < 1) {
-            inputHal = 1; // Paksa jadi minimal 1 jika dibiarkan kosong
-        }
-
-        // Aturan: Halaman 1 = Rp 0, sisanya +1500 (dikali Sisi)
-        const tambahanHalaman = Math.max(0, inputHal - 1);
-
-        return tambahanHalaman * sisiCetakMultiplier.value * 1500;
-    }
-    return 0;
-});
-
+// ==== RUMUS ASLI LU CUMA DIGANTI VARIABELNYA AJA ====
 const hargaSatuProdukFull = computed(() => {
-    // Gabung harga Dasar/Jilid dengan harga Kertas Halaman Dalam
-    return hargaSatuanSnapshot.value + biayaHalamanPerBuku.value;
+    // Gabung harga Dasar dengan hasil hitungan dari FormCetakBuku.vue
+    return hargaSatuanSnapshot.value + biayaTambahanCustom.value;
 });
 // ===================================
 
@@ -342,9 +327,7 @@ watch(() => form.value.id_sku, (newVal, oldVal) => {
     if (!selectedSku.value) return;
 
     if (!isEditMode.value) {
-        form.value.custom_attributes = {
-            'Jumlah Halaman': ''
-        };
+        form.value.custom_attributes = {};
     }
 
     if (isEditMode.value && !oldVal) return;
@@ -406,15 +389,6 @@ const handleFormSubmit = () => {
         return;
     }
 
-    const atributCustom = { ...form.value.custom_attributes };
-
-    if (tipeKalkulasi.value === 'cetak_buku') {
-        let h = parseInt(atributCustom['Jumlah Halaman'], 10);
-        if (isNaN(h) || h < 1) h = 1;
-
-        atributCustom['Jumlah Halaman'] = h;
-    }
-
     const rincianDiskon = [];
 
     if (diskonGrosir.value > 0) {
@@ -455,7 +429,7 @@ const handleFormSubmit = () => {
 
         finishing: props.isPosMode ? finishingPayload.value : JSON.stringify(finishingPayload.value),
 
-        atribut_custom_snapshot: Object.keys(atributCustom).length > 0 ? atributCustom : undefined,
+        atribut_custom_snapshot: Object.keys(form.value.custom_attributes).length > 0 ? form.value.custom_attributes : undefined,
 
         file: isJasaDesain.value ? null : form.value.desainPayload.file,
         tipe_file: isJasaDesain.value ? null : form.value.desainPayload.tipe_file,
@@ -479,10 +453,7 @@ const handleFormSubmit = () => {
 <template>
     <div class="relative border shadow-xl bg-base-100 border-primary/20 rounded-2xl">
 
-        <!-- Pindahkan overflow-hidden & rounded-2xl ke layer grid background -->
         <div class="absolute inset-0 pointer-events-none opacity-[0.03] z-0 rounded-2xl overflow-hidden" style="background-image: radial-gradient(currentColor 1.5px, transparent 1.5px); background-size: 24px 24px;"></div>
-
-        <!-- Tambahkan rounded-t-2xl ke garis atas supaya siku-siku card tetap mulus -->
         <div class="absolute top-0 left-0 w-full h-1.5 bg-primary z-10 rounded-t-2xl"></div>
 
         <div v-if="isFetching || isSubmitting" class="absolute inset-0 z-50 flex items-center justify-center bg-base-100/60 backdrop-blur-sm rounded-2xl">
@@ -504,7 +475,6 @@ const handleFormSubmit = () => {
             </div>
         </div>
 
-        <!-- UBAH DISINI: Naikkan z-index dari z-10 jadi z-30 supaya form melayang di atas panel bawah -->
         <div class="relative z-30 grid grid-cols-1 gap-8 px-8 pt-6 pb-8 lg:grid-cols-12 lg:gap-12">
             <div :class="['space-y-6', isJasaDesain ? 'lg:col-span-12 max-w-2xl' : 'lg:col-span-6']">
                 <h3 class="flex items-center gap-2 mb-2 text-xs font-black tracking-widest uppercase text-primary">Spesifikasi Dasar</h3>
@@ -540,14 +510,21 @@ const handleFormSubmit = () => {
 
                     <template v-if="!isJasaDesain">
 
-                        <div v-if="tipeKalkulasi === 'cetak_buku'" class="p-4 border bg-base-200/50 rounded-xl border-base-300">
-                            <h4 class="mb-3 text-[10px] font-bold tracking-widest uppercase text-base-content/50">Detail Isi Buku</h4>
-                            <CustomInputNumber
-                                label="Jumlah Halaman (Termasuk Cover)"
-                                v-model="form.custom_attributes['Jumlah Halaman']"
-                                placeholder="Contoh: 100"
-                            />
-                        </div>
+                        <!-- KOMPONEN KHUSUS DIPANGGIL DISINI -->
+                        <component
+                            :is="activeFormKalkulator"
+                            v-if="activeFormKalkulator"
+
+                            :finishings="form.finishings"
+                            :selectedSku="selectedSku"
+                            :initialAttributes="form.custom_attributes"
+
+                            :hargaSatuanSnapshot="hargaSatuanSnapshot"
+                            :qty="form.jumlah"
+
+                            @updateAttributes="(val) => form.custom_attributes = val"
+                            @updateBiayaTambahan="(val) => biayaTambahanCustom = val"
+                        />
 
                         <div class="form-control">
                             <CustomInputNumber label="Jumlah Pesanan (Qty)" v-model="form.jumlah" :min="currentMinimumOrder" />

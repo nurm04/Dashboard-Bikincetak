@@ -64,6 +64,13 @@ const clearAllFilesDB = async () => {
 // ==========================================
 // 2. STATE FORM & LOCAL STORAGE
 // ==========================================
+// FIX: Tambahkan Opsi Pembayaran agar tampil di UI dan sinkron dengan Controller
+const pembayaranOptionsForm = [
+    { value: 'belum_lunas', label: 'Belum Bayar' },
+    { value: 'dibayar_sebagian', label: 'Bayar Sebagian (DP)' },
+    { value: 'lunas', label: 'Lunas' }
+];
+
 const cartItems = ref([]);
 const savedState = JSON.parse(localStorage.getItem('pos_form_state')) || {};
 
@@ -167,22 +174,38 @@ const recalculateCartItems = (selectedCust) => {
         item.rincian_diskon_snapshot = rincianDiskon;
         item.harga_satuan_snapshot = Math.max(0, hargaAwal - totalDiskonSatuan);
 
-        // ==== PERBAIKAN RUMUS CETAK BUKU DI KERANJANG ====
+        // ==== PERBAIKAN RUMUS CETAK BUKU & METERAN DI KERANJANG ====
         let hargaSatuProdukFull = item.harga_satuan_snapshot;
 
         if (item.tipe_kalkulasi === 'cetak_buku') {
             let hal = parseInt(item.atribut_custom_snapshot?.['Jumlah Halaman'], 10);
             if (isNaN(hal) || hal < 1) hal = 1;
 
-            const sisi = Number(item.atribut_custom_snapshot?.['Sisi Cetak']) || 1;
+            let sisi = 1;
+            (item.pesanan_item_finishing || []).forEach(fin => {
+                if (fin && fin.nama_finishing_snapshot) {
+                    const label = fin.nama_finishing_snapshot.toLowerCase();
+                    if (label.includes('2 sisi') || label.includes('dua sisi') || label.includes('bolak')) {
+                        sisi = 2;
+                    }
+                }
+            });
 
-            // Halaman 1 Gratis
             const tambahanHalaman = Math.max(0, hal - 1);
             const biayaHalaman = tambahanHalaman * sisi * 1500;
+            hargaSatuProdukFull += biayaHalaman;
 
-            hargaSatuProdukFull += biayaHalaman; // Tambah Harga Kertas ke Harga Dasar
+        } else if (item.tipe_kalkulasi === 'cetak_meteran') {
+            let luas = 1;
+            if (item.atribut_custom_snapshot && typeof item.atribut_custom_snapshot === 'object') {
+                luas = parseFloat(item.atribut_custom_snapshot['Luas Dihargai (m2)']) || 1;
+            }
+            if (luas < 1) luas = 1;
+
+            // Kali harga satuan dengan luas efektif
+            hargaSatuProdukFull = hargaSatuProdukFull * luas;
         }
-        // =================================================
+        // =========================================================
 
         const totalHargaProduk = hargaSatuProdukFull * qty;
         const totalFinishing = hitungTotalFinishing(item, qty, hargaSatuProdukFull);
@@ -209,7 +232,6 @@ const recalculateCartItems = (selectedCust) => {
     }
 };
 
-// Watcher Customer Baru
 watch(() => form.id_customer, (newId, oldId) => {
     const selectedCust = props.customers.find(c => c.id_customer === newId);
     localStorage.setItem('pos_active_customer', JSON.stringify(selectedCust || null));
@@ -297,7 +319,6 @@ const fetchOngkir = async () => {
     }
 };
 
-// Hitung Ongkir Otomatis Jika Alamat Berubah
 watch(() => form.id_alamat, (newAlamat, oldAlamat) => {
     if (oldAlamat !== undefined && newAlamat !== oldAlamat) {
         if (cartItems.value.length > 0 && !isManualEkspedisi.value) {
@@ -426,18 +447,34 @@ const hitungTotalItem = (item) => {
     const qty = Number(item.jumlah) || 1;
     let hargaSatuProdukFull = Number(item.harga_satuan_snapshot) || 0;
 
-    // ==== PERBAIKAN RUMUS CETAK BUKU MASTER RECALCULATE ====
+    // ==== PERBAIKAN RUMUS CETAK BUKU & METERAN MASTER RECALCULATE ====
     if (item.tipe_kalkulasi === 'cetak_buku') {
         let hal = parseInt(item.atribut_custom_snapshot?.['Jumlah Halaman'], 10);
         if (isNaN(hal) || hal < 1) hal = 1;
 
-        const sisi = Number(item.atribut_custom_snapshot?.['Sisi Cetak']) || 1;
+        let sisi = 1;
+        (item.pesanan_item_finishing || []).forEach(fin => {
+            if (fin && fin.nama_finishing_snapshot) {
+                const label = fin.nama_finishing_snapshot.toLowerCase();
+                if (label.includes('2 sisi') || label.includes('dua sisi') || label.includes('bolak')) {
+                    sisi = 2;
+                }
+            }
+        });
 
-        // Halaman 1 Gratis
         const tambahanHalaman = Math.max(0, hal - 1);
         const biayaHalaman = tambahanHalaman * sisi * 1500;
-
         hargaSatuProdukFull += biayaHalaman;
+
+    } else if (item.tipe_kalkulasi === 'cetak_meteran') {
+        let luas = 1;
+        if (item.atribut_custom_snapshot && typeof item.atribut_custom_snapshot === 'object') {
+            luas = parseFloat(item.atribut_custom_snapshot['Luas Dihargai (m2)']) || 1;
+        }
+        if (luas < 1) luas = 1;
+
+        // Harga per pcs = (harga dasar) x (luas yg terpakai)
+        hargaSatuProdukFull = hargaSatuProdukFull * luas;
     }
     // =======================================================
 
@@ -544,7 +581,6 @@ const submitCheckout = async () => {
         formData.append(`items[${index}][rincian_diskon_snapshot]`, JSON.stringify(item.rincian_diskon_snapshot || []));
         formData.append(`items[${index}][finishing]`, JSON.stringify(item.pesanan_item_finishing || []));
 
-        // MAPPING JSON Atribut Custom (Buku / dll) ke request payload
         if (item.atribut_custom_snapshot && Object.keys(item.atribut_custom_snapshot).length > 0) {
             formData.append(`items[${index}][atribut_custom_snapshot]`, JSON.stringify(item.atribut_custom_snapshot));
         }
@@ -570,12 +606,6 @@ const submitCheckout = async () => {
         }
     });
 };
-
-const pembayaranOptionsForm = [
-    { value: 'belum_lunas', label: 'Belum Lunas (Piutang)' },
-    { value: 'dibayar_sebagian', label: 'Dibayar Sebagian (DP)' },
-    { value: 'lunas', label: 'Bayar Lunas' }
-];
 </script>
 
 <template>

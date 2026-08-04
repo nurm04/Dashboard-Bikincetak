@@ -9,7 +9,7 @@ import OrderInfoCards from './Partials/OrderInfoCards.vue';
 import OrderItemsTable from './Partials/OrderItemsTable.vue';
 import OrderSummary from './Partials/OrderSummary.vue';
 import OrderFormCard from './Partials/OrderFormCard.vue';
-import { ArrowLeft, Printer } from 'lucide-vue-next';
+import { ArrowLeft } from 'lucide-vue-next';
 
 const page = usePage();
 
@@ -40,32 +40,40 @@ const getCustomAttributes = (item) => {
 
 const isKaliJumlahPesan = (fin) => Boolean(fin.sku_finishing?.kali_jumlah_pesan);
 
+// FUNGSI UTAMA YANG DIPERBAIKI
+// FUNGSI UTAMA YANG DIPERBAIKI (Deteksi via Atribut, bukan tipe_kalkulasi)
 const getDisplaySubtotal = (item) => {
-    if (item.subtotal !== undefined) return Number(item.subtotal);
-
     let hargaAwal = Number(item.harga_satuan_snapshot) || 0;
     const attr = getCustomAttributes(item);
     const finishings = item.pesanan_item_finishing || item.finishing || [];
 
-    let sisi = 1;
-    finishings.forEach(f => {
-        const namaFin = (f.nama_finishing_snapshot || '').toLowerCase();
-        if (namaFin.includes('dua sisi') || namaFin.includes('2 sisi') || namaFin.includes('bolak')) {
-            sisi = 2;
-        }
-    });
-
+    // 1. LOGIC BUKU (Deteksi dari adanya 'Jumlah Halaman')
     if (attr && attr['Jumlah Halaman'] !== undefined) {
+        let sisi = 1;
+        finishings.forEach(f => {
+            const namaFin = (f.nama_finishing_snapshot || '').toLowerCase();
+            if (namaFin.includes('dua sisi') || namaFin.includes('2 sisi') || namaFin.includes('bolak')) {
+                sisi = 2;
+            }
+        });
         let hal = parseInt(attr['Jumlah Halaman'], 10);
         if (isNaN(hal) || hal < 1) hal = 1;
         hargaAwal += (Math.max(0, hal - 1) * sisi * 1500);
     }
+    // 2. LOGIC METERAN (Deteksi dari adanya 'Luas Dihargai (m2)')
+    else if (attr && attr['Luas Dihargai (m2)'] !== undefined) {
+        let luas = parseFloat(attr['Luas Dihargai (m2)']) || 1;
+        if (luas < 1) luas = 1;
 
-    let total = hargaAwal * item.jumlah;
+        hargaAwal = hargaAwal * luas;
+    }
 
+    // 3. Kalikan Harga Dasar dengan QTY
+    let total = hargaAwal * (Number(item.jumlah) || 1);
+
+    // 4. Hitung Tambahan Finishing
     finishings.forEach(f => {
         const isKaliQty = isKaliJumlahPesan(f);
-
         let val = f.tipe === 'persen'
             ? (hargaAwal * (Number(f.harga_finishing_snapshot) / 100))
             : (Number(f.harga_finishing_snapshot) || 0);
@@ -76,12 +84,16 @@ const getDisplaySubtotal = (item) => {
     return total;
 };
 
-// 2. Jumlahkan Subtotal Item DITAMBAH SLA di Grand Total Tagihan
+// Jumlahkan Subtotal Item DITAMBAH SLA di Grand Total Tagihan
 const computedTotalTagihan = computed(() => {
     let total = 0;
     if (props.pesanan && props.pesanan.pesanan_item) {
         props.pesanan.pesanan_item.forEach(item => {
             let subtotalProduk = getDisplaySubtotal(item);
+
+            // Kita juga timpa nilai subtotal di object aslinya biar tabel di OrderItemsTable.vue juga nampilin angka yang bener
+            item.subtotal = subtotalProduk;
+
             let biayaSLA = Number(item.harga_pengerjaan_snapshot) || 0;
             total += (subtotalProduk + biayaSLA);
         });
@@ -89,7 +101,7 @@ const computedTotalTagihan = computed(() => {
     return total;
 });
 
-// 2. Hitung ulang Grand Total (+ ongkir + kode unik - diskon voucher)
+// Hitung ulang Grand Total (+ ongkir + kode unik - diskon voucher)
 const computedTotalTransfer = computed(() => {
     let total = computedTotalTagihan.value;
     total += Number(props.pesanan?.harga_ongkir || 0);
@@ -98,7 +110,7 @@ const computedTotalTransfer = computed(() => {
     return Math.max(0, total);
 });
 
-// 3. Hitung ulang Sisa Tagihan (Grand Total - Telah Dibayar)
+// Hitung ulang Sisa Tagihan (Grand Total - Telah Dibayar)
 const computedSisaTagihan = computed(() => {
     let sisa = computedTotalTransfer.value - Number(props.total_dibayar || 0);
     return Math.max(0, sisa);
@@ -223,42 +235,23 @@ const handlePrintLabel = (itemId) => {
 
     <StafLayout>
         <template #header>
-            <!-- REVISI UTAMA: flex-col di HP (tumpuk atas-bawah), md:flex-row di desktop (sejajar) -->
-            <div class="flex flex-col w-full gap-4 md:flex-row md:items-center md:justify-between">
-
-                <!-- Sisi Kiri: Judul dan Tombol Back -->
-                <div class="flex items-center w-full gap-4">
-                    <!-- Ditambahkan shrink-0 biar tombol back ngga kepencet gepeng pas judulnya kepanjangan -->
-                    <Link :href="route('pesan.index')" class="btn btn-sm btn-circle btn-ghost ring-1 ring-base-300 shrink-0">
+            <div class="flex items-center justify-between w-full">
+                <div class="flex items-center gap-4">
+                    <Link :href="route('pesan.index')" class="btn btn-sm btn-circle btn-ghost ring-1 ring-base-300">
                         <ArrowLeft class="w-4 h-4" />
                     </Link>
-                    <h2 class="text-lg font-semibold leading-tight truncate md:text-xl text-base-content">
+                    <h2 class="text-xl font-semibold leading-tight text-base-content">
                         Detail Pesanan {{ pesanan.id_pesan }}
                     </h2>
                 </div>
-
-                <!-- Sisi Kanan: Tombol Cetak yang Dipercantik & Responsif -->
-                <div class="flex w-full gap-2 md:w-auto shrink-0">
-                    <!-- flex-1 di HP biar tombol berbagi lebar 50:50, md:flex-none biar ngepas konten di desktop -->
-                    <a
-                        :href="route('pesan.cetakNota', pesanan.id_pesan)"
-                        target="_blank"
-                        class="flex-1 md:flex-none flex justify-center items-center gap-2 px-3 md:px-4 py-2 transition-all border shadow-sm rounded-xl bg-base-100 border-base-300 hover:bg-primary/10 hover:border-primary/30 hover:text-primary group text-[9px] md:text-[10px] font-black tracking-widest uppercase"
-                    >
-                        <Printer class="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 transition-opacity" />
-                        <span>Cetak Nota</span>
+                <div class="flex gap-2">
+                    <a :href="route('pesan.cetakNota', pesanan.id_pesan)" target="_blank" class="btn btn-sm btn-outline shadow-sm font-black uppercase tracking-widest text-[10px]">
+                        🖨️ Cetak Nota
                     </a>
-
-                    <a
-                        :href="route('pesan.cetakLabel', pesanan.id_pesan)"
-                        target="_blank"
-                        class="flex-1 md:flex-none flex justify-center items-center gap-2 px-3 md:px-4 py-2 transition-all border shadow-sm rounded-xl bg-base-100 border-base-300 hover:bg-primary/10 hover:border-primary/30 hover:text-primary group text-[9px] md:text-[10px] font-black tracking-widest uppercase"
-                    >
-                        <Printer class="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 transition-opacity" />
-                        <span>Cetak Label</span>
+                    <a :href="route('pesan.cetakLabel', pesanan.id_pesan)" target="_blank" class="btn btn-sm btn-outline shadow-sm font-black uppercase tracking-widest text-[10px]">
+                        🖨️ Cetak Label
                     </a>
                 </div>
-
             </div>
         </template>
 
@@ -298,6 +291,7 @@ const handlePrintLabel = (itemId) => {
 
                 <div class="lg:col-span-4 xl:col-span-3">
                     <div class="sticky top-24">
+                        <!-- LEMPAR COMPUTED PROPERTIES KE SINI -->
                         <OrderSummary
                             :total_tagihan="computedTotalTagihan"
                             :harga_ongkir="pesanan.harga_ongkir"

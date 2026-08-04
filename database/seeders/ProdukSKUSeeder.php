@@ -144,6 +144,9 @@ class ProdukSKUSeeder extends Seeder
             ['id_sku' => 'PRD-3010-SKU-004', 'id_produk' => 'PRD-3010', 'nama_sku' => 'PRD-3010-Brosur Flyer-A6', 'minimum_pesan' => 1, 'harga' => 170000, 'created_at' => $now, 'tipe_kalkulasi' => 'standard', 'created_at' => $now],
             ['id_sku' => 'PRD-3010-SKU-005', 'id_produk' => 'PRD-3010', 'nama_sku' => 'PRD-3010-Brosur Flyer-Sepertiga A4', 'minimum_pesan' => 1, 'harga' => 200000, 'created_at' => $now, 'tipe_kalkulasi' => 'standard', 'created_at' => $now],
 
+            ['id_sku' => 'PRD-3011-SKU-001', 'id_produk' => 'PRD-3011', 'nama_sku' => 'PRD-3011-Bendera Umbul Umbul-Kain Satin', 'minimum_pesan' => 1, 'harga' => 60000, 'created_at' => $now, 'tipe_kalkulasi' => 'cetak_meteran', 'created_at' => $now],
+            ['id_sku' => 'PRD-3011-SKU-002', 'id_produk' => 'PRD-3011', 'nama_sku' => 'PRD-3011-Bendera Umbul Umbul-Kain TC', 'minimum_pesan' => 1, 'harga' => 60000, 'created_at' => $now, 'tipe_kalkulasi' => 'cetak_meteran', 'created_at' => $now],
+
         // KAT-004
             ['id_sku' => 'PRD-4001-SKU-001', 'id_produk' => 'PRD-4001', 'nama_sku' => 'PRD-4001-Kalender Meja-Art Carton 210 Gsm 8 Lembar', 'minimum_pesan' => 300, 'harga' => 18000, 'created_at' => $now, 'tipe_kalkulasi' => 'standard', 'created_at' => $now],
             ['id_sku' => 'PRD-4001-SKU-002', 'id_produk' => 'PRD-4001', 'nama_sku' => 'PRD-4001-Kalender Meja-Art Carton 210 Gsm 13 Lembar', 'minimum_pesan' => 300, 'harga' => 23000, 'created_at' => $now, 'tipe_kalkulasi' => 'standard', 'created_at' => $now],
@@ -560,6 +563,9 @@ class ProdukSKUSeeder extends Seeder
             ['id_sku' => 'PRD-3010-SKU-003', 'id_pilihan' => 'VAR-002-006', 'created_at' => $now,'updated_at' => $now],
             ['id_sku' => 'PRD-3010-SKU-004', 'id_pilihan' => 'VAR-002-007', 'created_at' => $now,'updated_at' => $now],
             ['id_sku' => 'PRD-3010-SKU-005', 'id_pilihan' => 'VAR-002-008', 'created_at' => $now,'updated_at' => $now],
+
+            ['id_sku' => 'PRD-3011-SKU-001', 'id_pilihan' => 'VAR-048-001', 'created_at' => $now,'updated_at' => $now],
+            ['id_sku' => 'PRD-3011-SKU-002', 'id_pilihan' => 'VAR-048-002', 'created_at' => $now,'updated_at' => $now],
 
         // KAT-004
             ['id_sku' => 'PRD-4001-SKU-001', 'id_pilihan' => 'VAR-001-007', 'created_at' => $now,'updated_at' => $now],

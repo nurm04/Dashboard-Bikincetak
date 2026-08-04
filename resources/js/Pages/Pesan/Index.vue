@@ -26,7 +26,7 @@ const props = defineProps({
 });
 
 // ==========================================
-// KALKULASI TOTAL TAGIHAN AKURAT (VUE)
+// KALKULASI TOTAL TAGIHAN AKURAT (VUE) - SUDAH FIX METERAN
 // ==========================================
 const getTagihanAkurat = (pesan) => {
     let totalMurniProduk = 0;
@@ -34,49 +34,50 @@ const getTagihanAkurat = (pesan) => {
 
     if (pesan.pesanan_item && Array.isArray(pesan.pesanan_item)) {
         pesan.pesanan_item.forEach(item => {
-            let hargaDasar = Number(item.harga_satuan_snapshot) || 0;
-            let jumlahHalaman = 1;
+            let hargaAwal = Number(item.harga_satuan_snapshot) || 0;
             let atribut = {};
+            const finishings = item.pesanan_item_finishing || item.finishing || [];
 
-            // 1. Ekstrak Jumlah Halaman dari atribut_custom_snapshot
             if (item.atribut_custom_snapshot) {
                 if (typeof item.atribut_custom_snapshot === 'string') {
-                    try {
-                        atribut = JSON.parse(item.atribut_custom_snapshot);
-                    } catch (e) {
-                        console.error("Gagal parse atribut_custom_snapshot", e);
-                    }
+                    try { atribut = JSON.parse(item.atribut_custom_snapshot); } catch (e) {}
                 } else {
                     atribut = item.atribut_custom_snapshot;
                 }
-
-                if (atribut && atribut['Jumlah Halaman'] !== undefined) {
-                    const val = parseInt(String(atribut['Jumlah Halaman']), 10);
-                    if (!isNaN(val) && val > 0) {
-                        jumlahHalaman = val;
-                    }
-                }
             }
 
-            // 2. Cek Sisi Cetak dari Finishing
-            let sisi = 1;
-            if (item.pesanan_item_finishing) {
-                item.pesanan_item_finishing.forEach(fin => {
-                    const label = (fin.nama_finishing_snapshot || "").toLowerCase();
-                    if (label.includes("2 sisi") || label.includes("dua sisi") || label.includes("bolak")) {
+            // 1. LOGIC BUKU
+            if (atribut && atribut['Jumlah Halaman'] !== undefined) {
+                let sisi = 1;
+                finishings.forEach(f => {
+                    const namaFin = (f.nama_finishing_snapshot || '').toLowerCase();
+                    if (namaFin.includes('dua sisi') || namaFin.includes('2 sisi') || namaFin.includes('bolak')) {
                         sisi = 2;
                     }
                 });
+                let hal = parseInt(String(atribut['Jumlah Halaman']), 10);
+                if (isNaN(hal) || hal < 1) hal = 1;
+                hargaAwal += (Math.max(0, hal - 1) * sisi * 1500);
+            }
+            // 2. LOGIC METERAN
+            else if (atribut && atribut['Luas Dihargai (m2)'] !== undefined) {
+                let luas = parseFloat(String(atribut['Luas Dihargai (m2)'])) || 1;
+                if (luas < 1) luas = 1;
+                hargaAwal = hargaAwal * luas; // Kalikan dengan Luas Bahan
             }
 
-            // 3. Tambahan Kertas (halaman 1 gratis)
-            if (jumlahHalaman > 1) {
-                hargaDasar += (jumlahHalaman - 1) * sisi * 1500;
-            }
+            // 3. Kalikan Harga Dasar dengan QTY
+            let subtotalItem = hargaAwal * (Number(item.jumlah) || 1);
 
-            // 4. Hitung Total Finishing + Pengerjaan
-            const finishingTotal = item.pesanan_item_finishing?.reduce((sum, fin) => sum + (Number(fin.harga_finishing_snapshot) || 0), 0) ?? 0;
-            const subtotalItem = (hargaDasar + finishingTotal) * (Number(item.jumlah) || 1);
+            // 4. Hitung Tambahan Finishing
+            finishings.forEach(f => {
+                const isKaliQty = Boolean(f.sku_finishing?.kali_jumlah_pesan) || Boolean(f.kali_jumlah_pesan);
+                let val = f.tipe === 'persen'
+                    ? (hargaAwal * (Number(f.harga_finishing_snapshot) / 100))
+                    : (Number(f.harga_finishing_snapshot) || 0);
+
+                subtotalItem += (isKaliQty ? val * (Number(item.jumlah) || 1) : val);
+            });
 
             totalMurniProduk += subtotalItem;
             totalPengerjaan += Number(item.harga_pengerjaan_snapshot) || 0;
@@ -216,29 +217,35 @@ const formatEnum = (text) => {
 
         <div class="min-h-screen px-4 py-6 mx-auto sm:px-6 lg:px-8 max-w-7xl">
 
-            <!-- BAGIAN ATAS: TOMBOL & FILTER YANG SUDAH DIRAPIKAN -->
-            <div class="flex flex-col gap-5 mb-6">
+            <!-- BAGIAN ATAS: TOMBOL & FILTER (SUDAH DISAMAKAN DENGAN PRODUK/INDEX) -->
+            <div class="flex flex-col gap-4 mb-6 md:flex-row md:items-center md:justify-between">
 
-                <!-- Wrapper Tombol POS -->
-                <div class="w-full md:w-auto">
-                    <Link v-if="$can('pesan', 'tambah')" :href="route('pesan.pos-kasir')" class="flex items-center justify-center w-full shadow-md md:w-auto btn btn-primary rounded-xl shrink-0">
-                        <span class="font-black tracking-wider">+ Tambah Pesanan (POS)</span>
-                    </Link>
+                <!-- Wrapper Tombol POS Kasir (Kiri di Desktop, Atas di Mobile) -->
+                <div class="w-full shrink-0 md:w-auto">
+                    <CustomButton v-if="$can('pesan', 'tambah')" type="link" :href="route('pesan.pos-kasir')" variant="primary" block>
+                        <template #icon>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+                                <path fill-rule="evenodd" d="M12 3.75a.75.75 0 01.75.75v6.75h6.75a.75.75 0 010 1.5h-6.75v6.75a.75.75 0 01-1.5 0v-6.75H4.5a.75.75 0 010-1.5h6.75V4.5a.75.75 0 01.75-.75z" clip-rule="evenodd" />
+                            </svg>
+                        </template>
+                        POS Kasir
+                    </CustomButton>
                 </div>
 
-                <!-- Wrapper Filter & Search -->
-                <div class="flex flex-col gap-3 md:flex-row md:items-center">
+                <!-- Wrapper Filter & Search (Kanan di Desktop, Bawah di Mobile) -->
+                <div class="flex flex-col w-full gap-3 md:flex-row md:items-center md:w-auto">
                     <!-- Search Input -->
-                    <div class="w-full md:w-72">
+                    <div class="w-full md:w-64 lg:w-72">
                         <CustomInputSearch
                             v-model="search"
                             placeholder="Cari ID / Nama Customer..."
+                            class="w-full"
                         />
                     </div>
 
                     <!-- Select Filters (Grid 2 kolom di mobile biar sejajar) -->
-                    <div class="grid grid-cols-2 gap-3 w-full md:flex md:w-auto md:gap-3">
-                        <div class="w-full md:w-56">
+                    <div class="grid w-full grid-cols-2 gap-3 md:flex md:w-auto md:gap-3">
+                        <div class="w-full md:w-48 lg:w-56">
                             <CustomSelect
                                 v-model="filterPembayaran"
                                 :options="pembayaranOptions"
@@ -247,7 +254,7 @@ const formatEnum = (text) => {
                                 placeholder="Semua Pembayaran"
                             />
                         </div>
-                        <div class="w-full md:w-56">
+                        <div class="w-full md:w-48 lg:w-56">
                             <CustomSelect
                                 v-model="filterOperasional"
                                 :options="operasionalOptions"
@@ -287,7 +294,6 @@ const formatEnum = (text) => {
                     </td>
 
                     <td class="px-4 py-4 whitespace-nowrap" :class="p.status_operasional === 'batal' ? 'opacity-50' : ''">
-                        <!-- class w-full md:w-auto dihapus dari select ini biar tabel gak melar -->
                         <select
                             class="select select-bordered select-sm text-[10px] font-black uppercase tracking-wider rounded-xl shadow-sm"
                             :class="
@@ -341,10 +347,10 @@ const formatEnum = (text) => {
         </div>
 
         <dialog class="modal" :class="{ 'modal-open': showBayarSebagianModal }">
-            <div class="modal-box w-11/12 max-w-lg">
+            <div class="w-11/12 max-w-lg modal-box">
                 <h3 class="text-lg font-black">Pembayaran Sebagian</h3>
 
-                <div v-if="selectedPesan" class="space-y-4 mt-4">
+                <div v-if="selectedPesan" class="mt-4 space-y-4">
                     <div>
                         <CustomInput
                             label="Total Tagihan"

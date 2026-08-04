@@ -40,15 +40,78 @@ const formatSimpleDate = (dateStr) => {
 };
 
 // ==========================================
-// 1. LOGIKA PARSING ATRIBUT & SISI (TETAP SAMA)
+// 1. ENGINE KALKULASI UTAMA (SATU PINTU BIAR SINKRON)
 // ==========================================
-const getCustomAttributes = (item) => {
+const getParsedItem = (item) => {
+    let hargaDasar = Number(item.harga_satuan_snapshot) || 0;
     let attr = item.atribut_custom_snapshot;
-    if (!attr) return null;
+
     if (typeof attr === 'string') {
-        try { attr = JSON.parse(attr); } catch (e) { return null; }
+        try { attr = JSON.parse(attr); } catch (e) { attr = null; }
+    } else {
+        attr = typeof attr === 'object' ? attr : null;
     }
-    if (typeof attr === 'object' && attr !== null) {
+
+    const finishings = item.pesanan_item_finishing || item.finishing || [];
+    let sisi = 1;
+
+    finishings.forEach(f => {
+        const namaFin = (f.nama_finishing_snapshot || '').toLowerCase();
+        if (namaFin.includes('dua sisi') || namaFin.includes('2 sisi') || namaFin.includes('bolak')) {
+            sisi = 2;
+        }
+    });
+
+    // A. LOGIC BUKU
+    if (attr && attr['Jumlah Halaman'] !== undefined) {
+        let hal = parseInt(String(attr['Jumlah Halaman']), 10);
+        if (isNaN(hal) || hal < 1) hal = 1;
+        hargaDasar += (Math.max(0, hal - 1) * sisi * 1500);
+    }
+    // B. LOGIC METERAN
+    else if (attr && attr['Luas Dihargai (m2)'] !== undefined) {
+        let luas = parseFloat(String(attr['Luas Dihargai (m2)'])) || 1;
+        if (luas < 1) luas = 1;
+        hargaDasar = hargaDasar * luas; // Kalikan harga dengan luas meteran
+    }
+
+    let finishingPerItem = 0;
+    let finishingFlat = 0;
+
+    // C. LOGIC FINISHING (Pakai hargaDasar yang udah fix meterannya)
+    finishings.forEach(f => {
+        const isKaliQty = Boolean(f.sku_finishing?.kali_jumlah_pesan) || Boolean(f.kali_jumlah_pesan);
+        let val = f.tipe === 'persen'
+            ? (hargaDasar * (Number(f.harga_finishing_snapshot) / 100))
+            : (Number(f.harga_finishing_snapshot) || 0);
+
+        if (isKaliQty) {
+            finishingPerItem += val;
+        } else {
+            finishingFlat += val;
+        }
+    });
+
+    const qty = Number(item.jumlah) || 1;
+    const sla = Number(item.harga_pengerjaan_snapshot || 0);
+
+    // D. REKAP HARGA AKHIR
+    const hargaSatuan = hargaDasar + finishingPerItem; // Tampil di kolom "Satuan Rp"
+    const subtotal = (hargaSatuan * qty) + finishingFlat + sla; // Tampil di kolom "Total Rp"
+
+    return { hargaSatuan, subtotal, finishingFlat, sla, attr };
+};
+
+// ==========================================
+// 2. GETTER UNTUK TABEL
+// ==========================================
+const getDisplayHargaSatuan = (item) => getParsedItem(item).hargaSatuan;
+const getDisplaySubtotal = (item) => getParsedItem(item).subtotal;
+const getFlatFinishingTotal = (item) => getParsedItem(item).finishingFlat;
+
+const getCustomAttributesDisplay = (item) => {
+    const attr = getParsedItem(item).attr;
+    if (attr && typeof attr === 'object') {
         const validAttrs = {};
         let hasValidData = false;
         for (const [key, value] of Object.entries(attr)) {
@@ -62,99 +125,8 @@ const getCustomAttributes = (item) => {
     return null;
 };
 
-const getSisiFromFinishing = (item) => {
-    const finishings = item.pesanan_item_finishing || [];
-    let sisi = 1;
-    finishings.forEach(f => {
-        const namaFin = (f.nama_finishing_snapshot || '').toLowerCase();
-        if (namaFin.includes('dua sisi') || namaFin.includes('2 sisi') || namaFin.includes('bolak')) {
-            sisi = 2;
-        }
-    });
-    return sisi;
-};
-
-const isKaliJumlahPesan = (fin) => Boolean(fin.sku_finishing?.kali_jumlah_pesan);
-
 // ==========================================
-// 2. KALKULASI HARGA ITEM (TETAP SAMA)
-// ==========================================
-const getDisplayHargaSatuan = (item) => {
-    let hargaAwal = Number(item.harga_satuan_snapshot) || 0;
-    const attr = getCustomAttributes(item);
-    const finishings = item.pesanan_item_finishing || [];
-    const sisi = getSisiFromFinishing(item);
-
-    if (attr && attr['Jumlah Halaman'] !== undefined) {
-        let hal = parseInt(attr['Jumlah Halaman'], 10);
-        if (isNaN(hal) || hal < 1) hal = 1;
-        hargaAwal += (Math.max(0, hal - 1) * sisi * 1500);
-    }
-
-    finishings.forEach(f => {
-        const isKaliQty = isKaliJumlahPesan(f);
-        if (isKaliQty) {
-            let val = f.tipe === 'persen'
-                ? (hargaAwal * (Number(f.harga_finishing_snapshot) / 100))
-                : (Number(f.harga_finishing_snapshot) || 0);
-            hargaAwal += val;
-        }
-    });
-    return hargaAwal;
-};
-
-const getDisplaySubtotal = (item) => {
-    let hargaAwal = Number(item.harga_satuan_snapshot) || 0;
-    const attr = getCustomAttributes(item);
-    const finishings = item.pesanan_item_finishing || [];
-    const sisi = getSisiFromFinishing(item);
-
-    if (attr && attr['Jumlah Halaman'] !== undefined) {
-        let hal = parseInt(attr['Jumlah Halaman'], 10);
-        if (isNaN(hal) || hal < 1) hal = 1;
-        hargaAwal += (Math.max(0, hal - 1) * sisi * 1500);
-    }
-
-    let total = hargaAwal * Number(item.jumlah || 1);
-
-    finishings.forEach(f => {
-        const isKaliQty = isKaliJumlahPesan(f);
-        let val = f.tipe === 'persen'
-            ? (hargaAwal * (Number(f.harga_finishing_snapshot) / 100))
-            : (Number(f.harga_finishing_snapshot) || 0);
-        total += (isKaliQty ? val * item.jumlah : val);
-    });
-
-    const sla = Number(item.harga_pengerjaan_snapshot || 0);
-    return total + sla;
-};
-
-const getFlatFinishingTotal = (item) => {
-    let hargaAwal = Number(item.harga_satuan_snapshot) || 0;
-    const attr = getCustomAttributes(item);
-    const sisi = getSisiFromFinishing(item);
-
-    if (attr && attr['Jumlah Halaman'] !== undefined) {
-        let hal = parseInt(attr['Jumlah Halaman'], 10);
-        if (isNaN(hal) || hal < 1) hal = 1;
-        hargaAwal += (Math.max(0, hal - 1) * sisi * 1500);
-    }
-
-    let finFlat = 0;
-    const finishings = item.pesanan_item_finishing || [];
-    finishings.forEach(f => {
-        if (!isKaliJumlahPesan(f)) {
-            let val = f.tipe === 'persen'
-                ? (hargaAwal * (Number(f.harga_finishing_snapshot) / 100))
-                : (Number(f.harga_finishing_snapshot) || 0);
-            finFlat += val;
-        }
-    });
-    return finFlat;
-};
-
-// ==========================================
-// 3. SUMMARY BINDING (LANGSUNG DARI BACKEND)
+// 3. OVERRIDE GRAND TOTAL (HITUNG MANUAL DI VUE)
 // ==========================================
 const totalHargaSeluruhBarang = computed(() => {
     if (!props.pesanan || !props.pesanan.pesanan_item) return 0;
@@ -162,12 +134,18 @@ const totalHargaSeluruhBarang = computed(() => {
 });
 
 const totalOngkir = computed(() => Number(props.pesanan?.harga_ongkir || 0));
+const diskonVoucher = computed(() => Number(props.pesanan?.diskon_voucher_nominal || 0));
+const kodeUnik = computed(() => Number(props.kode_unik || props.pesanan?.kode_unik || 0));
 
-// Semua total di bawah ini mutlak ngambil dari PesanService (Backend)
-const kodeUnik = computed(() => Number(props.kode_unik || 0));
-const totalTagihan = computed(() => Number(props.grand_total || 0));
-const telahDibayar = computed(() => Number(props.total_dibayar || 0));
-const sisaTagihan = computed(() => Number(props.sisa_tagihan || 0));
+// GANTI props.grand_total KARENA BACKEND TIDAK HITUNG METERAN
+const totalTagihan = computed(() => {
+    return totalHargaSeluruhBarang.value + totalOngkir.value + kodeUnik.value - diskonVoucher.value;
+});
+
+const telahDibayar = computed(() => Number(props.total_dibayar || props.pesanan?.total_dibayar || 0));
+
+// GANTI props.sisa_tagihan AGAR SINKRON DENGAN TOTAL YANG BARU
+const sisaTagihan = computed(() => totalTagihan.value - telahDibayar.value);
 
 onMounted(() => {
     setTimeout(() => {
@@ -224,8 +202,8 @@ onMounted(() => {
                             <div class="font-semibold">{{ item.nama_produk_snapshot }}</div>
 
                             <div class="text-[9.5px] text-gray-800 mt-1.5 leading-tight space-y-0.5">
-                                <div v-if="getCustomAttributes(item)">
-                                    <span v-for="(val, key) in getCustomAttributes(item)" :key="key" class="block">
+                                <div v-if="getCustomAttributesDisplay(item)">
+                                    <span v-for="(val, key) in getCustomAttributesDisplay(item)" :key="key" class="block">
                                         • {{ key.toUpperCase() }}: {{ val }}
                                     </span>
                                 </div>
@@ -240,14 +218,15 @@ onMounted(() => {
                                 </div>
                             </div>
 
-                            <div v-if="Number(item.harga_pengerjaan_snapshot || 0) > 0" class="mt-2 text-[10px] font-bold text-gray-900">
-                                + SLA ({{ item.estimasi_pengerjaan_snapshot || item.estimasi_pengerjaan }}): Rp {{ formatRupiah(item.harga_pengerjaan_snapshot) }}
+                            <div v-if="getParsedItem(item).sla > 0" class="mt-2 text-[10px] font-bold text-gray-900">
+                                + SLA ({{ item.estimasi_pengerjaan_snapshot || item.estimasi_pengerjaan }}): Rp {{ formatRupiah(getParsedItem(item).sla) }}
                             </div>
-                            <div v-if="getFlatFinishingTotal(item) > 0" class="mt-0.5 text-[10px] font-bold text-gray-900">
-                                + Jasa Tambahan (Flat): Rp {{ formatRupiah(getFlatFinishingTotal(item)) }}
+                            <div v-if="getParsedItem(item).finishingFlat > 0" class="mt-0.5 text-[10px] font-bold text-gray-900">
+                                + Jasa Tambahan (Flat): Rp {{ formatRupiah(getParsedItem(item).finishingFlat) }}
                             </div>
                         </td>
                         <td class="p-2 font-semibold text-center border-r border-black">{{ item.jumlah }}</td>
+                        <!-- SATUAN AKAN TEPAT SESUAI HARGA DASAR + FINISHING PCS -->
                         <td class="p-2 text-right border-r border-black">{{ formatRupiah(getDisplayHargaSatuan(item)) }}</td>
                         <td class="p-2 font-semibold text-right">{{ formatRupiah(getDisplaySubtotal(item)) }}</td>
                     </tr>
@@ -276,7 +255,7 @@ onMounted(() => {
                         <span>Subtotal Produk</span>
                         <span>{{ formatRupiah(totalHargaSeluruhBarang) }}</span>
                     </div>
-                    <div class="flex justify-between py-1 text-gray-700 border-b border-gray-300">
+                    <div v-if="totalOngkir > 0" class="flex justify-between py-1 text-gray-700 border-b border-gray-300">
                         <span>Ongkos Kirim</span>
                         <span>{{ formatRupiah(totalOngkir) }}</span>
                     </div>
@@ -284,8 +263,13 @@ onMounted(() => {
                         <span>Kode Unik</span>
                         <span>{{ formatRupiah(kodeUnik) }}</span>
                     </div>
+                    <div v-if="diskonVoucher > 0" class="flex justify-between py-1 font-bold text-green-600 border-b border-gray-300">
+                        <span>Diskon Voucher</span>
+                        <span>- {{ formatRupiah(diskonVoucher) }}</span>
+                    </div>
                     <div class="flex justify-between py-1.5 border-b-2 border-black font-black text-[13px]">
                         <span>GRAND TOTAL</span>
+                        <!-- GRAND TOTAL YANG BARU & AKURAT -->
                         <span>{{ formatRupiah(totalTagihan) }}</span>
                     </div>
                     <div class="flex justify-between py-1 font-bold text-green-700">
@@ -294,6 +278,7 @@ onMounted(() => {
                     </div>
                     <div class="flex justify-between py-1 font-bold" :class="sisaTagihan > 0 ? 'text-red-600' : ''">
                         <span>Sisa Tagihan</span>
+                        <!-- SISA TAGIHAN YANG BARU & AKURAT -->
                         <span>{{ formatRupiah(sisaTagihan) }}</span>
                     </div>
 

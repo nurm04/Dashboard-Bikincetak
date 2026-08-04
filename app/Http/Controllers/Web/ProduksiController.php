@@ -193,8 +193,17 @@ class ProduksiController extends Controller
                     }
                 }
 
-                $pengaliLembar = ceil($jumlahHalaman / $sisi);
-                if ($pengaliLembar < 1) $pengaliLembar = 1;
+                $pengaliBahanUtama = 1;
+
+                if (is_array($atribut) && isset($atribut['Jumlah Halaman'])) {
+                    $hal = max(1, (int) $atribut['Jumlah Halaman']);
+                    $pengaliBahanUtama = ceil($hal / $sisi);
+                }
+                elseif (is_array($atribut) && isset($atribut['Panjang']) && isset($atribut['Lebar'])) {
+                    $panjang = (float) str_replace(',', '.', $atribut['Panjang']);
+                    $lebar = (float) str_replace(',', '.', $atribut['Lebar']);
+                    $pengaliBahanUtama = $panjang * $lebar;
+                }
 
                 $semuaKomposisi = Komposisi::where('id_sku', $item->id_sku)->get();
 
@@ -207,7 +216,7 @@ class ProduksiController extends Controller
                         $qtyPengerjaan = (float) $schedule->qty_dikerjakan;
 
                         if ($isBahanBakuUtama) {
-                            $qty_dipakai = $komp->jumlah_pakai * $pengaliLembar * $qtyPengerjaan;
+                            $qty_dipakai = $komp->jumlah_pakai * $pengaliBahanUtama * $qtyPengerjaan;
                         } else {
                             $isKaliQty = $mapKaliJumlahPesan[$komp->id_pilihan_finishing] ?? true;
 

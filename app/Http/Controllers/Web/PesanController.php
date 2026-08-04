@@ -263,9 +263,15 @@ class PesanController extends Controller
 
                 $hppSatuan = 0;
                 if (!$isCustom) {
-                    $multiplierHalaman = 1;
+                    $multiplierBahanUtama = 1;
+
                     if (isset($atributCustomArray['Jumlah Halaman'])) {
-                        $multiplierHalaman = max(1, (int) $atributCustomArray['Jumlah Halaman']);
+                        $multiplierBahanUtama = max(1, (int) $atributCustomArray['Jumlah Halaman']);
+                    }
+                    elseif (isset($atributCustomArray['Panjang']) && isset($atributCustomArray['Lebar'])) {
+                        $panjang = (float) str_replace(',', '.', $atributCustomArray['Panjang']);
+                        $lebar = (float) str_replace(',', '.', $atributCustomArray['Lebar']);
+                        $multiplierBahanUtama = $panjang * $lebar;
                     }
 
                     $komposisiDasar = Komposisi::where('id_sku', $item['id_sku'])
@@ -273,7 +279,7 @@ class PesanController extends Controller
                         ->get();
 
                     foreach ($komposisiDasar as $kd) {
-                        $hppSatuan += ($kd->hpp * $multiplierHalaman);
+                        $hppSatuan += ($kd->hpp * $multiplierBahanUtama);
                     }
                 }
 

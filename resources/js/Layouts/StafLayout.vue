@@ -193,7 +193,10 @@ const doGlobalSearch = () => {
         <div class="flex flex-col flex-1 min-w-0 min-h-screen transition-all duration-300" :class="!isVendor ? (isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64') : ''">
 
             <!-- NAVBAR UTAMA -->
-            <nav class="relative top-0 z-30 flex items-center h-16 px-4 transition-colors border-b shadow-sm lg:px-8 bg-base-100/90 backdrop-blur-md border-base-300">
+            <nav
+                class="fixed top-0 right-0 z-30 flex items-center h-16 px-4 transition-all duration-300 border-b shadow-sm lg:px-8 bg-base-100/90 backdrop-blur-md border-base-300"
+                :class="!isVendor ? (isSidebarCollapsed ? 'left-0 lg:left-20' : 'left-0 lg:left-64') : 'left-0'"
+            >
                 <div class="flex items-center gap-3">
                     <!-- Hamburger Desktop -->
                     <button v-if="!isVendor" @click="toggleSidebar" class="hidden lg:flex btn btn-ghost btn-sm btn-circle hover:bg-base-200 ring-1 ring-base-300/50">
@@ -284,6 +287,8 @@ const doGlobalSearch = () => {
                     </button>
                 </form>
             </div>
+
+            <div class="w-full h-16 shrink-0"></div>
 
             <CustomAlert />
 

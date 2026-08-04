@@ -86,7 +86,7 @@ class AuthController extends Controller
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Kredensial tidak valid'
+                'message' => 'Email / Password Salah'
             ], 401);
         }
 

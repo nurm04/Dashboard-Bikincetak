@@ -543,195 +543,217 @@ class KomposisiSeeder extends Seeder
             // // 4B. Pilihan Laminasi Glossy (HPP: 0.9984 * 8000 = 7987)
             // ['id_sku' => 'PRD-4001-SKU-004', 'id_bahan_baku' => 'BAHAN-0036', 'id_pilihan_finishing' => 'FIN-001-002', 'jumlah_pakai' => 0.9984, 'hpp' => 7987, 'created_at' => $now, 'updated_at' => $now],
 
-            // ==============================================================================
-            // KOMPOSISI: PRD-4002 (KALENDER DINDING)
-            // ==============================================================================
+            // // ==============================================================================
+            // // KOMPOSISI: PRD-4002 (KALENDER DINDING)
+            // // ==============================================================================
 
-            // --- SKU-001 (Art Carton 210 Gsm - BAHAN-0006 @ Rp 700) ---
-            // Mapping Jumlah Lembar Kertas
-            ['id_sku' => 'PRD-4002-SKU-001', 'id_bahan_baku' => 'BAHAN-0006', 'id_pilihan_finishing' => 'FIN-010-001', 'jumlah_pakai' => 1, 'hpp' => 700, 'created_at' => $now, 'updated_at' => $now], // 1 Lembar
-            ['id_sku' => 'PRD-4002-SKU-001', 'id_bahan_baku' => 'BAHAN-0006', 'id_pilihan_finishing' => 'FIN-010-002', 'jumlah_pakai' => 2, 'hpp' => 1400, 'created_at' => $now, 'updated_at' => $now], // 2 Lembar
-            ['id_sku' => 'PRD-4002-SKU-001', 'id_bahan_baku' => 'BAHAN-0006', 'id_pilihan_finishing' => 'FIN-010-003', 'jumlah_pakai' => 3, 'hpp' => 2100, 'created_at' => $now, 'updated_at' => $now], // 3 Lembar
-            ['id_sku' => 'PRD-4002-SKU-001', 'id_bahan_baku' => 'BAHAN-0006', 'id_pilihan_finishing' => 'FIN-010-004', 'jumlah_pakai' => 4, 'hpp' => 2800, 'created_at' => $now, 'updated_at' => $now], // 4 Lembar
-            ['id_sku' => 'PRD-4002-SKU-001', 'id_bahan_baku' => 'BAHAN-0006', 'id_pilihan_finishing' => 'FIN-010-005', 'jumlah_pakai' => 5, 'hpp' => 3500, 'created_at' => $now, 'updated_at' => $now], // 5 Lembar (4+1 Cover)
-            ['id_sku' => 'PRD-4002-SKU-001', 'id_bahan_baku' => 'BAHAN-0006', 'id_pilihan_finishing' => 'FIN-010-006', 'jumlah_pakai' => 6, 'hpp' => 4200, 'created_at' => $now, 'updated_at' => $now], // 6 Lembar
-            ['id_sku' => 'PRD-4002-SKU-001', 'id_bahan_baku' => 'BAHAN-0006', 'id_pilihan_finishing' => 'FIN-010-007', 'jumlah_pakai' => 7, 'hpp' => 4900, 'created_at' => $now, 'updated_at' => $now], // 7 Lembar (6+1 Cover)
-            ['id_sku' => 'PRD-4002-SKU-001', 'id_bahan_baku' => 'BAHAN-0006', 'id_pilihan_finishing' => 'FIN-010-008', 'jumlah_pakai' => 12, 'hpp' => 8400, 'created_at' => $now, 'updated_at' => $now], // 12 Lembar
-            ['id_sku' => 'PRD-4002-SKU-001', 'id_bahan_baku' => 'BAHAN-0006', 'id_pilihan_finishing' => 'FIN-010-009', 'jumlah_pakai' => 13, 'hpp' => 9100, 'created_at' => $now, 'updated_at' => $now], // 13 Lembar (12+1 Cover)
-            // Mapping Gantungan
-            ['id_sku' => 'PRD-4002-SKU-001', 'id_bahan_baku' => 'BAHAN-0059', 'id_pilihan_finishing' => 'FIN-011-001', 'jumlah_pakai' => 1, 'hpp' => 1000, 'created_at' => $now, 'updated_at' => $now], // Klepseng
-            ['id_sku' => 'PRD-4002-SKU-001', 'id_bahan_baku' => 'BAHAN-0060', 'id_pilihan_finishing' => 'FIN-011-002', 'jumlah_pakai' => 1, 'hpp' => 2500, 'created_at' => $now, 'updated_at' => $now], // Spiral
-
-
-            // --- SKU-004 (Art Carton 260 Gsm - BAHAN-0007 @ Rp 850) ---
-            // Mapping Jumlah Lembar Kertas
-            ['id_sku' => 'PRD-4002-SKU-004', 'id_bahan_baku' => 'BAHAN-0007', 'id_pilihan_finishing' => 'FIN-010-001', 'jumlah_pakai' => 1, 'hpp' => 850, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-004', 'id_bahan_baku' => 'BAHAN-0007', 'id_pilihan_finishing' => 'FIN-010-002', 'jumlah_pakai' => 2, 'hpp' => 1700, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-004', 'id_bahan_baku' => 'BAHAN-0007', 'id_pilihan_finishing' => 'FIN-010-003', 'jumlah_pakai' => 3, 'hpp' => 2550, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-004', 'id_bahan_baku' => 'BAHAN-0007', 'id_pilihan_finishing' => 'FIN-010-004', 'jumlah_pakai' => 4, 'hpp' => 3400, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-004', 'id_bahan_baku' => 'BAHAN-0007', 'id_pilihan_finishing' => 'FIN-010-005', 'jumlah_pakai' => 5, 'hpp' => 4250, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-004', 'id_bahan_baku' => 'BAHAN-0007', 'id_pilihan_finishing' => 'FIN-010-006', 'jumlah_pakai' => 6, 'hpp' => 5100, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-004', 'id_bahan_baku' => 'BAHAN-0007', 'id_pilihan_finishing' => 'FIN-010-007', 'jumlah_pakai' => 7, 'hpp' => 5950, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-004', 'id_bahan_baku' => 'BAHAN-0007', 'id_pilihan_finishing' => 'FIN-010-008', 'jumlah_pakai' => 12, 'hpp' => 10200, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-004', 'id_bahan_baku' => 'BAHAN-0007', 'id_pilihan_finishing' => 'FIN-010-009', 'jumlah_pakai' => 13, 'hpp' => 11050, 'created_at' => $now, 'updated_at' => $now],
-            // Mapping Gantungan
-            ['id_sku' => 'PRD-4002-SKU-004', 'id_bahan_baku' => 'BAHAN-0059', 'id_pilihan_finishing' => 'FIN-011-001', 'jumlah_pakai' => 1, 'hpp' => 1000, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-004', 'id_bahan_baku' => 'BAHAN-0060', 'id_pilihan_finishing' => 'FIN-011-002', 'jumlah_pakai' => 1, 'hpp' => 2500, 'created_at' => $now, 'updated_at' => $now],
+            // // --- SKU-001 (Art Carton 210 Gsm - BAHAN-0006 @ Rp 700) ---
+            // // Mapping Jumlah Lembar Kertas
+            // ['id_sku' => 'PRD-4002-SKU-001', 'id_bahan_baku' => 'BAHAN-0006', 'id_pilihan_finishing' => 'FIN-010-001', 'jumlah_pakai' => 1, 'hpp' => 700, 'created_at' => $now, 'updated_at' => $now], // 1 Lembar
+            // ['id_sku' => 'PRD-4002-SKU-001', 'id_bahan_baku' => 'BAHAN-0006', 'id_pilihan_finishing' => 'FIN-010-002', 'jumlah_pakai' => 2, 'hpp' => 1400, 'created_at' => $now, 'updated_at' => $now], // 2 Lembar
+            // ['id_sku' => 'PRD-4002-SKU-001', 'id_bahan_baku' => 'BAHAN-0006', 'id_pilihan_finishing' => 'FIN-010-003', 'jumlah_pakai' => 3, 'hpp' => 2100, 'created_at' => $now, 'updated_at' => $now], // 3 Lembar
+            // ['id_sku' => 'PRD-4002-SKU-001', 'id_bahan_baku' => 'BAHAN-0006', 'id_pilihan_finishing' => 'FIN-010-004', 'jumlah_pakai' => 4, 'hpp' => 2800, 'created_at' => $now, 'updated_at' => $now], // 4 Lembar
+            // ['id_sku' => 'PRD-4002-SKU-001', 'id_bahan_baku' => 'BAHAN-0006', 'id_pilihan_finishing' => 'FIN-010-005', 'jumlah_pakai' => 5, 'hpp' => 3500, 'created_at' => $now, 'updated_at' => $now], // 5 Lembar (4+1 Cover)
+            // ['id_sku' => 'PRD-4002-SKU-001', 'id_bahan_baku' => 'BAHAN-0006', 'id_pilihan_finishing' => 'FIN-010-006', 'jumlah_pakai' => 6, 'hpp' => 4200, 'created_at' => $now, 'updated_at' => $now], // 6 Lembar
+            // ['id_sku' => 'PRD-4002-SKU-001', 'id_bahan_baku' => 'BAHAN-0006', 'id_pilihan_finishing' => 'FIN-010-007', 'jumlah_pakai' => 7, 'hpp' => 4900, 'created_at' => $now, 'updated_at' => $now], // 7 Lembar (6+1 Cover)
+            // ['id_sku' => 'PRD-4002-SKU-001', 'id_bahan_baku' => 'BAHAN-0006', 'id_pilihan_finishing' => 'FIN-010-008', 'jumlah_pakai' => 12, 'hpp' => 8400, 'created_at' => $now, 'updated_at' => $now], // 12 Lembar
+            // ['id_sku' => 'PRD-4002-SKU-001', 'id_bahan_baku' => 'BAHAN-0006', 'id_pilihan_finishing' => 'FIN-010-009', 'jumlah_pakai' => 13, 'hpp' => 9100, 'created_at' => $now, 'updated_at' => $now], // 13 Lembar (12+1 Cover)
+            // // Mapping Gantungan
+            // ['id_sku' => 'PRD-4002-SKU-001', 'id_bahan_baku' => 'BAHAN-0059', 'id_pilihan_finishing' => 'FIN-011-001', 'jumlah_pakai' => 1, 'hpp' => 1000, 'created_at' => $now, 'updated_at' => $now], // Klepseng
+            // ['id_sku' => 'PRD-4002-SKU-001', 'id_bahan_baku' => 'BAHAN-0060', 'id_pilihan_finishing' => 'FIN-011-002', 'jumlah_pakai' => 1, 'hpp' => 2500, 'created_at' => $now, 'updated_at' => $now], // Spiral
 
 
-            // --- SKU-007 (Art Paper 120 Gsm - BAHAN-0004 @ Rp 450) ---
-            // Mapping Jumlah Lembar Kertas
-            ['id_sku' => 'PRD-4002-SKU-007', 'id_bahan_baku' => 'BAHAN-0004', 'id_pilihan_finishing' => 'FIN-010-001', 'jumlah_pakai' => 1, 'hpp' => 450, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-007', 'id_bahan_baku' => 'BAHAN-0004', 'id_pilihan_finishing' => 'FIN-010-002', 'jumlah_pakai' => 2, 'hpp' => 900, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-007', 'id_bahan_baku' => 'BAHAN-0004', 'id_pilihan_finishing' => 'FIN-010-003', 'jumlah_pakai' => 3, 'hpp' => 1350, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-007', 'id_bahan_baku' => 'BAHAN-0004', 'id_pilihan_finishing' => 'FIN-010-004', 'jumlah_pakai' => 4, 'hpp' => 1800, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-007', 'id_bahan_baku' => 'BAHAN-0004', 'id_pilihan_finishing' => 'FIN-010-005', 'jumlah_pakai' => 5, 'hpp' => 2250, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-007', 'id_bahan_baku' => 'BAHAN-0004', 'id_pilihan_finishing' => 'FIN-010-006', 'jumlah_pakai' => 6, 'hpp' => 2700, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-007', 'id_bahan_baku' => 'BAHAN-0004', 'id_pilihan_finishing' => 'FIN-010-007', 'jumlah_pakai' => 7, 'hpp' => 3150, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-007', 'id_bahan_baku' => 'BAHAN-0004', 'id_pilihan_finishing' => 'FIN-010-008', 'jumlah_pakai' => 12, 'hpp' => 5400, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-007', 'id_bahan_baku' => 'BAHAN-0004', 'id_pilihan_finishing' => 'FIN-010-009', 'jumlah_pakai' => 13, 'hpp' => 5850, 'created_at' => $now, 'updated_at' => $now],
-            // Mapping Gantungan
-            ['id_sku' => 'PRD-4002-SKU-007', 'id_bahan_baku' => 'BAHAN-0059', 'id_pilihan_finishing' => 'FIN-011-001', 'jumlah_pakai' => 1, 'hpp' => 1000, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-007', 'id_bahan_baku' => 'BAHAN-0060', 'id_pilihan_finishing' => 'FIN-011-002', 'jumlah_pakai' => 1, 'hpp' => 2500, 'created_at' => $now, 'updated_at' => $now],
+            // // --- SKU-004 (Art Carton 260 Gsm - BAHAN-0007 @ Rp 850) ---
+            // // Mapping Jumlah Lembar Kertas
+            // ['id_sku' => 'PRD-4002-SKU-004', 'id_bahan_baku' => 'BAHAN-0007', 'id_pilihan_finishing' => 'FIN-010-001', 'jumlah_pakai' => 1, 'hpp' => 850, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-004', 'id_bahan_baku' => 'BAHAN-0007', 'id_pilihan_finishing' => 'FIN-010-002', 'jumlah_pakai' => 2, 'hpp' => 1700, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-004', 'id_bahan_baku' => 'BAHAN-0007', 'id_pilihan_finishing' => 'FIN-010-003', 'jumlah_pakai' => 3, 'hpp' => 2550, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-004', 'id_bahan_baku' => 'BAHAN-0007', 'id_pilihan_finishing' => 'FIN-010-004', 'jumlah_pakai' => 4, 'hpp' => 3400, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-004', 'id_bahan_baku' => 'BAHAN-0007', 'id_pilihan_finishing' => 'FIN-010-005', 'jumlah_pakai' => 5, 'hpp' => 4250, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-004', 'id_bahan_baku' => 'BAHAN-0007', 'id_pilihan_finishing' => 'FIN-010-006', 'jumlah_pakai' => 6, 'hpp' => 5100, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-004', 'id_bahan_baku' => 'BAHAN-0007', 'id_pilihan_finishing' => 'FIN-010-007', 'jumlah_pakai' => 7, 'hpp' => 5950, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-004', 'id_bahan_baku' => 'BAHAN-0007', 'id_pilihan_finishing' => 'FIN-010-008', 'jumlah_pakai' => 12, 'hpp' => 10200, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-004', 'id_bahan_baku' => 'BAHAN-0007', 'id_pilihan_finishing' => 'FIN-010-009', 'jumlah_pakai' => 13, 'hpp' => 11050, 'created_at' => $now, 'updated_at' => $now],
+            // // Mapping Gantungan
+            // ['id_sku' => 'PRD-4002-SKU-004', 'id_bahan_baku' => 'BAHAN-0059', 'id_pilihan_finishing' => 'FIN-011-001', 'jumlah_pakai' => 1, 'hpp' => 1000, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-004', 'id_bahan_baku' => 'BAHAN-0060', 'id_pilihan_finishing' => 'FIN-011-002', 'jumlah_pakai' => 1, 'hpp' => 2500, 'created_at' => $now, 'updated_at' => $now],
 
 
-            // --- SKU-010 (Art Paper 150 Gsm - BAHAN-0005 @ Rp 550) ---
-            // Mapping Jumlah Lembar Kertas
-            ['id_sku' => 'PRD-4002-SKU-010', 'id_bahan_baku' => 'BAHAN-0005', 'id_pilihan_finishing' => 'FIN-010-001', 'jumlah_pakai' => 1, 'hpp' => 550, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-010', 'id_bahan_baku' => 'BAHAN-0005', 'id_pilihan_finishing' => 'FIN-010-002', 'jumlah_pakai' => 2, 'hpp' => 1100, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-010', 'id_bahan_baku' => 'BAHAN-0005', 'id_pilihan_finishing' => 'FIN-010-003', 'jumlah_pakai' => 3, 'hpp' => 1650, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-010', 'id_bahan_baku' => 'BAHAN-0005', 'id_pilihan_finishing' => 'FIN-010-004', 'jumlah_pakai' => 4, 'hpp' => 2200, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-010', 'id_bahan_baku' => 'BAHAN-0005', 'id_pilihan_finishing' => 'FIN-010-005', 'jumlah_pakai' => 5, 'hpp' => 2750, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-010', 'id_bahan_baku' => 'BAHAN-0005', 'id_pilihan_finishing' => 'FIN-010-006', 'jumlah_pakai' => 6, 'hpp' => 3300, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-010', 'id_bahan_baku' => 'BAHAN-0005', 'id_pilihan_finishing' => 'FIN-010-007', 'jumlah_pakai' => 7, 'hpp' => 3850, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-010', 'id_bahan_baku' => 'BAHAN-0005', 'id_pilihan_finishing' => 'FIN-010-008', 'jumlah_pakai' => 12, 'hpp' => 6600, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-010', 'id_bahan_baku' => 'BAHAN-0005', 'id_pilihan_finishing' => 'FIN-010-009', 'jumlah_pakai' => 13, 'hpp' => 7150, 'created_at' => $now, 'updated_at' => $now],
-            // Mapping Gantungan
-            ['id_sku' => 'PRD-4002-SKU-010', 'id_bahan_baku' => 'BAHAN-0059', 'id_pilihan_finishing' => 'FIN-011-001', 'jumlah_pakai' => 1, 'hpp' => 1000, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-010', 'id_bahan_baku' => 'BAHAN-0060', 'id_pilihan_finishing' => 'FIN-011-002', 'jumlah_pakai' => 1, 'hpp' => 2500, 'created_at' => $now, 'updated_at' => $now],
-
-            // ==============================================================================
-            // KOMPOSISI: PRD-4002 (KALENDER DINDING 38x53)
-            // ==============================================================================
-
-            // --- SKU-002 (Art Carton 210 Gsm 38x53 - BAHAN-0062 @ Rp 10.000 / m2) ---
-            ['id_sku' => 'PRD-4002-SKU-002', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-001', 'jumlah_pakai' => 0.2014, 'hpp' => 2014, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-002', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-002', 'jumlah_pakai' => 0.4028, 'hpp' => 4028, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-002', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-003', 'jumlah_pakai' => 0.6042, 'hpp' => 6042, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-002', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-004', 'jumlah_pakai' => 0.8056, 'hpp' => 8056, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-002', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-005', 'jumlah_pakai' => 1.0070, 'hpp' => 10070, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-002', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-006', 'jumlah_pakai' => 1.2084, 'hpp' => 12084, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-002', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-007', 'jumlah_pakai' => 1.4098, 'hpp' => 14098, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-002', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-008', 'jumlah_pakai' => 2.4168, 'hpp' => 24168, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-002', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-009', 'jumlah_pakai' => 2.6182, 'hpp' => 26182, 'created_at' => $now, 'updated_at' => $now],
-            // Gantungan 38cm
-            ['id_sku' => 'PRD-4002-SKU-002', 'id_bahan_baku' => 'BAHAN-0065', 'id_pilihan_finishing' => 'FIN-011-001', 'jumlah_pakai' => 1, 'hpp' => 1200, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-002', 'id_bahan_baku' => 'BAHAN-0066', 'id_pilihan_finishing' => 'FIN-011-002', 'jumlah_pakai' => 1, 'hpp' => 3000, 'created_at' => $now, 'updated_at' => $now],
-
-            // --- SKU-005 (Art Carton 260 Gsm 38x53 - BAHAN-0063 @ Rp 11.000 / m2) ---
-            ['id_sku' => 'PRD-4002-SKU-005', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-001', 'jumlah_pakai' => 0.2014, 'hpp' => 2215, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-005', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-002', 'jumlah_pakai' => 0.4028, 'hpp' => 4431, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-005', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-003', 'jumlah_pakai' => 0.6042, 'hpp' => 6646, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-005', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-004', 'jumlah_pakai' => 0.8056, 'hpp' => 8862, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-005', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-005', 'jumlah_pakai' => 1.0070, 'hpp' => 11077, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-005', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-006', 'jumlah_pakai' => 1.2084, 'hpp' => 13292, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-005', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-007', 'jumlah_pakai' => 1.4098, 'hpp' => 15508, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-005', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-008', 'jumlah_pakai' => 2.4168, 'hpp' => 26585, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-005', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-009', 'jumlah_pakai' => 2.6182, 'hpp' => 28800, 'created_at' => $now, 'updated_at' => $now],
-            // Gantungan 38cm
-            ['id_sku' => 'PRD-4002-SKU-005', 'id_bahan_baku' => 'BAHAN-0065', 'id_pilihan_finishing' => 'FIN-011-001', 'jumlah_pakai' => 1, 'hpp' => 1200, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-005', 'id_bahan_baku' => 'BAHAN-0066', 'id_pilihan_finishing' => 'FIN-011-002', 'jumlah_pakai' => 1, 'hpp' => 3000, 'created_at' => $now, 'updated_at' => $now],
-
-            // --- SKU-008 (Art Paper 120 Gsm 38x53 - BAHAN-0061 @ Rp 7.000 / m2) ---
-            ['id_sku' => 'PRD-4002-SKU-008', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-001', 'jumlah_pakai' => 0.2014, 'hpp' => 1410, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-008', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-002', 'jumlah_pakai' => 0.4028, 'hpp' => 2820, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-008', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-003', 'jumlah_pakai' => 0.6042, 'hpp' => 4229, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-008', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-004', 'jumlah_pakai' => 0.8056, 'hpp' => 5639, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-008', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-005', 'jumlah_pakai' => 1.0070, 'hpp' => 7049, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-008', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-006', 'jumlah_pakai' => 1.2084, 'hpp' => 8459, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-008', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-007', 'jumlah_pakai' => 1.4098, 'hpp' => 9869, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-008', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-008', 'jumlah_pakai' => 2.4168, 'hpp' => 16918, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-008', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-009', 'jumlah_pakai' => 2.6182, 'hpp' => 18327, 'created_at' => $now, 'updated_at' => $now],
-            // Gantungan 38cm
-            ['id_sku' => 'PRD-4002-SKU-008', 'id_bahan_baku' => 'BAHAN-0065', 'id_pilihan_finishing' => 'FIN-011-001', 'jumlah_pakai' => 1, 'hpp' => 1200, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-008', 'id_bahan_baku' => 'BAHAN-0066', 'id_pilihan_finishing' => 'FIN-011-002', 'jumlah_pakai' => 1, 'hpp' => 3000, 'created_at' => $now, 'updated_at' => $now],
-
-            // --- SKU-011 (Art Paper 150 Gsm 38x53 - BAHAN-0031 (Master Lama) @ Rp 8.000 / m2) ---
-            ['id_sku' => 'PRD-4002-SKU-011', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-001', 'jumlah_pakai' => 0.2014, 'hpp' => 1611, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-011', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-002', 'jumlah_pakai' => 0.4028, 'hpp' => 3222, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-011', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-003', 'jumlah_pakai' => 0.6042, 'hpp' => 4834, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-011', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-004', 'jumlah_pakai' => 0.8056, 'hpp' => 6445, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-011', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-005', 'jumlah_pakai' => 1.0070, 'hpp' => 8056, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-011', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-006', 'jumlah_pakai' => 1.2084, 'hpp' => 9667, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-011', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-007', 'jumlah_pakai' => 1.4098, 'hpp' => 11278, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-011', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-008', 'jumlah_pakai' => 2.4168, 'hpp' => 19334, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-011', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-009', 'jumlah_pakai' => 2.6182, 'hpp' => 20946, 'created_at' => $now, 'updated_at' => $now],
-            // Gantungan 38cm
-            ['id_sku' => 'PRD-4002-SKU-011', 'id_bahan_baku' => 'BAHAN-0065', 'id_pilihan_finishing' => 'FIN-011-001', 'jumlah_pakai' => 1, 'hpp' => 1200, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-011', 'id_bahan_baku' => 'BAHAN-0066', 'id_pilihan_finishing' => 'FIN-011-002', 'jumlah_pakai' => 1, 'hpp' => 3000, 'created_at' => $now, 'updated_at' => $now],
-
-            // ==============================================================================
-            // KOMPOSISI: PRD-4002 (KALENDER DINDING 46x64)
-            // ==============================================================================
-
-            // --- SKU-003 (Art Carton 210 Gsm 46x64 - BAHAN-0062 @ Rp 10.000 / m2) ---
-            ['id_sku' => 'PRD-4002-SKU-003', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-001', 'jumlah_pakai' => 0.2944, 'hpp' => 2944, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-003', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-002', 'jumlah_pakai' => 0.5888, 'hpp' => 5888, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-003', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-003', 'jumlah_pakai' => 0.8832, 'hpp' => 8832, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-003', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-004', 'jumlah_pakai' => 1.1776, 'hpp' => 11776, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-003', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-005', 'jumlah_pakai' => 1.4720, 'hpp' => 14720, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-003', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-006', 'jumlah_pakai' => 1.7664, 'hpp' => 17664, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-003', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-007', 'jumlah_pakai' => 2.0608, 'hpp' => 20608, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-003', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-008', 'jumlah_pakai' => 3.5328, 'hpp' => 35328, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-003', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-009', 'jumlah_pakai' => 3.8272, 'hpp' => 38272, 'created_at' => $now, 'updated_at' => $now],
-            // Gantungan 46cm
-            ['id_sku' => 'PRD-4002-SKU-003', 'id_bahan_baku' => 'BAHAN-0067', 'id_pilihan_finishing' => 'FIN-011-001', 'jumlah_pakai' => 1, 'hpp' => 1500, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-003', 'id_bahan_baku' => 'BAHAN-0068', 'id_pilihan_finishing' => 'FIN-011-002', 'jumlah_pakai' => 1, 'hpp' => 3500, 'created_at' => $now, 'updated_at' => $now],
+            // // --- SKU-007 (Art Paper 120 Gsm - BAHAN-0004 @ Rp 450) ---
+            // // Mapping Jumlah Lembar Kertas
+            // ['id_sku' => 'PRD-4002-SKU-007', 'id_bahan_baku' => 'BAHAN-0004', 'id_pilihan_finishing' => 'FIN-010-001', 'jumlah_pakai' => 1, 'hpp' => 450, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-007', 'id_bahan_baku' => 'BAHAN-0004', 'id_pilihan_finishing' => 'FIN-010-002', 'jumlah_pakai' => 2, 'hpp' => 900, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-007', 'id_bahan_baku' => 'BAHAN-0004', 'id_pilihan_finishing' => 'FIN-010-003', 'jumlah_pakai' => 3, 'hpp' => 1350, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-007', 'id_bahan_baku' => 'BAHAN-0004', 'id_pilihan_finishing' => 'FIN-010-004', 'jumlah_pakai' => 4, 'hpp' => 1800, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-007', 'id_bahan_baku' => 'BAHAN-0004', 'id_pilihan_finishing' => 'FIN-010-005', 'jumlah_pakai' => 5, 'hpp' => 2250, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-007', 'id_bahan_baku' => 'BAHAN-0004', 'id_pilihan_finishing' => 'FIN-010-006', 'jumlah_pakai' => 6, 'hpp' => 2700, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-007', 'id_bahan_baku' => 'BAHAN-0004', 'id_pilihan_finishing' => 'FIN-010-007', 'jumlah_pakai' => 7, 'hpp' => 3150, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-007', 'id_bahan_baku' => 'BAHAN-0004', 'id_pilihan_finishing' => 'FIN-010-008', 'jumlah_pakai' => 12, 'hpp' => 5400, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-007', 'id_bahan_baku' => 'BAHAN-0004', 'id_pilihan_finishing' => 'FIN-010-009', 'jumlah_pakai' => 13, 'hpp' => 5850, 'created_at' => $now, 'updated_at' => $now],
+            // // Mapping Gantungan
+            // ['id_sku' => 'PRD-4002-SKU-007', 'id_bahan_baku' => 'BAHAN-0059', 'id_pilihan_finishing' => 'FIN-011-001', 'jumlah_pakai' => 1, 'hpp' => 1000, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-007', 'id_bahan_baku' => 'BAHAN-0060', 'id_pilihan_finishing' => 'FIN-011-002', 'jumlah_pakai' => 1, 'hpp' => 2500, 'created_at' => $now, 'updated_at' => $now],
 
 
-            // --- SKU-006 (Art Carton 260 Gsm 46x64 - BAHAN-0063 @ Rp 11.000 / m2) ---
-            ['id_sku' => 'PRD-4002-SKU-006', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-001', 'jumlah_pakai' => 0.2944, 'hpp' => 3238, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-006', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-002', 'jumlah_pakai' => 0.5888, 'hpp' => 6477, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-006', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-003', 'jumlah_pakai' => 0.8832, 'hpp' => 9715, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-006', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-004', 'jumlah_pakai' => 1.1776, 'hpp' => 12954, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-006', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-005', 'jumlah_pakai' => 1.4720, 'hpp' => 16192, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-006', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-006', 'jumlah_pakai' => 1.7664, 'hpp' => 19430, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-006', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-007', 'jumlah_pakai' => 2.0608, 'hpp' => 22669, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-006', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-008', 'jumlah_pakai' => 3.5328, 'hpp' => 38861, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-006', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-009', 'jumlah_pakai' => 3.8272, 'hpp' => 42099, 'created_at' => $now, 'updated_at' => $now],
-            // Gantungan 46cm
-            ['id_sku' => 'PRD-4002-SKU-006', 'id_bahan_baku' => 'BAHAN-0067', 'id_pilihan_finishing' => 'FIN-011-001', 'jumlah_pakai' => 1, 'hpp' => 1500, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-006', 'id_bahan_baku' => 'BAHAN-0068', 'id_pilihan_finishing' => 'FIN-011-002', 'jumlah_pakai' => 1, 'hpp' => 3500, 'created_at' => $now, 'updated_at' => $now],
+            // // --- SKU-010 (Art Paper 150 Gsm - BAHAN-0005 @ Rp 550) ---
+            // // Mapping Jumlah Lembar Kertas
+            // ['id_sku' => 'PRD-4002-SKU-010', 'id_bahan_baku' => 'BAHAN-0005', 'id_pilihan_finishing' => 'FIN-010-001', 'jumlah_pakai' => 1, 'hpp' => 550, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-010', 'id_bahan_baku' => 'BAHAN-0005', 'id_pilihan_finishing' => 'FIN-010-002', 'jumlah_pakai' => 2, 'hpp' => 1100, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-010', 'id_bahan_baku' => 'BAHAN-0005', 'id_pilihan_finishing' => 'FIN-010-003', 'jumlah_pakai' => 3, 'hpp' => 1650, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-010', 'id_bahan_baku' => 'BAHAN-0005', 'id_pilihan_finishing' => 'FIN-010-004', 'jumlah_pakai' => 4, 'hpp' => 2200, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-010', 'id_bahan_baku' => 'BAHAN-0005', 'id_pilihan_finishing' => 'FIN-010-005', 'jumlah_pakai' => 5, 'hpp' => 2750, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-010', 'id_bahan_baku' => 'BAHAN-0005', 'id_pilihan_finishing' => 'FIN-010-006', 'jumlah_pakai' => 6, 'hpp' => 3300, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-010', 'id_bahan_baku' => 'BAHAN-0005', 'id_pilihan_finishing' => 'FIN-010-007', 'jumlah_pakai' => 7, 'hpp' => 3850, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-010', 'id_bahan_baku' => 'BAHAN-0005', 'id_pilihan_finishing' => 'FIN-010-008', 'jumlah_pakai' => 12, 'hpp' => 6600, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-010', 'id_bahan_baku' => 'BAHAN-0005', 'id_pilihan_finishing' => 'FIN-010-009', 'jumlah_pakai' => 13, 'hpp' => 7150, 'created_at' => $now, 'updated_at' => $now],
+            // // Mapping Gantungan
+            // ['id_sku' => 'PRD-4002-SKU-010', 'id_bahan_baku' => 'BAHAN-0059', 'id_pilihan_finishing' => 'FIN-011-001', 'jumlah_pakai' => 1, 'hpp' => 1000, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-010', 'id_bahan_baku' => 'BAHAN-0060', 'id_pilihan_finishing' => 'FIN-011-002', 'jumlah_pakai' => 1, 'hpp' => 2500, 'created_at' => $now, 'updated_at' => $now],
+
+            // // ==============================================================================
+            // // KOMPOSISI: PRD-4002 (KALENDER DINDING 38x53)
+            // // ==============================================================================
+
+            // // --- SKU-002 (Art Carton 210 Gsm 38x53 - BAHAN-0062 @ Rp 10.000 / m2) ---
+            // ['id_sku' => 'PRD-4002-SKU-002', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-001', 'jumlah_pakai' => 0.2014, 'hpp' => 2014, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-002', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-002', 'jumlah_pakai' => 0.4028, 'hpp' => 4028, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-002', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-003', 'jumlah_pakai' => 0.6042, 'hpp' => 6042, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-002', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-004', 'jumlah_pakai' => 0.8056, 'hpp' => 8056, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-002', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-005', 'jumlah_pakai' => 1.0070, 'hpp' => 10070, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-002', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-006', 'jumlah_pakai' => 1.2084, 'hpp' => 12084, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-002', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-007', 'jumlah_pakai' => 1.4098, 'hpp' => 14098, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-002', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-008', 'jumlah_pakai' => 2.4168, 'hpp' => 24168, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-002', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-009', 'jumlah_pakai' => 2.6182, 'hpp' => 26182, 'created_at' => $now, 'updated_at' => $now],
+            // // Gantungan 38cm
+            // ['id_sku' => 'PRD-4002-SKU-002', 'id_bahan_baku' => 'BAHAN-0065', 'id_pilihan_finishing' => 'FIN-011-001', 'jumlah_pakai' => 1, 'hpp' => 1200, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-002', 'id_bahan_baku' => 'BAHAN-0066', 'id_pilihan_finishing' => 'FIN-011-002', 'jumlah_pakai' => 1, 'hpp' => 3000, 'created_at' => $now, 'updated_at' => $now],
+
+            // // --- SKU-005 (Art Carton 260 Gsm 38x53 - BAHAN-0063 @ Rp 11.000 / m2) ---
+            // ['id_sku' => 'PRD-4002-SKU-005', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-001', 'jumlah_pakai' => 0.2014, 'hpp' => 2215, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-005', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-002', 'jumlah_pakai' => 0.4028, 'hpp' => 4431, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-005', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-003', 'jumlah_pakai' => 0.6042, 'hpp' => 6646, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-005', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-004', 'jumlah_pakai' => 0.8056, 'hpp' => 8862, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-005', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-005', 'jumlah_pakai' => 1.0070, 'hpp' => 11077, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-005', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-006', 'jumlah_pakai' => 1.2084, 'hpp' => 13292, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-005', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-007', 'jumlah_pakai' => 1.4098, 'hpp' => 15508, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-005', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-008', 'jumlah_pakai' => 2.4168, 'hpp' => 26585, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-005', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-009', 'jumlah_pakai' => 2.6182, 'hpp' => 28800, 'created_at' => $now, 'updated_at' => $now],
+            // // Gantungan 38cm
+            // ['id_sku' => 'PRD-4002-SKU-005', 'id_bahan_baku' => 'BAHAN-0065', 'id_pilihan_finishing' => 'FIN-011-001', 'jumlah_pakai' => 1, 'hpp' => 1200, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-005', 'id_bahan_baku' => 'BAHAN-0066', 'id_pilihan_finishing' => 'FIN-011-002', 'jumlah_pakai' => 1, 'hpp' => 3000, 'created_at' => $now, 'updated_at' => $now],
+
+            // // --- SKU-008 (Art Paper 120 Gsm 38x53 - BAHAN-0061 @ Rp 7.000 / m2) ---
+            // ['id_sku' => 'PRD-4002-SKU-008', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-001', 'jumlah_pakai' => 0.2014, 'hpp' => 1410, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-008', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-002', 'jumlah_pakai' => 0.4028, 'hpp' => 2820, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-008', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-003', 'jumlah_pakai' => 0.6042, 'hpp' => 4229, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-008', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-004', 'jumlah_pakai' => 0.8056, 'hpp' => 5639, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-008', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-005', 'jumlah_pakai' => 1.0070, 'hpp' => 7049, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-008', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-006', 'jumlah_pakai' => 1.2084, 'hpp' => 8459, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-008', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-007', 'jumlah_pakai' => 1.4098, 'hpp' => 9869, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-008', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-008', 'jumlah_pakai' => 2.4168, 'hpp' => 16918, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-008', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-009', 'jumlah_pakai' => 2.6182, 'hpp' => 18327, 'created_at' => $now, 'updated_at' => $now],
+            // // Gantungan 38cm
+            // ['id_sku' => 'PRD-4002-SKU-008', 'id_bahan_baku' => 'BAHAN-0065', 'id_pilihan_finishing' => 'FIN-011-001', 'jumlah_pakai' => 1, 'hpp' => 1200, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-008', 'id_bahan_baku' => 'BAHAN-0066', 'id_pilihan_finishing' => 'FIN-011-002', 'jumlah_pakai' => 1, 'hpp' => 3000, 'created_at' => $now, 'updated_at' => $now],
+
+            // // --- SKU-011 (Art Paper 150 Gsm 38x53 - BAHAN-0031 (Master Lama) @ Rp 8.000 / m2) ---
+            // ['id_sku' => 'PRD-4002-SKU-011', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-001', 'jumlah_pakai' => 0.2014, 'hpp' => 1611, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-011', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-002', 'jumlah_pakai' => 0.4028, 'hpp' => 3222, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-011', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-003', 'jumlah_pakai' => 0.6042, 'hpp' => 4834, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-011', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-004', 'jumlah_pakai' => 0.8056, 'hpp' => 6445, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-011', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-005', 'jumlah_pakai' => 1.0070, 'hpp' => 8056, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-011', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-006', 'jumlah_pakai' => 1.2084, 'hpp' => 9667, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-011', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-007', 'jumlah_pakai' => 1.4098, 'hpp' => 11278, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-011', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-008', 'jumlah_pakai' => 2.4168, 'hpp' => 19334, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-011', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-009', 'jumlah_pakai' => 2.6182, 'hpp' => 20946, 'created_at' => $now, 'updated_at' => $now],
+            // // Gantungan 38cm
+            // ['id_sku' => 'PRD-4002-SKU-011', 'id_bahan_baku' => 'BAHAN-0065', 'id_pilihan_finishing' => 'FIN-011-001', 'jumlah_pakai' => 1, 'hpp' => 1200, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-011', 'id_bahan_baku' => 'BAHAN-0066', 'id_pilihan_finishing' => 'FIN-011-002', 'jumlah_pakai' => 1, 'hpp' => 3000, 'created_at' => $now, 'updated_at' => $now],
+
+            // // ==============================================================================
+            // // KOMPOSISI: PRD-4002 (KALENDER DINDING 46x64)
+            // // ==============================================================================
+
+            // // --- SKU-003 (Art Carton 210 Gsm 46x64 - BAHAN-0062 @ Rp 10.000 / m2) ---
+            // ['id_sku' => 'PRD-4002-SKU-003', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-001', 'jumlah_pakai' => 0.2944, 'hpp' => 2944, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-003', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-002', 'jumlah_pakai' => 0.5888, 'hpp' => 5888, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-003', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-003', 'jumlah_pakai' => 0.8832, 'hpp' => 8832, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-003', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-004', 'jumlah_pakai' => 1.1776, 'hpp' => 11776, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-003', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-005', 'jumlah_pakai' => 1.4720, 'hpp' => 14720, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-003', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-006', 'jumlah_pakai' => 1.7664, 'hpp' => 17664, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-003', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-007', 'jumlah_pakai' => 2.0608, 'hpp' => 20608, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-003', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-008', 'jumlah_pakai' => 3.5328, 'hpp' => 35328, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-003', 'id_bahan_baku' => 'BAHAN-0062', 'id_pilihan_finishing' => 'FIN-010-009', 'jumlah_pakai' => 3.8272, 'hpp' => 38272, 'created_at' => $now, 'updated_at' => $now],
+            // // Gantungan 46cm
+            // ['id_sku' => 'PRD-4002-SKU-003', 'id_bahan_baku' => 'BAHAN-0067', 'id_pilihan_finishing' => 'FIN-011-001', 'jumlah_pakai' => 1, 'hpp' => 1500, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-003', 'id_bahan_baku' => 'BAHAN-0068', 'id_pilihan_finishing' => 'FIN-011-002', 'jumlah_pakai' => 1, 'hpp' => 3500, 'created_at' => $now, 'updated_at' => $now],
 
 
-            // --- SKU-009 (Art Paper 120 Gsm 46x64 - BAHAN-0061 @ Rp 7.000 / m2) ---
-            ['id_sku' => 'PRD-4002-SKU-009', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-001', 'jumlah_pakai' => 0.2944, 'hpp' => 2061, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-009', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-002', 'jumlah_pakai' => 0.5888, 'hpp' => 4122, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-009', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-003', 'jumlah_pakai' => 0.8832, 'hpp' => 6182, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-009', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-004', 'jumlah_pakai' => 1.1776, 'hpp' => 8243, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-009', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-005', 'jumlah_pakai' => 1.4720, 'hpp' => 10304, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-009', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-006', 'jumlah_pakai' => 1.7664, 'hpp' => 12365, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-009', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-007', 'jumlah_pakai' => 2.0608, 'hpp' => 14426, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-009', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-008', 'jumlah_pakai' => 3.5328, 'hpp' => 24730, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-009', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-009', 'jumlah_pakai' => 3.8272, 'hpp' => 26790, 'created_at' => $now, 'updated_at' => $now],
-            // Gantungan 46cm
-            ['id_sku' => 'PRD-4002-SKU-009', 'id_bahan_baku' => 'BAHAN-0067', 'id_pilihan_finishing' => 'FIN-011-001', 'jumlah_pakai' => 1, 'hpp' => 1500, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-009', 'id_bahan_baku' => 'BAHAN-0068', 'id_pilihan_finishing' => 'FIN-011-002', 'jumlah_pakai' => 1, 'hpp' => 3500, 'created_at' => $now, 'updated_at' => $now],
+            // // --- SKU-006 (Art Carton 260 Gsm 46x64 - BAHAN-0063 @ Rp 11.000 / m2) ---
+            // ['id_sku' => 'PRD-4002-SKU-006', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-001', 'jumlah_pakai' => 0.2944, 'hpp' => 3238, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-006', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-002', 'jumlah_pakai' => 0.5888, 'hpp' => 6477, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-006', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-003', 'jumlah_pakai' => 0.8832, 'hpp' => 9715, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-006', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-004', 'jumlah_pakai' => 1.1776, 'hpp' => 12954, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-006', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-005', 'jumlah_pakai' => 1.4720, 'hpp' => 16192, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-006', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-006', 'jumlah_pakai' => 1.7664, 'hpp' => 19430, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-006', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-007', 'jumlah_pakai' => 2.0608, 'hpp' => 22669, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-006', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-008', 'jumlah_pakai' => 3.5328, 'hpp' => 38861, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-006', 'id_bahan_baku' => 'BAHAN-0063', 'id_pilihan_finishing' => 'FIN-010-009', 'jumlah_pakai' => 3.8272, 'hpp' => 42099, 'created_at' => $now, 'updated_at' => $now],
+            // // Gantungan 46cm
+            // ['id_sku' => 'PRD-4002-SKU-006', 'id_bahan_baku' => 'BAHAN-0067', 'id_pilihan_finishing' => 'FIN-011-001', 'jumlah_pakai' => 1, 'hpp' => 1500, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-006', 'id_bahan_baku' => 'BAHAN-0068', 'id_pilihan_finishing' => 'FIN-011-002', 'jumlah_pakai' => 1, 'hpp' => 3500, 'created_at' => $now, 'updated_at' => $now],
 
 
-            // --- SKU-012 (Art Paper 150 Gsm 46x64 - BAHAN-0031 (Master Lama) @ Rp 8.000 / m2) ---
-            ['id_sku' => 'PRD-4002-SKU-012', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-001', 'jumlah_pakai' => 0.2944, 'hpp' => 2355, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-012', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-002', 'jumlah_pakai' => 0.5888, 'hpp' => 4710, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-012', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-003', 'jumlah_pakai' => 0.8832, 'hpp' => 7066, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-012', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-004', 'jumlah_pakai' => 1.1776, 'hpp' => 9421, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-012', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-005', 'jumlah_pakai' => 1.4720, 'hpp' => 11776, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-012', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-006', 'jumlah_pakai' => 1.7664, 'hpp' => 14131, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-012', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-007', 'jumlah_pakai' => 2.0608, 'hpp' => 16486, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-012', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-008', 'jumlah_pakai' => 3.5328, 'hpp' => 28262, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-012', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-009', 'jumlah_pakai' => 3.8272, 'hpp' => 30618, 'created_at' => $now, 'updated_at' => $now],
-            // Gantungan 46cm
-            ['id_sku' => 'PRD-4002-SKU-012', 'id_bahan_baku' => 'BAHAN-0067', 'id_pilihan_finishing' => 'FIN-011-001', 'jumlah_pakai' => 1, 'hpp' => 1500, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-4002-SKU-012', 'id_bahan_baku' => 'BAHAN-0068', 'id_pilihan_finishing' => 'FIN-011-002', 'jumlah_pakai' => 1, 'hpp' => 3500, 'created_at' => $now, 'updated_at' => $now],
+            // // --- SKU-009 (Art Paper 120 Gsm 46x64 - BAHAN-0061 @ Rp 7.000 / m2) ---
+            // ['id_sku' => 'PRD-4002-SKU-009', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-001', 'jumlah_pakai' => 0.2944, 'hpp' => 2061, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-009', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-002', 'jumlah_pakai' => 0.5888, 'hpp' => 4122, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-009', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-003', 'jumlah_pakai' => 0.8832, 'hpp' => 6182, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-009', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-004', 'jumlah_pakai' => 1.1776, 'hpp' => 8243, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-009', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-005', 'jumlah_pakai' => 1.4720, 'hpp' => 10304, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-009', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-006', 'jumlah_pakai' => 1.7664, 'hpp' => 12365, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-009', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-007', 'jumlah_pakai' => 2.0608, 'hpp' => 14426, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-009', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-008', 'jumlah_pakai' => 3.5328, 'hpp' => 24730, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-009', 'id_bahan_baku' => 'BAHAN-0061', 'id_pilihan_finishing' => 'FIN-010-009', 'jumlah_pakai' => 3.8272, 'hpp' => 26790, 'created_at' => $now, 'updated_at' => $now],
+            // // Gantungan 46cm
+            // ['id_sku' => 'PRD-4002-SKU-009', 'id_bahan_baku' => 'BAHAN-0067', 'id_pilihan_finishing' => 'FIN-011-001', 'jumlah_pakai' => 1, 'hpp' => 1500, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-009', 'id_bahan_baku' => 'BAHAN-0068', 'id_pilihan_finishing' => 'FIN-011-002', 'jumlah_pakai' => 1, 'hpp' => 3500, 'created_at' => $now, 'updated_at' => $now],
+
+
+            // // --- SKU-012 (Art Paper 150 Gsm 46x64 - BAHAN-0031 (Master Lama) @ Rp 8.000 / m2) ---
+            // ['id_sku' => 'PRD-4002-SKU-012', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-001', 'jumlah_pakai' => 0.2944, 'hpp' => 2355, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-012', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-002', 'jumlah_pakai' => 0.5888, 'hpp' => 4710, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-012', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-003', 'jumlah_pakai' => 0.8832, 'hpp' => 7066, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-012', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-004', 'jumlah_pakai' => 1.1776, 'hpp' => 9421, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-012', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-005', 'jumlah_pakai' => 1.4720, 'hpp' => 11776, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-012', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-006', 'jumlah_pakai' => 1.7664, 'hpp' => 14131, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-012', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-007', 'jumlah_pakai' => 2.0608, 'hpp' => 16486, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-012', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-008', 'jumlah_pakai' => 3.5328, 'hpp' => 28262, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-012', 'id_bahan_baku' => 'BAHAN-0031', 'id_pilihan_finishing' => 'FIN-010-009', 'jumlah_pakai' => 3.8272, 'hpp' => 30618, 'created_at' => $now, 'updated_at' => $now],
+            // // Gantungan 46cm
+            // ['id_sku' => 'PRD-4002-SKU-012', 'id_bahan_baku' => 'BAHAN-0067', 'id_pilihan_finishing' => 'FIN-011-001', 'jumlah_pakai' => 1, 'hpp' => 1500, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-4002-SKU-012', 'id_bahan_baku' => 'BAHAN-0068', 'id_pilihan_finishing' => 'FIN-011-002', 'jumlah_pakai' => 1, 'hpp' => 3500, 'created_at' => $now, 'updated_at' => $now],
+
+            // ====================================================================================
+            // KOMPOSISI PRODUK & FINISHING
+            // ====================================================================================
+
+            // --- SKU-001 (Bendera Umbul Umbul - Kain Satin - BAHAN-0069 @ Rp 15.000 / m2) ---
+            // Base Kain (Tanpa Finishing Khusus / Menempel di SKU)
+            ['id_sku' => 'PRD-3011-SKU-001', 'id_bahan_baku' => 'BAHAN-0069', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 1, 'hpp' => 15000, 'created_at' => $now, 'updated_at' => $now],
+            // Finishing Jahit Obras
+            ['id_sku' => 'PRD-3011-SKU-001', 'id_bahan_baku' => 'BAHAN-0071', 'id_pilihan_finishing' => 'FIN-017-001', 'jumlah_pakai' => 0.05, 'hpp' => 900, 'created_at' => $now, 'updated_at' => $now],
+            // Finishing Jahit Obras & Tali
+            ['id_sku' => 'PRD-3011-SKU-001', 'id_bahan_baku' => 'BAHAN-0071', 'id_pilihan_finishing' => 'FIN-017-002', 'jumlah_pakai' => 0.05, 'hpp' => 900, 'created_at' => $now, 'updated_at' => $now],
+            ['id_sku' => 'PRD-3011-SKU-001', 'id_bahan_baku' => 'BAHAN-0072', 'id_pilihan_finishing' => 'FIN-017-002', 'jumlah_pakai' => 1, 'hpp' => 500, 'created_at' => $now, 'updated_at' => $now],
+
+            // --- SKU-002 (Bendera Umbul Umbul - Kain TC - BAHAN-0070 @ Rp 12.000 / m2) ---
+            // Base Kain (Tanpa Finishing Khusus / Menempel di SKU)
+            ['id_sku' => 'PRD-3011-SKU-002', 'id_bahan_baku' => 'BAHAN-0070', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 1, 'hpp' => 12000, 'created_at' => $now, 'updated_at' => $now],
+            // Finishing Jahit Obras
+            ['id_sku' => 'PRD-3011-SKU-002', 'id_bahan_baku' => 'BAHAN-0071', 'id_pilihan_finishing' => 'FIN-017-001', 'jumlah_pakai' => 0.05, 'hpp' => 900, 'created_at' => $now, 'updated_at' => $now],
+            // Finishing Jahit Obras & Tali
+            ['id_sku' => 'PRD-3011-SKU-002', 'id_bahan_baku' => 'BAHAN-0071', 'id_pilihan_finishing' => 'FIN-017-002', 'jumlah_pakai' => 0.05, 'hpp' => 900, 'created_at' => $now, 'updated_at' => $now],
+            ['id_sku' => 'PRD-3011-SKU-002', 'id_bahan_baku' => 'BAHAN-0072', 'id_pilihan_finishing' => 'FIN-017-002', 'jumlah_pakai' => 1, 'hpp' => 500, 'created_at' => $now, 'updated_at' => $now],
         ]);
     }
 }

@@ -697,119 +697,165 @@ class BahanBakuSeeder extends Seeder
             // 13. MATERIAL KALENDER DINDING (Gantungan Saja)
             // =======================================================
 
-            [
-                'id_bahan_baku' => 'BAHAN-0059',
-                'nama_bahan_baku' => 'Klepseng Kalender Dinding (31cm)',
-                'satuan' => 'Pcs',
-                'berat_gram_persatuan' => 15.00,
-                'harga_beli' => 1000,
-                'stok_awal' => 1000,
-                'stok_sekarang' => 1000,
-                'is_active' => true,
-                'created_at' => $now, 'updated_at' => $now
-            ],
-            [
-                'id_bahan_baku' => 'BAHAN-0060',
-                'nama_bahan_baku' => 'Spiral Kawat + Hanger Kalender (31cm)',
-                'satuan' => 'Pcs',
-                'berat_gram_persatuan' => 25.00,
-                'harga_beli' => 2500,
-                'stok_awal' => 1000,
-                'stok_sekarang' => 1000,
-                'is_active' => true,
-                'created_at' => $now, 'updated_at' => $now
-            ],
-            // =======================================================
-            // 14. MATERIAL KALENDER 38x53 (Roll Meteran & Gantungan)
-            // =======================================================
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0059',
+            //     'nama_bahan_baku' => 'Klepseng Kalender Dinding (31cm)',
+            //     'satuan' => 'Pcs',
+            //     'berat_gram_persatuan' => 15.00,
+            //     'harga_beli' => 1000,
+            //     'stok_awal' => 1000,
+            //     'stok_sekarang' => 1000,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0060',
+            //     'nama_bahan_baku' => 'Spiral Kawat + Hanger Kalender (31cm)',
+            //     'satuan' => 'Pcs',
+            //     'berat_gram_persatuan' => 25.00,
+            //     'harga_beli' => 2500,
+            //     'stok_awal' => 1000,
+            //     'stok_sekarang' => 1000,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+            // // =======================================================
+            // // 14. MATERIAL KALENDER 38x53 (Roll Meteran & Gantungan)
+            // // =======================================================
 
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0061',
+            //     'nama_bahan_baku' => 'Art Paper 120 Gsm (Roll)',
+            //     'satuan' => 'Meter Persegi',
+            //     'berat_gram_persatuan' => 120.00,
+            //     'harga_beli' => 7000, // Estimasi harga HPP
+            //     'stok_awal' => 200,
+            //     'stok_sekarang' => 200,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0062',
+            //     'nama_bahan_baku' => 'Art Carton 210 Gsm (Roll)',
+            //     'satuan' => 'Meter Persegi',
+            //     'berat_gram_persatuan' => 210.00,
+            //     'harga_beli' => 10000, // Estimasi harga HPP
+            //     'stok_awal' => 200,
+            //     'stok_sekarang' => 200,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0063',
+            //     'nama_bahan_baku' => 'Art Carton 260 Gsm (Roll)',
+            //     'satuan' => 'Meter Persegi',
+            //     'berat_gram_persatuan' => 260.00,
+            //     'harga_beli' => 11000, // Estimasi harga HPP
+            //     'stok_awal' => 200,
+            //     'stok_sekarang' => 200,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0064',
+            //     'nama_bahan_baku' => 'Art Carton 310 Gsm (Roll)',
+            //     'satuan' => 'Meter Persegi',
+            //     'berat_gram_persatuan' => 310.00,
+            //     'harga_beli' => 13000, // Estimasi harga HPP (buat jaga-jaga)
+            //     'stok_awal' => 200,
+            //     'stok_sekarang' => 200,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0065',
+            //     'nama_bahan_baku' => 'Klepseng Kalender Dinding (38cm)',
+            //     'satuan' => 'Pcs',
+            //     'berat_gram_persatuan' => 20.00,
+            //     'harga_beli' => 1200,
+            //     'stok_awal' => 1000,
+            //     'stok_sekarang' => 1000,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0066',
+            //     'nama_bahan_baku' => 'Spiral Kawat + Hanger Kalender (38cm)',
+            //     'satuan' => 'Pcs',
+            //     'berat_gram_persatuan' => 35.00,
+            //     'harga_beli' => 3000,
+            //     'stok_awal' => 1000,
+            //     'stok_sekarang' => 1000,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+            // // =======================================================
+            // // 15. MATERIAL KALENDER 46x64 (Gantungan Saja)
+            // // =======================================================
+
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0067',
+            //     'nama_bahan_baku' => 'Klepseng Kalender Dinding (46cm)',
+            //     'satuan' => 'Pcs',
+            //     'berat_gram_persatuan' => 25.00,
+            //     'harga_beli' => 1500, // Estimasi HPP
+            //     'stok_awal' => 1000,
+            //     'stok_sekarang' => 1000,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0068',
+            //     'nama_bahan_baku' => 'Spiral Kawat + Hanger Kalender (46cm)',
+            //     'satuan' => 'Pcs',
+            //     'berat_gram_persatuan' => 45.00,
+            //     'harga_beli' => 3500, // Estimasi HPP
+            //     'stok_awal' => 1000,
+            //     'stok_sekarang' => 1000,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+            // Kebutuhan Kain
             [
-                'id_bahan_baku' => 'BAHAN-0061',
-                'nama_bahan_baku' => 'Art Paper 120 Gsm (Roll)',
-                'satuan' => 'Meter Persegi',
+                'id_bahan_baku' => 'BAHAN-0069',
+                'nama_bahan_baku' => 'Kain Satin Flag/Bendera (Roll)',
+                'satuan' => 'Meter',
+                'berat_gram_persatuan' => 150.00, // Berat per meter
+                'harga_beli' => 15000, // HPP per meter
+                'stok_awal' => 500,
+                'stok_sekarang' => 500,
+                'is_active' => true,
+                'created_at' => $now, 'updated_at' => $now
+            ],
+            [
+                'id_bahan_baku' => 'BAHAN-0070',
+                'nama_bahan_baku' => 'Kain TC (Tetoron Cotton) Bendera (Roll)',
+                'satuan' => 'Meter',
                 'berat_gram_persatuan' => 120.00,
-                'harga_beli' => 7000, // Estimasi harga HPP
-                'stok_awal' => 200,
-                'stok_sekarang' => 200,
+                'harga_beli' => 12000, // HPP per meter
+                'stok_awal' => 500,
+                'stok_sekarang' => 500,
                 'is_active' => true,
                 'created_at' => $now, 'updated_at' => $now
             ],
+            // Kebutuhan Finishing (Obras & Tali)
             [
-                'id_bahan_baku' => 'BAHAN-0062',
-                'nama_bahan_baku' => 'Art Carton 210 Gsm (Roll)',
-                'satuan' => 'Meter Persegi',
-                'berat_gram_persatuan' => 210.00,
-                'harga_beli' => 10000, // Estimasi harga HPP
-                'stok_awal' => 200,
-                'stok_sekarang' => 200,
-                'is_active' => true,
-                'created_at' => $now, 'updated_at' => $now
-            ],
-            [
-                'id_bahan_baku' => 'BAHAN-0063',
-                'nama_bahan_baku' => 'Art Carton 260 Gsm (Roll)',
-                'satuan' => 'Meter Persegi',
-                'berat_gram_persatuan' => 260.00,
-                'harga_beli' => 11000, // Estimasi harga HPP
-                'stok_awal' => 200,
-                'stok_sekarang' => 200,
-                'is_active' => true,
-                'created_at' => $now, 'updated_at' => $now
-            ],
-            [
-                'id_bahan_baku' => 'BAHAN-0064',
-                'nama_bahan_baku' => 'Art Carton 310 Gsm (Roll)',
-                'satuan' => 'Meter Persegi',
-                'berat_gram_persatuan' => 310.00,
-                'harga_beli' => 13000, // Estimasi harga HPP (buat jaga-jaga)
-                'stok_awal' => 200,
-                'stok_sekarang' => 200,
-                'is_active' => true,
-                'created_at' => $now, 'updated_at' => $now
-            ],
-            [
-                'id_bahan_baku' => 'BAHAN-0065',
-                'nama_bahan_baku' => 'Klepseng Kalender Dinding (38cm)',
+                'id_bahan_baku' => 'BAHAN-0071',
+                'nama_bahan_baku' => 'Benang Obras Jahit (Cones)',
                 'satuan' => 'Pcs',
-                'berat_gram_persatuan' => 20.00,
-                'harga_beli' => 1200,
-                'stok_awal' => 1000,
-                'stok_sekarang' => 1000,
+                'berat_gram_persatuan' => 250.00,
+                'harga_beli' => 18000, // HPP per cones
+                'stok_awal' => 50,
+                'stok_sekarang' => 50,
                 'is_active' => true,
                 'created_at' => $now, 'updated_at' => $now
             ],
             [
-                'id_bahan_baku' => 'BAHAN-0066',
-                'nama_bahan_baku' => 'Spiral Kawat + Hanger Kalender (38cm)',
-                'satuan' => 'Pcs',
-                'berat_gram_persatuan' => 35.00,
-                'harga_beli' => 3000,
-                'stok_awal' => 1000,
-                'stok_sekarang' => 1000,
-                'is_active' => true,
-                'created_at' => $now, 'updated_at' => $now
-            ],
-            // =======================================================
-            // 15. MATERIAL KALENDER 46x64 (Gantungan Saja)
-            // =======================================================
-
-            [
-                'id_bahan_baku' => 'BAHAN-0067',
-                'nama_bahan_baku' => 'Klepseng Kalender Dinding (46cm)',
-                'satuan' => 'Pcs',
-                'berat_gram_persatuan' => 25.00,
-                'harga_beli' => 1500, // Estimasi HPP
-                'stok_awal' => 1000,
-                'stok_sekarang' => 1000,
-                'is_active' => true,
-                'created_at' => $now, 'updated_at' => $now
-            ],
-            [
-                'id_bahan_baku' => 'BAHAN-0068',
-                'nama_bahan_baku' => 'Spiral Kawat + Hanger Kalender (46cm)',
-                'satuan' => 'Pcs',
-                'berat_gram_persatuan' => 45.00,
-                'harga_beli' => 3500, // Estimasi HPP
+                'id_bahan_baku' => 'BAHAN-0072',
+                'nama_bahan_baku' => 'Tali Bendera / Tali Kur',
+                'satuan' => 'Meter',
+                'berat_gram_persatuan' => 10.00,
+                'harga_beli' => 500, // HPP tali per meter
                 'stok_awal' => 1000,
                 'stok_sekarang' => 1000,
                 'is_active' => true,

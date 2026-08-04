@@ -32,6 +32,7 @@ class FinishingSeeder extends Seeder
             ['id_finishing' => 'FIN-014', 'nama_finishing' => 'Cetak Kartu ID Card', 'created_at' => $now, 'updated_at' => $now],
             ['id_finishing' => 'FIN-015', 'nama_finishing' => 'Holder Case ID Card', 'created_at' => $now, 'updated_at' => $now],
             ['id_finishing' => 'FIN-016', 'nama_finishing' => 'Stopper Tali Lanyard', 'created_at' => $now, 'updated_at' => $now],
+            ['id_finishing' => 'FIN-017', 'nama_finishing' => 'Obras & Tali Samping', 'created_at' => $now, 'updated_at' => $now],
         ]);
 
         DB::table('pilihan_finishing')->insert([
@@ -71,6 +72,8 @@ class FinishingSeeder extends Seeder
             ['id_pilihan_finishing' => 'FIN-014-001', 'id_finishing' => 'FIN-014', 'nama_pilihan' => 'ID Card Name Tag Print UV', 'created_at' => $now, 'updated_at' => $now],
             ['id_pilihan_finishing' => 'FIN-015-001', 'id_finishing' => 'FIN-015', 'nama_pilihan' => 'Holder ID Card', 'created_at' => $now, 'updated_at' => $now],
             ['id_pilihan_finishing' => 'FIN-016-001', 'id_finishing' => 'FIN-016', 'nama_pilihan' => 'Stopper Tali Lanyard', 'created_at' => $now, 'updated_at' => $now],
+            ['id_pilihan_finishing' => 'FIN-017-001', 'id_finishing' => 'FIN-017', 'nama_pilihan' => 'Jahit Obras', 'created_at' => $now, 'updated_at' => $now],
+            ['id_pilihan_finishing' => 'FIN-017-002', 'id_finishing' => 'FIN-017', 'nama_pilihan' => 'Jahit Obras & Tali', 'created_at' => $now, 'updated_at' => $now],
         ]);
     }
 }

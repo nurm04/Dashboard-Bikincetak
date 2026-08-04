@@ -60,11 +60,9 @@ class PesanService
             $hargaDasarAwal = $item->harga_dasar_awal_snapshot ?? $item->harga_satuan_snapshot;
             $diskonPerItem = $item->total_diskon_snapshot ?? 0;
 
-            $hargaSatuanNet = max(0, $hargaDasarAwal - $diskonPerItem);
-
             $atribut = is_string($item->atribut_custom_snapshot)
                 ? json_decode($item->atribut_custom_snapshot, true)
-                : $item->atribut_custom_snapshot;
+                : ($item->atribut_custom_snapshot ?? []);
 
             $sisi = 1;
             foreach ($item->pesananItemFinishing as $fin) {
@@ -76,12 +74,26 @@ class PesanService
             }
 
             $biayaHalaman = 0;
+
+            // ==========================================
+            // LOGIC BUKU & LOGIC CETAK METERAN (SPANDUK)
+            // ==========================================
             if (is_array($atribut) && isset($atribut['Jumlah Halaman'])) {
                 $hal = max(1, (int) $atribut['Jumlah Halaman']);
                 $biayaHalaman = max(0, $hal - 1) * $sisi * 1500;
+            } elseif (is_array($atribut) && isset($atribut['Luas Dihargai (m2)'])) {
+                $luasDihargai = (float) $atribut['Luas Dihargai (m2)'];
+                // Minimal luas yang dihitung standar percetakan adalah 1 m2
+                if ($luasDihargai < 1) $luasDihargai = 1;
+
+                // Kalikan harga dasar dengan luas meteran
+                $hargaDasarAwal = $hargaDasarAwal * $luasDihargai;
             }
 
+            // Hitung harga bersih dipotong diskon (dilakukan setelah dikali Luas)
+            $hargaSatuanNet = max(0, $hargaDasarAwal - $diskonPerItem);
             $hargaSatuProdukFull = $hargaSatuanNet + $biayaHalaman;
+
             $totalDiskonItem += ($diskonPerItem * $qty);
 
             $totalFinishingItem = 0;
@@ -99,13 +111,10 @@ class PesanService
                     $biayaFin *= $qty;
                 }
 
-                if ($isKaliQty) {
-                    $biayaFin *= $qty;
-                }
-
                 $totalFinishingItem += $biayaFin;
             }
 
+            // Totalkan menggunakan base harga yang sudah dikali luas
             $kotorItem = (($hargaDasarAwal + $biayaHalaman) * $qty) + $totalFinishingItem;
             $totalProdukKotor += $kotorItem;
 
@@ -165,28 +174,32 @@ class PesanService
                             })
                             ->get();
 
-        // CUMA AMBIL JUMLAH HALAMAN (Tanpa konversi sisi cetak)
-        $jumlahHalaman = isset($atributCustom['Jumlah Halaman']) ? max(1, (int)$atributCustom['Jumlah Halaman']) : 1;
+        $pengaliBahanUtama = 1;
+
+        if (isset($atributCustom['Jumlah Halaman'])) {
+            $pengaliBahanUtama = max(1, (int)$atributCustom['Jumlah Halaman']);
+        } elseif (isset($atributCustom['Luas Dihargai (m2)'])) {
+            $pengaliBahanUtama = (float) str_replace(',', '.', $atributCustom['Luas Dihargai (m2)']);
+        } elseif (isset($atributCustom['Panjang']) && isset($atributCustom['Lebar'])) {
+            $panjang = (float) str_replace(',', '.', $atributCustom['Panjang']);
+            $lebar = (float) str_replace(',', '.', $atributCustom['Lebar']);
+            $pengaliBahanUtama = $panjang * $lebar;
+        }
 
         $beratSatuPcs = 0;
 
         foreach ($komposisiList as $komp) {
             if ($komp->bahanBaku) {
-                // RUMUS LU: Berat Bahan (32.76) x Pemakaian BOM (0.25)
                 $beratBahan = $komp->jumlah_pakai * $komp->bahanBaku->berat_gram_persatuan;
 
-                // JIKA INI BAHAN UTAMA (Kertas Isi Buku), KALIKAN DENGAN HALAMAN (20)
                 if (is_null($komp->id_pilihan_finishing)) {
-                    $beratBahan *= $jumlahHalaman;
+                    $beratBahan *= $pengaliBahanUtama;
                 }
-
-                // (Untuk finishing seperti cover dll, dia akan masuk ke blok $beratSatuPcs tanpa dikali halaman)
 
                 $beratSatuPcs += $beratBahan;
             }
         }
 
-        // Total akhir dikalikan dengan QTY pesanan
         return (int) ceil($beratSatuPcs * $jumlah);
     }
 

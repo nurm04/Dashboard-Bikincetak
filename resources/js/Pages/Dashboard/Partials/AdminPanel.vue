@@ -225,13 +225,15 @@ onBeforeUnmount(() => { if (chartInstance) chartInstance.destroy(); });
                                 <div class="mt-2 overflow-x-auto">
                                     <table class="table w-full table-xs">
                                         <tbody>
-                                            <tr v-if="pesananBaru.length === 0"><td class="py-4 text-center opacity-50">Belum ada pesanan baru.</td></tr>
+                                            <!-- REVISI: Tambah colspan="4" biar gak error nyempil -->
+                                            <tr v-if="pesananBaru.length === 0"><td colspan="4" class="py-4 text-center opacity-50">Belum ada pesanan baru.</td></tr>
                                             <tr v-for="psn in pesananBaru" :key="psn.id_pesan" class="hover text-[11px]">
                                                 <td class="font-mono font-bold">{{ psn.id_pesan }}</td>
                                                 <td>{{ psn.customer?.user?.name || psn.alamat?.nama_penerima || 'Umum' }}</td>
                                                 <td class="font-black text-right text-primary">{{ formatRupiah(psn.total_tagihan) }}</td>
                                                 <td class="text-right">
-                                                    <CustomButton type="link" :href="`/pesan/${psn.id_pesan}/detail`" size="sm" variant="secondary" class="px-2! py-1! text-[9px]!">Detail</CustomButton>
+                                                    <!-- REVISI: Standarisasi important tailwind jadi !px-2 dll -->
+                                                    <CustomButton type="link" :href="`/pesan/${psn.id_pesan}/detail`" size="sm" variant="secondary" class="px-2! py-0.5! text-[9px]!">Detail</CustomButton>
                                                 </td>
                                             </tr>
                                         </tbody>
@@ -248,7 +250,8 @@ onBeforeUnmount(() => { if (chartInstance) chartInstance.destroy(); });
                                 <div class="mt-2 overflow-x-auto">
                                     <table class="table w-full table-xs">
                                         <tbody>
-                                            <tr v-if="urgentProduksi.length === 0"><td class="py-4 text-center opacity-50">Mesin lagi nganggur nih bos.</td></tr>
+                                            <!-- REVISI: Tambah colspan="3" -->
+                                            <tr v-if="urgentProduksi.length === 0"><td colspan="3" class="py-4 text-center opacity-50">Mesin lagi nganggur nih bos.</td></tr>
                                             <tr v-for="psn in urgentProduksi" :key="psn.id_pesan" class="hover text-[11px]">
                                                 <td class="font-mono">{{ psn.id_pesan }}</td>
                                                 <td>{{ psn.customer?.user?.name || 'Umum' }}</td>

@@ -19,7 +19,7 @@ class PembayaranController extends Controller
     {
         $search = $request->query('search');
 
-        $query = Pembayaran::with(['pesan.customer.user', 'staf.user']);
+        $query = Pembayaran::with(['pesan.customer.user', 'staf.user', 'pesan.pesananItem.pesananItemFinishing']);
 
         if (!empty($search)) {
             $query->where(function($q) use ($search) {
@@ -74,7 +74,11 @@ class PembayaranController extends Controller
 
     public function detail($id)
     {
-        $pembayaran = Pembayaran::with(['pesan.customer.user', 'staf.user'])
+        $pembayaran = Pembayaran::with([
+            'pesan.customer.user',
+            'staf.user',
+            'pesan.pesanan_item.pesanan_item_finishing'
+        ])
             ->where('id_pembayaran', $id)
             ->firstOrFail();
 

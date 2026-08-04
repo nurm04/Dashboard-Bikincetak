@@ -1,4 +1,5 @@
 <script setup>
+import { computed } from 'vue';
 import StafLayout from '@/Layouts/StafLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import { ArrowLeft } from 'lucide-vue-next';
@@ -6,6 +7,80 @@ import { ArrowLeft } from 'lucide-vue-next';
 const props = defineProps({
     pembayaran: Object,
 });
+
+// ==========================================
+// KALKULASI TOTAL TAGIHAN AKURAT (VUE) - METERAN FIX
+// ==========================================
+const getTagihanMurni = (pesan) => {
+    if (!pesan) return 0;
+    let totalMurniProduk = 0;
+    let totalPengerjaan = 0;
+
+    if (pesan.pesanan_item && Array.isArray(pesan.pesanan_item)) {
+        pesan.pesanan_item.forEach(item => {
+            let hargaAwal = Number(item.harga_satuan_snapshot) || 0;
+            let atribut = {};
+            const finishings = item.pesanan_item_finishing || item.finishing || [];
+
+            if (item.atribut_custom_snapshot) {
+                if (typeof item.atribut_custom_snapshot === 'string') {
+                    try { atribut = JSON.parse(item.atribut_custom_snapshot); } catch (e) {}
+                } else {
+                    atribut = item.atribut_custom_snapshot;
+                }
+            }
+
+            // 1. LOGIC BUKU
+            if (atribut && atribut['Jumlah Halaman'] !== undefined) {
+                let sisi = 1;
+                finishings.forEach(f => {
+                    const namaFin = (f.nama_finishing_snapshot || '').toLowerCase();
+                    if (namaFin.includes('dua sisi') || namaFin.includes('2 sisi') || namaFin.includes('bolak')) {
+                        sisi = 2;
+                    }
+                });
+                let hal = parseInt(String(atribut['Jumlah Halaman']), 10);
+                if (isNaN(hal) || hal < 1) hal = 1;
+                hargaAwal += (Math.max(0, hal - 1) * sisi * 1500);
+            }
+            // 2. LOGIC METERAN
+            else if (atribut && atribut['Luas Dihargai (m2)'] !== undefined) {
+                let luas = parseFloat(String(atribut['Luas Dihargai (m2)'])) || 1;
+                if (luas < 1) luas = 1;
+                hargaAwal = hargaAwal * luas; // Kalikan dengan Luas Bahan
+            }
+
+            // 3. Kalikan Harga Dasar dengan QTY
+            let subtotalItem = hargaAwal * (Number(item.jumlah) || 1);
+
+            // 4. Hitung Tambahan Finishing
+            finishings.forEach(f => {
+                const isKaliQty = Boolean(f.sku_finishing?.kali_jumlah_pesan) || Boolean(f.kali_jumlah_pesan);
+                let val = f.tipe === 'persen'
+                    ? (hargaAwal * (Number(f.harga_finishing_snapshot) / 100))
+                    : (Number(f.harga_finishing_snapshot) || 0);
+
+                subtotalItem += (isKaliQty ? val * (Number(item.jumlah) || 1) : val);
+            });
+
+            totalMurniProduk += subtotalItem;
+            totalPengerjaan += Number(item.harga_pengerjaan_snapshot) || 0;
+        });
+    }
+
+    const ongkir = Number(pesan.harga_ongkir || 0);
+    const diskon = Number(pesan.diskon_voucher_nominal || 0);
+
+    return totalMurniProduk + totalPengerjaan + ongkir - diskon;
+};
+
+// Hitung Tagihan secara Real-Time
+const computedTotalTagihan = computed(() => getTagihanMurni(props.pembayaran?.pesan));
+
+// Hitung Transfer = Tagihan + Kode Unik
+const computedTotalTransfer = computed(() => computedTotalTagihan.value + Number(props.pembayaran?.kode_unik || 0));
+// ==========================================
+
 
 const formatRupiah = (angka) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(angka);
@@ -133,7 +208,8 @@ const formatTanggalBayar = (id) => {
                         <div class="p-4 space-y-2 rounded-lg bg-base-200/50">
                             <div class="flex items-center justify-between text-sm">
                                 <span class="text-base-content/70">Total Tagihan Pesanan:</span>
-                                <span class="font-semibold">{{ formatRupiah(pembayaran?.total_tagihan) }}</span>
+                                <!-- PAKAI computedTotalTagihan DI SINI -->
+                                <span class="font-semibold">{{ formatRupiah(computedTotalTagihan) }}</span>
                             </div>
                             <div class="flex items-center justify-between pb-2 text-sm border-b border-base-300">
                                 <span class="text-base-content/70">Kode Unik:</span>
@@ -141,7 +217,8 @@ const formatTanggalBayar = (id) => {
                             </div>
                             <div class="flex items-center justify-between pt-2">
                                 <span class="font-bold">Total Yang Harus Ditransfer:</span>
-                                <span class="text-lg font-black text-success">{{ formatRupiah(pembayaran?.total_transfer) }}</span>
+                                <!-- PAKAI computedTotalTransfer DI SINI -->
+                                <span class="text-lg font-black text-success">{{ formatRupiah(computedTotalTransfer) }}</span>
                             </div>
                             <div class="flex items-center justify-between pt-2 mt-2 border-t border-base-300">
                                 <span class="font-bold text-base-content/70">Nominal Dibayar:</span>

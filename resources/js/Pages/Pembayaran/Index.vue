@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import StafLayout from '@/Layouts/StafLayout.vue';
 import CustomButton from '@/Components/Form/CustomButton.vue';
@@ -19,7 +19,86 @@ const props = defineProps({
     filters: Object
 });
 
-const headers = ['ID Pembayaran', 'Pelanggan', 'Total Tagihan', 'Total Transfer', 'Staf', 'Aksi'];
+// ==========================================
+// KALKULASI TOTAL TAGIHAN AKURAT (VUE) - METERAN FIX
+// ==========================================
+const getTagihanAkurat = (pesan) => {
+    if (!pesan) return 0;
+    let totalMurniProduk = 0;
+    let totalPengerjaan = 0;
+
+    if (pesan.pesanan_item && Array.isArray(pesan.pesanan_item)) {
+        pesan.pesanan_item.forEach(item => {
+            let hargaAwal = Number(item.harga_satuan_snapshot) || 0;
+            let atribut = {};
+            const finishings = item.pesanan_item_finishing || item.finishing || [];
+
+            if (item.atribut_custom_snapshot) {
+                if (typeof item.atribut_custom_snapshot === 'string') {
+                    try { atribut = JSON.parse(item.atribut_custom_snapshot); } catch (e) {}
+                } else {
+                    atribut = item.atribut_custom_snapshot;
+                }
+            }
+
+            // 1. LOGIC BUKU
+            if (atribut && atribut['Jumlah Halaman'] !== undefined) {
+                let sisi = 1;
+                finishings.forEach(f => {
+                    const namaFin = (f.nama_finishing_snapshot || '').toLowerCase();
+                    if (namaFin.includes('dua sisi') || namaFin.includes('2 sisi') || namaFin.includes('bolak')) {
+                        sisi = 2;
+                    }
+                });
+                let hal = parseInt(String(atribut['Jumlah Halaman']), 10);
+                if (isNaN(hal) || hal < 1) hal = 1;
+                hargaAwal += (Math.max(0, hal - 1) * sisi * 1500);
+            }
+            // 2. LOGIC METERAN
+            else if (atribut && atribut['Luas Dihargai (m2)'] !== undefined) {
+                let luas = parseFloat(String(atribut['Luas Dihargai (m2)'])) || 1;
+                if (luas < 1) luas = 1;
+                hargaAwal = hargaAwal * luas; // Kalikan dengan Luas Bahan
+            }
+
+            // 3. Kalikan Harga Dasar dengan QTY
+            let subtotalItem = hargaAwal * (Number(item.jumlah) || 1);
+
+            // 4. Hitung Tambahan Finishing
+            finishings.forEach(f => {
+                const isKaliQty = Boolean(f.sku_finishing?.kali_jumlah_pesan) || Boolean(f.kali_jumlah_pesan);
+                let val = f.tipe === 'persen'
+                    ? (hargaAwal * (Number(f.harga_finishing_snapshot) / 100))
+                    : (Number(f.harga_finishing_snapshot) || 0);
+
+                subtotalItem += (isKaliQty ? val * (Number(item.jumlah) || 1) : val);
+            });
+
+            totalMurniProduk += subtotalItem;
+            totalPengerjaan += Number(item.harga_pengerjaan_snapshot) || 0;
+        });
+    }
+
+    const ongkir = Number(pesan.harga_ongkir || 0);
+    const diskon = Number(pesan.diskon_voucher_nominal || 0);
+    const kodeUnik = Number(pesan.kode_unik || 0);
+
+    return totalMurniProduk + totalPengerjaan + ongkir - diskon + kodeUnik;
+};
+
+// Map pembayaran yang masuk dan inject tagihan akurat dari pesanan
+const pembayaranAkurat = computed(() => {
+    return props.pembayaran.map(p => {
+        return {
+            ...p,
+            total_tagihan_real: getTagihanAkurat(p.pesan)
+        };
+    });
+});
+// ==========================================
+
+// Btw gua ubah judul "Total Transfer" jadi "Nominal Dibayar" biar gak bingung sama isi tabelnya
+const headers = ['ID Pembayaran', 'Pelanggan', 'Total Tagihan', 'Nominal Dibayar', 'Staf', 'Aksi'];
 
 const search = ref(props.filters?.search || '');
 
@@ -63,7 +142,8 @@ const formatRupiah = (angka) => {
                 </div>
 
                 <CustomTable :headers="headers">
-                    <tr v-for="item in pembayaran" :key="item.id_pembayaran" class="transition-colors hover:bg-base-200/50">
+                    <!-- PAKAI pembayaranAkurat BUKAN pembayaran -->
+                    <tr v-for="item in pembayaranAkurat" :key="item.id_pembayaran" class="transition-colors hover:bg-base-200/50">
                         <td class="px-6 py-4 font-mono text-xs font-bold text-primary">
                             {{ item.id_pembayaran }}
                             <div v-if="item.pesan" class="text-[10px] text-base-content/50 mt-1 uppercase tracking-wider">
@@ -78,8 +158,9 @@ const formatRupiah = (angka) => {
                             </div>
                         </td>
 
-                        <td class="px-6 py-4 text-base-content/80">
-                            {{ formatRupiah(item.total_tagihan) }}
+                        <td class="px-6 py-4 font-black text-base-content/80">
+                            <!-- NAMPILIN TAGIHAN YANG UDAH DIHITUNG ULANG -->
+                            {{ formatRupiah(item.total_tagihan_real) }}
                         </td>
 
                         <td class="px-6 py-4 font-bold text-success">
