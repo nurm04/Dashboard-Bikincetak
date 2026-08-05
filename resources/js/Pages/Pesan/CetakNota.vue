@@ -147,6 +147,11 @@ const telahDibayar = computed(() => Number(props.total_dibayar || props.pesanan?
 // GANTI props.sisa_tagihan AGAR SINKRON DENGAN TOTAL YANG BARU
 const sisaTagihan = computed(() => totalTagihan.value - telahDibayar.value);
 
+const cleanProductName = (name) => {
+    if (!name) return '';
+    return name.replace(/^[A-Za-z]+-\d+-/, '').replace(/-/g, ' ');
+};
+
 onMounted(() => {
     setTimeout(() => {
         window.print();
@@ -171,7 +176,7 @@ onMounted(() => {
                     <h1 class="font-serif text-2xl font-black tracking-tight text-blue-950">bikincetak</h1>
                     <p class="text-[10px] italic text-gray-700">Digital Printing, Offset, Merchandise</p>
                     <p class="text-[9px] mt-1.5 text-gray-800 leading-tight">
-                        WA : 083831862770 | Email : bikinkancetak@gmail.com <br>
+                        WA : 083831862770 | Email : order@bikincetak.co.id <br>
                         Alamat : Jl. Barata Jaya XVII No. 3 Gubeng - Surabaya
                     </p>
                 </div>
@@ -180,7 +185,8 @@ onMounted(() => {
                     <p class="pt-1 font-medium">Kepada Yth.</p>
                     <p class="font-bold uppercase">{{ pesanan.customer?.user?.name || '-' }}</p>
                     <p class="text-[11px] text-gray-700 max-w-50 truncate uppercase">{{ pesanan.alamat?.kota || pesanan.alamat?.detail_alamat || 'Surabaya' }}</p>
-                    <p class="mt-1 text-sm font-bold tracking-wide uppercase">SO {{ pesanan.id_pesan }}</p>
+                    <p class="pt-1 font-medium">Kode Transaksi</p>
+                    <p class="mt-1 text-sm font-bold tracking-wide uppercase">{{ pesanan.kode_transaksi }}</p>
                 </div>
             </div>
 
@@ -199,7 +205,7 @@ onMounted(() => {
                 <tbody>
                     <tr v-for="item in pesanan.pesanan_item" :key="item.id" class="align-top border-b border-black">
                         <td class="p-2 border-r border-black">
-                            <div class="font-semibold">{{ item.nama_produk_snapshot }}</div>
+                            <div class="font-semibold">{{ cleanProductName(item.nama_produk_snapshot) }}</div>
 
                             <div class="text-[9.5px] text-gray-800 mt-1.5 leading-tight space-y-0.5">
                                 <div v-if="getCustomAttributesDisplay(item)">

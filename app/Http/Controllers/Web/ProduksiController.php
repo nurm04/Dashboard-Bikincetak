@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\BahanBaku;
+use App\Models\BukuBesar;
 use App\Models\Komposisi;
 use App\Models\Pesan;
 use App\Models\PesananItem;
 use App\Models\PesananItemProduksi;
 use App\Models\Vendor;
+use App\Services\PesanService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -290,22 +292,88 @@ class ProduksiController extends Controller
             'ekspedisi_estimasi' => 'nullable|string',
         ]);
 
-        $pesanan = Pesan::where('id_pesan', $id_pesan)->firstOrFail();
+        DB::beginTransaction();
 
-        $pesanan->update([
-            'ekspedisi_nama'     => $request->ekspedisi_nama,
-            'ekspedisi_layanan'  => $request->ekspedisi_layanan,
-            'harga_ongkir'       => $request->harga_ongkir,
-            'ekspedisi_estimasi' => $request->ekspedisi_estimasi,
-            'status_operasional' => 'proses_pengantaran',
-        ]);
+        try {
+            $pesanan = Pesan::with(['pesananItem.pesananItemFinishing', 'pembayaran'])
+                ->where('id_pesan', $id_pesan)
+                ->firstOrFail();
 
-        return back()->with('success', 'Pesanan berhasil diproses dan masuk ke tahap pengantaran.');
+            // 1. Update data pengiriman dan status operasional
+            $pesanan->update([
+                'ekspedisi_nama'     => $request->ekspedisi_nama,
+                'ekspedisi_layanan'  => $request->ekspedisi_layanan,
+                'harga_ongkir'       => $request->harga_ongkir,
+                'ekspedisi_estimasi' => $request->ekspedisi_estimasi,
+                'status_operasional' => 'proses_pengantaran',
+            ]);
+
+            // 2. Wajib refresh model agar kalkulasi sisa tagihan membaca harga ongkir terbaru
+            $pesanan->refresh();
+
+            // 3. Logic Jurnal Piutang (Anti-Double & Anti-Skip)
+            if (in_array($pesanan->status_pembayaran, ['belum_lunas', 'dibayar_sebagian'])) {
+
+                $rincian = PesanService::kalkulasiRincianPesanan($pesanan);
+                $sisaTagihan = $rincian['sisa_tagihan'] ?? 0;
+
+                if ($sisaTagihan > 0) {
+                    $akunPiutang    = BukuBesarController::getAkunId('Piutang Usaha (Customer)');
+                    $akunPendapatan = BukuBesarController::getAkunId('Pendapatan Jasa Percetakan');
+
+                    // Cegah silent fails! Biar keluar alert merah kalau seeder belum sempurna
+                    if (!$akunPiutang || !$akunPendapatan) {
+                        throw new \Exception("Akun Piutang atau Pendapatan tidak ditemukan. Cek lagi Seeder lu, Bang!");
+                    }
+
+                    // Cek apakah jurnal piutang untuk transaksi ini sudah ada (Biar gak double walau di-submit 2x)
+                    $jurnalSudahAda = BukuBesar::where('id_referensi', $pesanan->id_pesan)
+                        ->where('id_akun', $akunPiutang)
+                        ->where('keterangan', 'like', '%Piutang%')
+                        ->exists();
+
+                    if (!$jurnalSudahAda) {
+                        // Jurnal Debit: Piutang Bertambah
+                        BukuBesarController::catatJurnal(
+                            $akunPiutang,
+                            $pesanan->id_pesan,
+                            'PENDAPATAN', // Sengaja pakai UPPERCASE mengikuti screenshot image_2608b8.jpg
+                            "Piutang Pesanan Tempo #{$pesanan->id_pesan}",
+                            $sisaTagihan,
+                            0
+                        );
+
+                        // Jurnal Kredit: Pendapatan Diakui (Belum Tertagih)
+                        BukuBesarController::catatJurnal(
+                            $akunPendapatan,
+                            $pesanan->id_pesan,
+                            'PENDAPATAN',
+                            "Pendapatan Penjualan (Tempo) #{$pesanan->id_pesan}",
+                            0,
+                            $sisaTagihan
+                        );
+                    }
+                }
+            }
+
+            DB::commit();
+            return back()->with('success', 'Pesanan berhasil diproses dan masuk ke tahap pengantaran.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Gagal memproses pengantaran: ' . $e->getMessage());
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
     }
 
     public function kirimPesanan(Request $request, $id_pesan)
     {
-        $pesanan = Pesan::with('pesananItem.pesananItemProduksi')->findOrFail($id_pesan);
+        // 1. Tambahkan relasi yang dibutuhkan untuk kalkulasi tagihan (finishing & pembayaran)
+        $pesanan = Pesan::with([
+            'pesananItem.pesananItemProduksi',
+            'pesananItem.pesananItemFinishing',
+            'pembayaran'
+        ])->findOrFail($id_pesan);
 
         $allSchedules = $pesanan->pesananItem->flatMap(function($item) {
             return $item->pesananItemProduksi;
@@ -327,15 +395,71 @@ class ProduksiController extends Controller
             'nomor_resi' => 'nullable|string|max:255'
         ]);
 
-        $pesanan->status_operasional = 'proses_pengantaran';
+        // Mulai Transaksi Database
+        DB::beginTransaction();
 
-        if ($request->filled('nomor_resi')) {
-            $pesanan->nomor_resi = $request->nomor_resi;
+        try {
+            // 2. Update status operasional & resi
+            $pesanan->status_operasional = 'proses_pengantaran';
+
+            if ($request->filled('nomor_resi')) {
+                $pesanan->nomor_resi = $request->nomor_resi;
+            }
+
+            $pesanan->save();
+
+            // 3. Logic Jurnal Piutang untuk Buku Besar
+            if (in_array($pesanan->status_pembayaran, ['belum_lunas', 'dibayar_sebagian'])) {
+
+                $rincian = PesanService::kalkulasiRincianPesanan($pesanan);
+                $sisaTagihan = $rincian['sisa_tagihan'] ?? 0;
+
+                if ($sisaTagihan > 0) {
+                    $akunPiutang    = BukuBesarController::getAkunId('Piutang Usaha (Customer)');
+                    $akunPendapatan = BukuBesarController::getAkunId('Pendapatan Jasa Percetakan');
+
+                    if (!$akunPiutang || !$akunPendapatan) {
+                        throw new \Exception("Akun Piutang atau Pendapatan tidak ditemukan. Cek lagi Seeder lu, Bang!");
+                    }
+
+                    // Cek biar nggak double
+                    $jurnalSudahAda = \App\Models\BukuBesar::where('id_referensi', $pesanan->id_pesan)
+                        ->where('id_akun', $akunPiutang)
+                        ->where('keterangan', 'like', '%Piutang%')
+                        ->exists();
+
+                    if (!$jurnalSudahAda) {
+                        // Jurnal Debit: Piutang Bertambah
+                        BukuBesarController::catatJurnal(
+                            $akunPiutang,
+                            $pesanan->id_pesan,
+                            'PENDAPATAN',
+                            "Piutang Pesanan Tempo #{$pesanan->id_pesan}",
+                            $sisaTagihan,
+                            0
+                        );
+
+                        // Jurnal Kredit: Pendapatan Diakui
+                        BukuBesarController::catatJurnal(
+                            $akunPendapatan,
+                            $pesanan->id_pesan,
+                            'PENDAPATAN',
+                            "Pendapatan Penjualan (Tempo) #{$pesanan->id_pesan}",
+                            0,
+                            $sisaTagihan
+                        );
+                    }
+                }
+            }
+
+            DB::commit();
+            return back()->with('success', 'Status pesanan berhasil diubah ke Proses Pengantaran & Piutang Tercatat!');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Gagal memproses kirim pesanan reguler: ' . $e->getMessage());
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
-
-        $pesanan->save();
-
-        return back()->with('success', 'Status pesanan berhasil diubah ke Proses Pengantaran!');
     }
 
     public function histori(Request $request)

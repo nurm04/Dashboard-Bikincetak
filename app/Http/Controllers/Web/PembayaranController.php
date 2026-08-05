@@ -174,14 +174,20 @@ class PembayaranController extends Controller
                     }
                 }
 
-                $pesan->waktu_deadline = Carbon::now()->addDays($maxHari);
+                $pesan->waktu_deadline = PesanService::hitungDeadlineKerja($maxHari);
             }
 
             $pesan->save();
 
             if ($nominalDibayar > 0 && $idPembayaran) {
-                $akunKas        = BukuBesarController::getAkunId('Kas Bank (BCA/Mandiri/dll)');
-                $akunPendapatan = BukuBesarController::getAkunId('Pendapatan Jasa Percetakan');
+                $akunKas = BukuBesarController::getAkunId('Kas Bank (BCA/Mandiri/dll)');
+                if (in_array($pesan->status_operasional, ['proses_pengantaran', 'selesai'])) {
+                    $akunLawan = BukuBesarController::getAkunId('Piutang Usaha (Customer)');
+                    $ketLawan = "Pelunasan Piutang Pesanan #{$pesan->id_pesan}";
+                } else {
+                    $akunLawan = BukuBesarController::getAkunId('Pendapatan Jasa Percetakan');
+                    $ketLawan = "Pendapatan Penjualan Pesanan #{$pesan->id_pesan}";
+                }
 
                 BukuBesarController::catatJurnal(
                     $akunKas,
@@ -193,10 +199,10 @@ class PembayaranController extends Controller
                 );
 
                 BukuBesarController::catatJurnal(
-                    $akunPendapatan,
+                    $akunLawan,
                     $idPembayaran,
                     'pendapatan',
-                    "Pendapatan Penjualan Pesanan #{$pesan->id_pesan}",
+                    $ketLawan,
                     0,
                     $nominalDibayar
                 );

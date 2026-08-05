@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Web;
 
+use App\Events\ProduksiBaruEvent;
 use App\Http\Controllers\Controller;
 use App\Models\BahanBaku;
 use App\Models\Customer;
@@ -211,7 +212,7 @@ class PesanController extends Controller
             }
 
             $waktuDeadline = in_array($request->status_pembayaran, ['dibayar_sebagian', 'lunas'])
-                ? Carbon::now()->addDays($maxHari)
+                ? PesanService::hitungDeadlineKerja(now(), $maxHari)
                 : null;
 
             $pesanan = Pesan::create([
@@ -569,6 +570,43 @@ class PesanController extends Controller
             throw new HttpResponseException(
                 redirect()->back()->with('error', 'Pesanan sudah masuk tahap pengerjaan/selesai dan tidak dapat diubah lagi.')
             );
+        }
+    }
+
+    public function lemparKeProduksi(Request $request, $id_pesan)
+    {
+        try {
+            DB::beginTransaction();
+
+            $pesan = Pesan::with('pesananItem')->findOrFail($id_pesan);
+
+            if ($pesan->status_pembayaran === 'belum_lunas' && is_null($pesan->waktu_deadline)) {
+
+                $maxHari = 1;
+                foreach ($pesan->pesananItem as $item) {
+                    if (preg_match('/(\d+)/', $item->estimasi_pengerjaan_snapshot, $matches)) {
+                        $hari = (int) $matches[1];
+                        if ($hari > $maxHari) {
+                            $maxHari = $hari;
+                        }
+                    }
+                }
+
+                $waktuAwal = $pesan->tanggal_pesan ?? now();
+                $pesan->waktu_deadline = PesanService::hitungDeadlineKerja($maxHari);
+
+                $pesan->status_operasional = 'menunggu_diproses';
+                $pesan->save();
+
+                event(new ProduksiBaruEvent($pesan));
+            }
+
+            DB::commit();
+            return back()->with('success', 'Pesanan Tempo berhasil dimasukkan ke antrean produksi.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Gagal melempar pesanan ke produksi: ' . $e->getMessage());
+            return back()->with('error', 'Gagal memproses pesanan: ' . $e->getMessage());
         }
     }
 

@@ -21,7 +21,7 @@ class Komposisi extends Model
         'hpp',
     ];
 
-    protected $touches = ['proprodukSkuduk'];
+    protected $touches = ['produkSku'];
 
     public function produkSku(): BelongsTo
     {

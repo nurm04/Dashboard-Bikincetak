@@ -9,6 +9,7 @@ import CustomInputNumber from '@/Components/Form/CustomInputNumber.vue';
 import CustomInput from '@/Components/Form/CustomInput.vue';
 import CustomInputSearch from '@/Components/Form/CustomInputSearch.vue';
 import CustomSelect from '@/Components/Form/CustomSelect.vue';
+import CustomAlertConfirm from '@/Components/CustomAlertConfirm.vue'; // <-- Import komponen baru
 
 const debounce = (fn, delay) => {
     let timeoutId;
@@ -26,7 +27,7 @@ const props = defineProps({
 });
 
 // ==========================================
-// KALKULASI TOTAL TAGIHAN AKURAT (VUE) - SUDAH FIX METERAN
+// KALKULASI TOTAL TAGIHAN AKURAT (VUE)
 // ==========================================
 const getTagihanAkurat = (pesan) => {
     let totalMurniProduk = 0;
@@ -46,7 +47,6 @@ const getTagihanAkurat = (pesan) => {
                 }
             }
 
-            // 1. LOGIC BUKU
             if (atribut && atribut['Jumlah Halaman'] !== undefined) {
                 let sisi = 1;
                 finishings.forEach(f => {
@@ -59,17 +59,14 @@ const getTagihanAkurat = (pesan) => {
                 if (isNaN(hal) || hal < 1) hal = 1;
                 hargaAwal += (Math.max(0, hal - 1) * sisi * 1500);
             }
-            // 2. LOGIC METERAN
             else if (atribut && atribut['Luas Dihargai (m2)'] !== undefined) {
                 let luas = parseFloat(String(atribut['Luas Dihargai (m2)'])) || 1;
                 if (luas < 1) luas = 1;
-                hargaAwal = hargaAwal * luas; // Kalikan dengan Luas Bahan
+                hargaAwal = hargaAwal * luas;
             }
 
-            // 3. Kalikan Harga Dasar dengan QTY
             let subtotalItem = hargaAwal * (Number(item.jumlah) || 1);
 
-            // 4. Hitung Tambahan Finishing
             finishings.forEach(f => {
                 const isKaliQty = Boolean(f.sku_finishing?.kali_jumlah_pesan) || Boolean(f.kali_jumlah_pesan);
                 let val = f.tipe === 'persen'
@@ -91,7 +88,6 @@ const getTagihanAkurat = (pesan) => {
     return totalMurniProduk + totalPengerjaan + ongkir - diskon + kodeUnik;
 };
 
-// Map pesanan yang masuk dan inject tagihan akurat
 const pesananAkurat = computed(() => {
     return props.pesanan.map(p => {
         return {
@@ -100,7 +96,6 @@ const pesananAkurat = computed(() => {
         };
     });
 });
-// ==========================================
 
 const headers = ['ID Pesanan', 'Kode Transaksi', 'Customer', 'Total Tagihan', 'Pembayaran', 'Operasional', 'Aksi'];
 
@@ -152,7 +147,6 @@ watch(
 );
 
 const sudahAdaPembayaran = (pesan) => (pesan.total_dibayar ?? 0) > 0;
-// PENTING: Gunakan total_tagihan_real untuk validasi lunas!
 const sudahLunas = (pesan) => (pesan.total_dibayar ?? 0) >= (pesan.total_tagihan_real ?? 0);
 
 const resetModal = () => {
@@ -188,12 +182,42 @@ const submitBayarSebagian = () => {
         preserveScroll: true,
         onSuccess: () => {
             resetModal();
-            showBayarSebagianModal.value = false;
             alertStore.show('Pembayaran berhasil dicatat!','success');
         },
         onError: () => alertStore.show('Gagal mencatat pembayaran!','error')
     });
 };
+
+// ==========================================
+// STATE & FUNGSI BARU: CUSTOM ALERT CONFIRM
+// ==========================================
+const showConfirmProduksi = ref(false);
+const idPesananUntukProduksi = ref(null);
+const isProcessingProduksi = ref(false);
+
+const openConfirmProduksi = (id_pesan) => {
+    idPesananUntukProduksi.value = id_pesan;
+    showConfirmProduksi.value = true;
+};
+
+const submitLemparProduksi = () => {
+    if (!idPesananUntukProduksi.value) return;
+
+    isProcessingProduksi.value = true;
+
+    router.post(route('pesan.lemparProduksi', idPesananUntukProduksi.value), {}, {
+        preserveScroll: true,
+        onSuccess: () => {
+            showConfirmProduksi.value = false;
+            alertStore.show('Pesanan berhasil dilempar ke produksi!', 'success');
+        },
+        onError: () => alertStore.show('Gagal memproses pesanan ke produksi!', 'error'),
+        onFinish: () => {
+            isProcessingProduksi.value = false;
+        }
+    });
+};
+// ==========================================
 
 const formatRupiah = (angka) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(angka);
@@ -217,10 +241,7 @@ const formatEnum = (text) => {
 
         <div class="min-h-screen px-4 py-6 mx-auto sm:px-6 lg:px-8 max-w-7xl">
 
-            <!-- BAGIAN ATAS: TOMBOL & FILTER (SUDAH DISAMAKAN DENGAN PRODUK/INDEX) -->
             <div class="flex flex-col gap-4 mb-6 md:flex-row md:items-center md:justify-between">
-
-                <!-- Wrapper Tombol POS Kasir (Kiri di Desktop, Atas di Mobile) -->
                 <div class="w-full shrink-0 md:w-auto">
                     <CustomButton v-if="$can('pesan', 'tambah')" type="link" :href="route('pesan.pos-kasir')" variant="primary" block>
                         <template #icon>
@@ -232,9 +253,7 @@ const formatEnum = (text) => {
                     </CustomButton>
                 </div>
 
-                <!-- Wrapper Filter & Search (Kanan di Desktop, Bawah di Mobile) -->
                 <div class="flex flex-col w-full gap-3 md:flex-row md:items-center md:w-auto">
-                    <!-- Search Input -->
                     <div class="w-full md:w-64 lg:w-72">
                         <CustomInputSearch
                             v-model="search"
@@ -242,8 +261,6 @@ const formatEnum = (text) => {
                             class="w-full"
                         />
                     </div>
-
-                    <!-- Select Filters (Grid 2 kolom di mobile biar sejajar) -->
                     <div class="grid w-full grid-cols-2 gap-3 md:flex md:w-auto md:gap-3">
                         <div class="w-full md:w-48 lg:w-56">
                             <CustomSelect
@@ -265,9 +282,7 @@ const formatEnum = (text) => {
                         </div>
                     </div>
                 </div>
-
             </div>
-            <!-- END BAGIAN ATAS -->
 
             <CustomTable :headers="headers">
                 <tr
@@ -325,9 +340,23 @@ const formatEnum = (text) => {
                     </td>
 
                     <td class="px-4 py-4 text-center whitespace-nowrap">
-                        <CustomButton v-if="$can('pesan')" type="link" :href="route('pesan.detail', p.id_pesan)" variant="info" size="sm">
-                            Detail
-                        </CustomButton>
+                        <div class="flex items-center justify-center gap-2">
+                            <CustomButton v-if="$can('pesan')" type="link" :href="route('pesan.detail', p.id_pesan)" variant="info" size="sm">
+                                Detail
+                            </CustomButton>
+
+                            <!-- TOMBOL PRODUKSI DENGAN CUSTOM ALERT -->
+                            <CustomButton
+                                v-if="p.status_pembayaran === 'belum_lunas' && !p.waktu_deadline && p.status_operasional !== 'batal'"
+                                @click="openConfirmProduksi(p.id_pesan)"
+                                type="button"
+                                variant="primary"
+                                size="sm"
+                                class="bg-indigo-600! hover:bg-indigo-700! border-none! text-white!"
+                            >
+                                Masuk Produksi
+                            </CustomButton>
+                        </div>
                     </td>
                 </tr>
 
@@ -346,6 +375,7 @@ const formatEnum = (text) => {
             </CustomTable>
         </div>
 
+        <!-- MODAL BAYAR SEBAGIAN -->
         <dialog class="modal" :class="{ 'modal-open': showBayarSebagianModal }">
             <div class="w-11/12 max-w-lg modal-box">
                 <h3 class="text-lg font-black">Pembayaran Sebagian</h3>
@@ -384,6 +414,20 @@ const formatEnum = (text) => {
                 </div>
             </div>
         </dialog>
+
+        <!-- IMPLEMENTASI CUSTOM ALERT CONFIRM DI SINI -->
+        <CustomAlertConfirm
+            :show="showConfirmProduksi"
+            type="info"
+            title="Sistem Tempo Produksi"
+            message="Yakin ingin memproses pesanan ini ke meja produksi tanpa pembayaran awal dari customer? Transaksi akan dicatat sebagai Piutang."
+            confirmText="Ya, Masukkan Antrean"
+            cancelText="Batal"
+            :loading="isProcessingProduksi"
+            @close="showConfirmProduksi = false"
+            @confirm="submitLemparProduksi"
+        />
+
     </StafLayout>
 </template>
 

@@ -56,7 +56,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/test-notif/pesanan', function () {
         $user = auth()->user();
-        
+
         if (!in_array($user->staf->id_role_staf ?? null, ['ROLE-STAF-ADMIN', 'ROLE-STAF-KASIR'])) {
             return 'Akses ditolak: Route ini khusus Admin dan Kasir.';
         }
@@ -99,12 +99,12 @@ Route::middleware('auth')->group(function () {
 
         if ($token) {
             $user = auth()->user();
-            
+
             $tokens = is_array($user->fcm_token) ? $user->fcm_token : [];
 
             if (!in_array($token, $tokens)) {
                 $tokens[] = $token;
-                
+
                 $user->update([
                     'fcm_token' => $tokens
                 ]);
@@ -138,6 +138,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('akun', AkunController::class)->middleware('akses:akun');
         Route::middleware('akses:customer')->group(function () {
             Route::resource('customer', CustomerController::class);
+            Route::get('/customer/{id_customer}/rekap', [CustomerController::class, 'rekap'])->name('customer.rekap');
             Route::post('/role-customer', [RoleCustomerController::class, 'store'])->name('role-customer.store');
             Route::get('/customer/{id_customer}/alamat', [AlamatController::class, 'index'])->name('alamat.customer');
             Route::post('/customer/{id_customer}/alamat', [AlamatController::class, 'store'])->name('alamat.store');
@@ -204,6 +205,7 @@ Route::middleware('auth')->group(function () {
             Route::put('/pesan/update-item/{id}', [PesanController::class, 'updateItem'])->middleware('akses:pesan,ubah')->name('pesan.updateItem');
             Route::delete('/pesan/delete-item/{id}', [PesanController::class, 'deleteItem'])->middleware('akses:pesan,hapus')->name('pesan.deleteItem');
             Route::get('/pesan/pos-kasir', [PesanController::class, 'posKasir'])->middleware('akses:pesan,tambah')->name('pesan.pos-kasir');
+            Route::post('/pesan/{id}/lempar-produksi', [PesanController::class, 'lemparKeProduksi'])->name('pesan.lemparProduksi');
         });
         Route::middleware('akses:pembayaran')->group(function () {
             Route::get('pembayaran', [PembayaranController::class, 'index'])->name('pembayaran.index');

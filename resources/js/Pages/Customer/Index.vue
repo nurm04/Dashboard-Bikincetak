@@ -149,6 +149,12 @@ const doDelete = () => {
                                     Menu Customer
                                 </div>
 
+                                <Link v-if="$can('customer')" :href="route('customer.rekap', cust.id_customer)" @click="close" class="flex items-center px-4 py-2.5 text-sm font-bold text-success hover:bg-success/10 transition-colors">
+                                    <svg class="w-4 h-4 mr-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                    </svg>
+                                    Rekap Pesanan
+                                </Link>
                                 <Link v-if="$can('customer', 'ubah')" :href="route('customer.edit', cust.id_customer)" @click="close" class="flex items-center px-4 py-2.5 text-sm font-bold text-primary hover:bg-primary/10 transition-colors">
                                     <svg class="w-4 h-4 mr-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                                     Edit Customer

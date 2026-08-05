@@ -3,16 +3,19 @@
 namespace App\Http\Controllers\Web\User;
 
 use App\Http\Controllers\Controller;
+use App\Mail\CustomerPasswordChanged;
 use App\Models\Customer;
+use App\Models\Pesan;
 use App\Models\RoleCustomer;
 use App\Models\User;
 use App\Services\CustomerService;
+use App\Services\PesanService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Inertia\Inertia;
-use App\Mail\CustomerPasswordChanged;
 use Illuminate\Support\Facades\Mail;
+use Inertia\Inertia;
 
 class CustomerController extends Controller
 {
@@ -204,5 +207,72 @@ class CustomerController extends Controller
         User::find($customer->user_id)->delete();
 
         return redirect()->back()->with('success', 'Data customer berhasil dihapus.');
+    }
+
+    public function rekap($id_customer)
+    {
+        $customer = Customer::with(['user', 'roleCustomer'])->findOrFail($id_customer);
+
+        $bulanIni = Carbon::now()->month;
+        $tahunIni = Carbon::now()->year;
+
+        // Tarik semua history pesanan customer ini (kecuali yang dibatalkan)
+        $semuaPesanan = Pesan::with(['pesananItem.pesananItemFinishing', 'pembayaran'])
+            ->where('id_customer', $id_customer)
+            ->where('status_operasional', '!=', 'batal')
+            ->orderBy('tanggal_pesan', 'desc')
+            ->get();
+
+        $totalOrderBulanIni = 0;
+        $totalBelanjaBulanIni = 0;
+        $totalPiutang = 0;
+
+        $pesananBulanIni = [];
+        $pesananPiutang = [];
+
+        foreach ($semuaPesanan as $pesanan) {
+            // Pakai service yang udah ada biar kalkulasi akurat (termasuk pajak/ongkir kalau ada)
+            $rincian = PesanService::kalkulasiRincianPesanan($pesanan);
+            $grandTotal = $rincian['grand_total'] ?? 0;
+            $sisaTagihan = $rincian['sisa_tagihan'] ?? 0;
+
+            $tanggalPesan = Carbon::parse($pesanan->tanggal_pesan);
+
+            // 1. Kalkulasi Khusus Bulan Berjalan (Untuk trigger upgrade role > 10Jt)
+            if ($tanggalPesan->month == $bulanIni && $tanggalPesan->year == $tahunIni) {
+                $totalOrderBulanIni++;
+                $totalBelanjaBulanIni += $grandTotal;
+
+                $pesananBulanIni[] = [
+                    'id_pesan' => $pesanan->id_pesan,
+                    'tanggal' => $pesanan->tanggal_pesan,
+                    'status_operasional' => $pesanan->status_operasional,
+                    'total_tagihan' => $grandTotal,
+                ];
+            }
+
+            if (in_array($pesanan->status_pembayaran, ['belum_lunas', 'dibayar_sebagian']) && $sisaTagihan > 0) {
+                $totalPiutang += $sisaTagihan;
+
+                $pesananPiutang[] = [
+                    'id_pesan' => $pesanan->id_pesan,
+                    'tanggal' => $pesanan->tanggal_pesan,
+                    'total_tagihan' => $grandTotal,
+                    'sisa_tagihan' => $sisaTagihan,
+                    'status_pembayaran' => $pesanan->status_pembayaran,
+                ];
+            }
+        }
+
+        return Inertia::render('Customer/Rekap', [
+            'customer' => $customer,
+            'statistik' => [
+                'total_order_bulan_ini' => $totalOrderBulanIni,
+                'total_belanja_bulan_ini' => $totalBelanjaBulanIni,
+                'total_piutang' => $totalPiutang,
+            ],
+            'riwayat_bulan_ini' => $pesananBulanIni,
+            'pesanan_piutang' => $pesananPiutang,
+        ]);
     }
 }

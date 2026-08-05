@@ -3,7 +3,8 @@ import StafLayout from '@/Layouts/StafLayout.vue';
 import DeleteUserForm from './Partials/DeleteUserForm.vue';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm.vue';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm.vue';
-import { Head } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
+import { ArrowLeft } from 'lucide-vue-next';
 
 defineProps({
     mustVerifyEmail: {
@@ -13,6 +14,13 @@ defineProps({
         type: String,
     },
 });
+const goBack = () => {
+    if (window.history.length > 1) {
+        window.history.back();
+    } else {
+        router.get(route('dashboard'));
+    }
+};
 </script>
 
 <template>
@@ -20,9 +28,16 @@ defineProps({
 
     <StafLayout>
         <template #header>
-            <h2 class="text-xl font-bold leading-tight text-base-content">
-                Profil Saya
-            </h2>
+            <div class="flex items-center justify-between w-full">
+                <div class="flex items-center gap-4">
+                    <button @click.prevent="goBack" class="btn btn-sm btn-circle btn-ghost ring-1 ring-base-300 transition-colors hover:bg-base-200">
+                        <ArrowLeft class="w-4 h-4" />
+                    </button>
+                    <h2 class="text-xl font-semibold leading-tight text-base-content">
+                        Profil Saya
+                    </h2>
+                </div>
+            </div>
         </template>
 
         <div class="py-12">

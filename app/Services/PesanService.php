@@ -8,6 +8,7 @@ use App\Models\Pesan;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Carbon;
 
 class PesanService
 {
@@ -157,6 +158,38 @@ class PesanService
     {
         $rincian = self::kalkulasiRincianPesanan($pesan);
         return $rincian['grand_total'];
+    }
+
+    public static function hitungDeadlineKerja($jumlahHari)
+    {
+        // 1. Waktu mutlak dihitung mulai dari detik ini (saat pesanan dilempar ke produksi)
+        $waktu = Carbon::now();
+
+        // 2. Tambahkan estimasi hari pengerjaan terlebih dahulu
+        for ($i = 0; $i < $jumlahHari; $i++) {
+            $waktu->addDay();
+
+            // Jika setelah ditambah 1 hari jatuhnya hari Minggu, lewati (tambah 1 hari lagi)
+            if ($waktu->isSunday()) {
+                $waktu->addDay();
+            }
+        }
+
+        // 3. Penyesuaian Jam Kerja (07:00 - 17:00)
+        if ($waktu->hour >= 17) {
+            // Jika deadline jatuh setelah jam 17:00, geser ke besok paginya jam 07:00
+            $waktu->addDay()->startOfDay()->addHours(7);
+
+            // Pastikan jika "besok" itu hari Minggu, geser lagi ke hari Senin jam 07:00
+            if ($waktu->isSunday()) {
+                $waktu->addDay();
+            }
+        } elseif ($waktu->hour < 7) {
+            // Jika deadline jatuh sebelum jam 07:00 (misal jam 5 subuh), set pas jam 07:00 pagi di hari tersebut
+            $waktu->startOfDay()->addHours(7);
+        }
+
+        return $waktu;
     }
 
     public static function hitungTotalBeratPesanan(Pesan $pesan): int

@@ -228,6 +228,14 @@ const handlePrintLabel = (itemId) => {
     }
     window.open(route('pesan.cetakLabelItem', itemId), '_blank');
 };
+
+const goBack = () => {
+    if (window.history.length > 1) {
+        window.history.back();
+    } else {
+        router.get(route('pesan.index'));
+    }
+};
 </script>
 
 <template>
@@ -237,9 +245,9 @@ const handlePrintLabel = (itemId) => {
         <template #header>
             <div class="flex items-center justify-between w-full">
                 <div class="flex items-center gap-4">
-                    <Link :href="route('pesan.index')" class="btn btn-sm btn-circle btn-ghost ring-1 ring-base-300">
+                    <button @click.prevent="goBack" class="btn btn-sm btn-circle btn-ghost ring-1 ring-base-300 transition-colors hover:bg-base-200">
                         <ArrowLeft class="w-4 h-4" />
-                    </Link>
+                    </button>
                     <h2 class="text-xl font-semibold leading-tight text-base-content">
                         Detail Pesanan {{ pesanan.id_pesan }}
                     </h2>

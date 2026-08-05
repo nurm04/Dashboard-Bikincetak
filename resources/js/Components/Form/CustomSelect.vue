@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 
 const props = defineProps({
     modelValue: [String, Number],
@@ -14,11 +14,30 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue']);
 
 const isOpen = ref(false);
-const container = ref(null);
+const actionRef = ref(null); // Samain kayak CustomTableAction
+const dropdownRef = ref(null); // Ref untuk menu dropdown teleport
+const dropdownStyle = ref({});
 
-const toggle = () => {
+const calculatePosition = () => {
+    if (!actionRef.value) return;
+
+    // Ambil posisi elemen input select saat ini
+    const rect = actionRef.value.getBoundingClientRect();
+
+    // Set koordinat, lebar disamakan dengan input aslinya
+    dropdownStyle.value = {
+        top: `${rect.bottom + 8}px`, // Jarak 8px dari bawah tombol
+        left: `${rect.left}px`,
+        width: `${rect.width}px`     // Penting: Biar lebarnya nggak acak-acakan
+    };
+};
+
+const toggle = async () => {
     if (!isOpen.value) {
         window.dispatchEvent(new CustomEvent('close-all-dropdowns'));
+        // Tunggu DOM update, lalu hitung posisi kordinatnya
+        await nextTick();
+        calculatePosition();
     }
     isOpen.value = !isOpen.value;
 };
@@ -36,28 +55,47 @@ const selectOption = (opt) => {
 };
 
 const handleClickOutside = (event) => {
-    if (container.value && !container.value.contains(event.target)) {
+    // Cek apakah klik terjadi di dalam tombol toggle
+    const isClickInsideButton = actionRef.value && actionRef.value.contains(event.target);
+    // Cek apakah klik terjadi di dalam menu dropdown yang di-teleport
+    const isClickInsideDropdown = dropdownRef.value && dropdownRef.value.contains(event.target);
+
+    if (!isClickInsideButton && !isClickInsideDropdown) {
         close();
     }
 };
 
+const handleCloseAll = () => {
+    close();
+};
+
+const handleScroll = () => {
+    // WAJIB: Tutup dropdown otomatis jika tabel atau halaman di-scroll.
+    if (isOpen.value) close();
+};
+
 onMounted(() => {
     document.addEventListener('click', handleClickOutside);
-    window.addEventListener('close-all-dropdowns', close);
+    window.addEventListener('close-all-dropdowns', handleCloseAll);
+    // Angka "true" wajib ada untuk menangkap scroll dari dalam tabel
+    window.addEventListener('scroll', handleScroll, true);
 });
 
 onUnmounted(() => {
     document.removeEventListener('click', handleClickOutside);
-    window.removeEventListener('close-all-dropdowns', close);
+    window.removeEventListener('close-all-dropdowns', handleCloseAll);
+    window.removeEventListener('scroll', handleScroll, true);
 });
 </script>
 
 <template>
-    <div class="relative inline-block w-full" ref="container">
+    <!-- ref actionRef dipindah ke div pembungkus utama -->
+    <div class="relative inline-block w-full" ref="actionRef">
         <label v-if="label" class="block mb-1 ml-1 text-xs font-bold text-base-content/70">
             {{ label }}
         </label>
 
+        <!-- Tombol Pemicu / Input Palsu -->
         <div
             @click.stop="toggle"
             class="flex items-center justify-between w-full px-3 py-2 transition-all duration-300 border rounded-xl cursor-pointer bg-base-100"
@@ -73,29 +111,35 @@ onUnmounted(() => {
             </svg>
         </div>
 
-        <Transition
-            enter-active-class="transition duration-200 ease-out"
-            enter-from-class="scale-95 translate-y-2 opacity-0"
-            enter-to-class="scale-100 translate-y-0 opacity-100"
-            leave-active-class="transition duration-150 ease-in"
-            leave-from-class="scale-100 translate-y-0 opacity-100"
-            leave-to-class="scale-95 translate-y-2 opacity-0"
-        >
-            <div
-                v-if="isOpen"
-                class="absolute right-0 top-full mt-2 w-full min-w-50 z-999 bg-base-100 border border-base-300 shadow-2xl rounded-2xl overflow-hidden py-2"
+        <!-- AJAIBNYA VUE 3: Teleport akan memindahkan elemen ini keluar dari tabel langsung ke <body> -->
+        <Teleport to="body">
+            <Transition
+                enter-active-class="transition duration-200 ease-out"
+                enter-from-class="scale-95 translate-y-2 opacity-0"
+                enter-to-class="scale-100 translate-y-0 opacity-100"
+                leave-active-class="transition duration-150 ease-in"
+                leave-from-class="scale-100 translate-y-0 opacity-100"
+                leave-to-class="scale-95 translate-y-2 opacity-0"
             >
-                <ul class="py-1 overflow-y-auto max-h-60 scrollbar-hide">
-                    <li v-for="opt in options" :key="opt[valueKey]"
-                        @click="selectOption(opt)"
-                        class="px-4 py-3 text-[11px] font-black uppercase tracking-widest transition-all cursor-pointer border-b border-base-200/50 last:border-0 hover:bg-primary/10 hover:text-primary"
-                        :class="String(opt[props.valueKey]) === String(modelValue) ? 'bg-primary/10 text-primary' : 'text-base-content/70'"
-                    >
-                        {{ opt[labelKey] }}
-                    </li>
-                </ul>
-            </div>
-        </Transition>
+                <!-- CLASS fixed DAN z-9999 SEKARANG HARDFIX DI SINI -->
+                <div
+                    v-if="isOpen"
+                    ref="dropdownRef"
+                    class="fixed py-2 overflow-hidden border shadow-2xl z-9999 bg-base-100 border-base-300 rounded-2xl"
+                    :style="dropdownStyle"
+                >
+                    <ul class="py-1 overflow-y-auto max-h-60 scrollbar-hide">
+                        <li v-for="opt in options" :key="opt[valueKey]"
+                            @click="selectOption(opt)"
+                            class="px-4 py-3 text-[11px] font-black uppercase tracking-widest transition-all cursor-pointer border-b border-base-200/50 last:border-0 hover:bg-primary/10 hover:text-primary"
+                            :class="String(opt[props.valueKey]) === String(modelValue) ? 'bg-primary/10 text-primary' : 'text-base-content/70'"
+                        >
+                            {{ opt[labelKey] }}
+                        </li>
+                    </ul>
+                </div>
+            </Transition>
+        </Teleport>
 
         <p v-if="error" class="text-error text-[10px] mt-1 ml-1 font-bold">{{ error }}</p>
     </div>
