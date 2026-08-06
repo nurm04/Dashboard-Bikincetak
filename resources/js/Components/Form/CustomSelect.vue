@@ -69,9 +69,14 @@ const handleCloseAll = () => {
     close();
 };
 
-const handleScroll = () => {
-    // WAJIB: Tutup dropdown otomatis jika tabel atau halaman di-scroll.
-    if (isOpen.value) close();
+const handleScroll = (event) => {
+    if (!isOpen.value) return;
+
+    const isScrollInsideDropdown = dropdownRef.value && dropdownRef.value.contains(event.target);
+
+    if (!isScrollInsideDropdown) {
+        close();
+    }
 };
 
 onMounted(() => {
