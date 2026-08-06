@@ -173,10 +173,10 @@ onMounted(() => {
             <!-- Header Toko & Tujuan -->
             <div class="flex items-start justify-between pb-4 border-b border-black">
                 <div>
-                    <h1 class="font-serif text-2xl font-black tracking-tight text-blue-950">bikincetak</h1>
+                    <h1 class="text-2xl font-black tracking-tight text-blue-950">BIKIN Cetak</h1>
                     <p class="text-[10px] italic text-gray-700">Digital Printing, Offset, Merchandise</p>
                     <p class="text-[9px] mt-1.5 text-gray-800 leading-tight">
-                        WA : 083831862770 | Email : order@bikincetak.co.id <br>
+                        WA : 081213139490 | Email : order@bikincetak.co.id <br>
                         Alamat : Jl. Barata Jaya XVII No. 3 Gubeng - Surabaya
                     </p>
                 </div>
