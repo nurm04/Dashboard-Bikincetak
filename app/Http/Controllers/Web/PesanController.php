@@ -109,6 +109,28 @@ class PesanController extends Controller
         ]);
     }
 
+    /**
+     * Menampilkan halaman riwayat log / audit trail pesanan
+     */
+    public function logRiwayat($id_pesan)
+    {
+        // Ambil data pesanan beserta customer-nya
+        // Dan tarik semua histori log beserta data staf yang melakukan aksi
+        $pesanan = Pesan::with([
+            'customer.user',
+            'logs.staf.user' // Sesuaikan jika relasi nama di model lu berbeda (misal cuma 'logs.staf')
+        ])->findOrFail($id_pesan);
+
+        // Jika pesanan tidak punya log sama sekali (misal data lama), kembalikan dengan pesan
+        if ($pesanan->logs->isEmpty()) {
+            return back()->with('info', 'Belum ada riwayat log yang tercatat untuk pesanan ini.');
+        }
+
+        return inertia('Pesan/LogRiwayat', [
+            'pesanan' => $pesanan
+        ]);
+    }
+
     public function detail($id_pesan)
     {
         $pesanan = Pesan::with([
@@ -359,6 +381,16 @@ class PesanController extends Controller
                 auth()->user()?->staf?->id_staf
             );
 
+            $dataBaru = PesanService::getSnapshotPesanan($pesanan->id_pesan);
+
+            PesanService::catatLog(
+                $pesanan->id_pesan,
+                'buat_pesanan',
+                'Pesanan dibuat melalui POS Kasir',
+                null,
+                $dataBaru
+            );
+
             DB::commit();
 
             return redirect()->route('pesan.index')->with('success', 'Pesanan berhasil dibuat!');
@@ -581,6 +613,7 @@ class PesanController extends Controller
             $pesan = Pesan::with('pesananItem')->findOrFail($id_pesan);
 
             if ($pesan->status_pembayaran === 'belum_lunas' && is_null($pesan->waktu_deadline)) {
+                $dataLama = PesanService::getSnapshotPesanan($id_pesan);
 
                 $maxHari = 1;
                 foreach ($pesan->pesananItem as $item) {
@@ -597,6 +630,16 @@ class PesanController extends Controller
 
                 $pesan->status_operasional = 'menunggu_diproses';
                 $pesan->save();
+
+                $dataBaru = PesanService::getSnapshotPesanan($id_pesan);
+
+                PesanService::catatLog(
+                    $pesan->id_pesan,
+                    'pindah_produksi',
+                    'Pesanan Tempo dimasukkan ke antrean produksi (Set Waktu Deadline)',
+                    $dataLama,
+                    $dataBaru
+                );
 
                 event(new ProduksiBaruEvent($pesan));
             }
@@ -625,14 +668,23 @@ class PesanController extends Controller
 
         DB::beginTransaction();
         try {
+            $dataLama = PesanService::getSnapshotPesanan($id_pesan);
+
             $pesanan->update([
                 'id_alamat' => $request->id_alamat,
                 'ekspedisi_nama' => strtoupper($request->ekspedisi_nama),
                 'ekspedisi_layanan' => $request->ekspedisi_layanan,
                 'harga_ongkir' => $request->harga_ongkir
             ]);
-
             $this->sinkronisasiKeuanganPesanan($id_pesan);
+            $dataBaru = PesanService::getSnapshotPesanan($id_pesan);
+            PesanService::catatLog(
+                $id_pesan,
+                'edit_pesanan',
+                'Staf mengubah Alamat dan/atau Ekspedisi Pengiriman',
+                $dataLama,
+                $dataBaru
+            );
 
             DB::commit();
             return back()->with('success', 'Alamat & Pengiriman berhasil diperbarui!');
@@ -652,8 +704,20 @@ class PesanController extends Controller
 
         DB::beginTransaction();
         try {
+            $dataLama = PesanService::getSnapshotPesanan($request->id_pesan);
+
             $item = $this->saveItem($request);
             $this->sinkronisasiKeuanganPesanan($request->id_pesan);
+
+            $dataBaru = PesanService::getSnapshotPesanan($request->id_pesan);
+
+            PesanService::catatLog(
+                $request->id_pesan,
+                'tambah_item',
+                'Staf menambahkan item baru ke dalam pesanan',
+                $dataLama,
+                $dataBaru
+            );
 
             DB::commit();
             return back()->with('success', 'Item berhasil ditambahkan.');
@@ -673,8 +737,20 @@ class PesanController extends Controller
 
         DB::beginTransaction();
         try {
+            $dataLama = PesanService::getSnapshotPesanan($pesanan->id_pesan);
+
             $this->saveItem($request, $item);
             $this->sinkronisasiKeuanganPesanan($pesanan->id_pesan);
+
+            $dataBaru = PesanService::getSnapshotPesanan($pesanan->id_pesan);
+
+            PesanService::catatLog(
+                $pesanan->id_pesan,
+                'edit_item',
+                'Staf mengubah rincian produk/finishing pada item pesanan',
+                $dataLama,
+                $dataBaru
+            );
 
             DB::commit();
             return back()->with('success', 'Item berhasil diperbarui.');
@@ -696,10 +772,22 @@ class PesanController extends Controller
         try {
             $id_pesan = $item->id_pesan;
 
+            $dataLama = PesanService::getSnapshotPesanan($id_pesan);
+
             $item->pesananItemFinishing()->delete();
             $item->delete();
 
             $this->sinkronisasiKeuanganPesanan($id_pesan);
+
+            $dataBaru = PesanService::getSnapshotPesanan($id_pesan);
+
+            PesanService::catatLog(
+                $id_pesan,
+                'hapus_item',
+                'Staf menghapus item dari keranjang pesanan',
+                $dataLama,
+                $dataBaru
+            );
 
             DB::commit();
             return back()->with('success', 'Item berhasil dihapus.');

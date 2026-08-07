@@ -38,6 +38,10 @@ class Pesan extends Model
         'tanggal_selesai' => 'datetime',
     ];
 
+    public function logs(): HasMany
+    {
+        return $this->hasMany(PesananLog::class, 'id_pesan', 'id_pesan')->latest();
+    }
     public function pembayaran()
     {
         return $this->hasMany(Pembayaran::class, 'id_pesan', 'id_pesan');

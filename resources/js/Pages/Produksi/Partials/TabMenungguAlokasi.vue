@@ -7,6 +7,7 @@ import { Clock, Plus, Trash2, Inbox, Printer } from 'lucide-vue-next';
 const props = defineProps({
     pesananList: Array,
     vendors: Array,
+    stafs: Array,
     currentUser: Object,
 });
 
@@ -42,7 +43,8 @@ const openAlokasiModal = (pesanan) => {
         nama_produk: item.nama_produk_snapshot,
         total_qty: item.jumlah,
         is_desain: item.id_sku?.startsWith('PRD-0002') || false,
-        skema: [{ tipe_pengerjaan: 'sendiri', id_vendor: null, qty_dikerjakan: item.jumlah, instruksi_pengerjaan: '' }]
+        // <-- TAMBAHAN: id_staf_pelaksana dimasukkan ke state awal
+        skema: [{ tipe_pengerjaan: 'sendiri', id_vendor: null, id_staf_pelaksana: null, qty_dikerjakan: item.jumlah, instruksi_pengerjaan: '' }]
     }));
     isAlokasiModalOpen.value = true;
 };
@@ -70,7 +72,8 @@ const addSkema = (itemIndex) => {
 
     // Hanya bisa tambah pelaksana kalau masih ada sisa quantity
     if (sisa > 0) {
-        item.skema.push({ tipe_pengerjaan: 'vendor', id_vendor: null, qty_dikerjakan: sisa, instruksi_pengerjaan: '' });
+        // <-- TAMBAHAN: id_staf_pelaksana disertakan saat menambah baris pelaksana baru
+        item.skema.push({ tipe_pengerjaan: 'vendor', id_vendor: null, id_staf_pelaksana: null, qty_dikerjakan: sisa, instruksi_pengerjaan: '' });
     } else {
         alertStore.show('Seluruh Qty pesanan sudah dialokasikan! Kurangi Qty pelaksana lain terlebih dahulu.', 'warning');
     }
@@ -215,13 +218,21 @@ const submitAlokasi = () => {
                                 </div>
                                 <div class="space-y-4 sm:space-y-3">
                                     <div v-for="(skema, skemaIndex) in item.skema" :key="skemaIndex" class="flex flex-col items-start gap-3 p-3 border sm:p-0 sm:border-none rounded-xl border-base-200 bg-base-50/50 sm:bg-transparent sm:flex-row sm:items-end">
+
+                                        <!-- JENIS PELAKSANA (Tambahan event @change untuk mereset id terkait) -->
                                         <div class="w-full sm:w-1/4">
                                             <label class="block mb-1 text-[11px] font-black uppercase tracking-widest text-base-content/50">Pelaksana</label>
-                                            <select v-model="skema.tipe_pengerjaan" class="w-full font-bold select select-sm select-bordered rounded-xl">
+                                            <select
+                                                v-model="skema.tipe_pengerjaan"
+                                                @change="skema.id_vendor = null; skema.id_staf_pelaksana = null"
+                                                class="w-full font-bold select select-sm select-bordered rounded-xl"
+                                            >
                                                 <option value="sendiri">In-House</option>
                                                 <option value="vendor">Vendor</option>
                                             </select>
                                         </div>
+
+                                        <!-- JIKA TIPE: VENDOR -->
                                         <div v-if="skema.tipe_pengerjaan === 'vendor'" class="w-full sm:w-1/4">
                                             <label class="block mb-1 text-[11px] font-black uppercase tracking-widest text-base-content/50">Pilih Vendor</label>
                                             <select v-model="skema.id_vendor" required class="w-full font-bold select select-sm select-bordered rounded-xl">
@@ -229,6 +240,16 @@ const submitAlokasi = () => {
                                                 <option v-for="v in vendors" :key="v.id_vendor" :value="v.id_vendor">{{ v.nama_vendor }}</option>
                                             </select>
                                         </div>
+
+                                        <!-- JIKA TIPE: IN-HOUSE (SENDIRI) -->
+                                        <div v-if="skema.tipe_pengerjaan === 'sendiri'" class="w-full sm:w-1/4">
+                                            <label class="block mb-1 text-[11px] font-black uppercase tracking-widest text-base-content/50">Pilih Staf (In-House)</label>
+                                            <select v-model="skema.id_staf_pelaksana" required class="w-full font-bold select select-sm select-bordered rounded-xl">
+                                                <option :value="null" disabled>Pilih Staf Produksi...</option>
+                                                <option v-for="s in stafs" :key="s.id_staf" :value="s.id_staf">{{ s.user?.name || s.id_staf }}</option>
+                                            </select>
+                                        </div>
+
                                         <div class="w-full sm:w-24">
                                             <label class="block mb-1 text-[11px] font-black uppercase tracking-widest text-base-content/50">Qty <span class="text-[9px] normal-case tracking-normal opacity-70">(Maks: {{ getMaxQty(item, skemaIndex) }})</span></label>
                                             <input

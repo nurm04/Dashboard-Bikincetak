@@ -450,6 +450,17 @@ class PesanController extends Controller
             $rincian = PesanService::kalkulasiRincianPesanan($newPesan);
             $totalTagihanLengkap = $rincian['grand_total'];
 
+            $dataBaru = PesanService::getSnapshotPesanan($newPesan->id_pesan);
+
+            PesanService::catatLog(
+                $newPesan->id_pesan,
+                'buat_pesanan',
+                'Pesanan baru dibuat oleh pelanggan (via Web)',
+                null,
+                $dataBaru,
+                null
+            );
+
             DB::commit();
 
             try {

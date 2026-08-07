@@ -9,7 +9,8 @@ import CustomInputNumber from '@/Components/Form/CustomInputNumber.vue';
 import CustomInput from '@/Components/Form/CustomInput.vue';
 import CustomInputSearch from '@/Components/Form/CustomInputSearch.vue';
 import CustomSelect from '@/Components/Form/CustomSelect.vue';
-import CustomAlertConfirm from '@/Components/CustomAlertConfirm.vue'; // <-- Import komponen baru
+import CustomAlertConfirm from '@/Components/CustomAlertConfirm.vue';
+import CustomTableAction from '@/Components/CustomTableAction.vue';
 
 const debounce = (fn, delay) => {
     let timeoutId;
@@ -340,23 +341,43 @@ const formatEnum = (text) => {
                     </td>
 
                     <td class="px-4 py-4 text-center whitespace-nowrap">
-                        <div class="flex items-center justify-center gap-2">
-                            <CustomButton v-if="$can('pesan')" type="link" :href="route('pesan.detail', p.id_pesan)" variant="info" size="sm">
-                                Detail
-                            </CustomButton>
+                        <CustomTableAction v-slot="{ close }">
 
-                            <!-- TOMBOL PRODUKSI DENGAN CUSTOM ALERT -->
-                            <CustomButton
-                                v-if="p.status_pembayaran === 'belum_lunas' && !p.waktu_deadline && p.status_operasional !== 'batal'"
-                                @click="openConfirmProduksi(p.id_pesan)"
-                                type="button"
-                                variant="primary"
-                                size="sm"
-                                class="bg-indigo-600! hover:bg-indigo-700! border-none! text-white!"
-                            >
-                                Masuk Produksi
-                            </CustomButton>
-                        </div>
+                            <!-- Header Menu -->
+                            <div class="px-4 py-2 text-[10px] font-black text-base-content/40 uppercase tracking-widest border-b border-base-300/50 mb-1">
+                                Menu Pesanan
+                            </div>
+
+                            <!-- 1. Detail Pesanan -->
+                            <Link :href="route('pesan.detail', p.id_pesan)" @click="close" class="flex items-center px-4 py-2.5 text-sm font-bold text-base-content hover:bg-base-200 transition-colors">
+                                <svg class="w-4 h-4 mr-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                Detail Pesanan
+                            </Link>
+
+                            <!-- 2. Riwayat Log (Sementara pakai '#' sampai route-nya lu daftarin di web.php) -->
+                            <Link :href="route('pesan.log', p.id_pesan)" @click="close" class="flex items-center px-4 py-2.5 text-sm font-bold text-info hover:bg-info/10 transition-colors">
+                                <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                Riwayat Log
+                            </Link>
+
+                            <!-- 3. Masuk Produksi (Kondisional) -->
+                            <template v-if="p.status_pembayaran === 'belum_lunas' && !p.waktu_deadline && p.status_operasional !== 'batal'">
+                                <div class="my-1 border-t border-base-300/50"></div>
+
+                                <button @click="openConfirmProduksi(p.id_pesan); close()" class="flex items-center w-full px-4 py-2.5 text-sm font-bold text-primary hover:bg-primary/10 transition-colors">
+                                    <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                    </svg>
+                                    Masuk Produksi
+                                </button>
+                            </template>
+
+                        </CustomTableAction>
                     </td>
                 </tr>
 

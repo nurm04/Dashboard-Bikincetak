@@ -16,6 +16,7 @@ const currentUser = page.props.auth?.user;
 const props = defineProps({
     pesananProduksi: Array,
     vendors: Array,
+    stafs: Array,
     currentVendorId: String,
 });
 
@@ -136,6 +137,7 @@ const listPengantaran = computed(() =>
                     v-if="activeTab === 'alokasi'"
                     :pesananList="listAlokasi"
                     :vendors="vendors"
+                    :stafs="stafs"
                     :currentUser="currentUser"
                 />
 

@@ -112,6 +112,8 @@ class PembayaranController extends Controller
         DB::beginTransaction();
 
         try {
+            $dataLama = PesanService::getSnapshotPesanan($id_pesan);
+
             $nominalDibayar = 0;
             $idPembayaran = null;
 
@@ -209,6 +211,21 @@ class PembayaranController extends Controller
             }
 
             event(new ProduksiBaruEvent($pesan));
+
+            $dataBaru = PesanService::getSnapshotPesanan($id_pesan);
+
+            $keteranganLog = "Staf mengupdate status pembayaran menjadi: " . str_replace('_', ' ', $request->status_pembayaran);
+            if ($nominalDibayar > 0) {
+                $keteranganLog .= " (Nominal: Rp " . number_format($nominalDibayar, 0, ',', '.') . ")";
+            }
+
+            PesanService::catatLog(
+                $id_pesan,
+                'pembayaran',
+                $keteranganLog,
+                $dataLama,
+                $dataBaru
+            );
 
             DB::commit();
             return back()->with('success', 'Pembayaran berhasil dicatat & masuk ke Buku Besar.');

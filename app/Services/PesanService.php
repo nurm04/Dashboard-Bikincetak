@@ -5,10 +5,11 @@ namespace App\Services;
 use App\Mail\CheckoutSuccessMail;
 use App\Models\Komposisi;
 use App\Models\Pesan;
+use App\Models\PesananLog;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Carbon;
 
 class PesanService
 {
@@ -48,6 +49,29 @@ class PesanService
         preg_match('/(\d+)$/', $idPesan, $matches);
         $nomorUrut = (int) ($matches[1] ?? 1);
         return ($nomorUrut % 100) + 1;
+    }
+
+    public static function catatLog($id_pesan, $aksi, $keterangan = null, $dataLama = null, $dataBaru = null, $idStaf = null)
+    {
+        if (is_null($idStaf)) {
+            $staf = auth()->user()?->staf;
+            $idStaf = $staf ? $staf->id_staf : null;
+        }
+
+        return PesananLog::create([
+            'id_pesan'   => $id_pesan,
+            'id_staf'    => $idStaf,
+            'aksi'       => $aksi,
+            'keterangan' => $keterangan,
+            'data_lama'  => $dataLama,
+            'data_baru'  => $dataBaru,
+        ]);
+    }
+
+    public static function getSnapshotPesanan($id_pesan)
+    {
+        $pesanan = Pesan::with(['pesananItem.pesananItemFinishing'])->find($id_pesan);
+        return $pesanan ? $pesanan->toArray() : null;
     }
 
     public static function kalkulasiRincianPesanan(Pesan $pesan): array

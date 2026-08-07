@@ -16,6 +16,7 @@ class PesananItemProduksi extends Model
         'id_pesanan_item',
         'tipe_pengerjaan',
         'id_vendor',
+        'id_staf_pelaksana',
         'id_tagihan_vendor',
         'qty_dikerjakan',
         'status_pengerjaan',
@@ -37,5 +38,9 @@ class PesananItemProduksi extends Model
     public function vendor(): BelongsTo
     {
         return $this->belongsTo(Vendor::class, 'id_vendor', 'id_vendor');
+    }
+    public function stafPelaksana(): BelongsTo
+    {
+        return $this->belongsTo(Staf::class, 'id_staf_pelaksana', 'id_staf'); // Sesuaikan dengan model staf/user lu
     }
 }

@@ -9,6 +9,7 @@ use App\Models\Komposisi;
 use App\Models\Pesan;
 use App\Models\PesananItem;
 use App\Models\PesananItemProduksi;
+use App\Models\Staf;
 use App\Models\Vendor;
 use App\Services\PesanService;
 use Illuminate\Http\Request;
@@ -66,11 +67,13 @@ class ProduksiController extends Controller
 
         $pesananProduksi = $query->orderBy('waktu_deadline', 'asc')->get();
         $vendors = Vendor::where('is_active', true)->get();
+        $stafs = Staf::with('user')->get();
 
         return Inertia::render('Produksi/Index', [
             'pesananProduksi' => $pesananProduksi,
             'vendors' => $vendors,
-            'currentVendorId' => $vendorId
+            'currentVendorId' => $vendorId,
+            'stafs' => $stafs,
         ]);
     }
 
@@ -85,6 +88,7 @@ class ProduksiController extends Controller
             'alokasi.*.skema' => 'required|array|min:1',
             'alokasi.*.skema.*.tipe_pengerjaan' => 'required|in:sendiri,vendor',
             'alokasi.*.skema.*.id_vendor' => 'nullable|required_if:alokasi.*.skema.*.tipe_pengerjaan,vendor|exists:vendor,id_vendor',
+            'alokasi.*.skema.*.id_staf_pelaksana' => 'nullable|required_if:alokasi.*.skema.*.tipe_pengerjaan,sendiri|exists:staf,id_staf',
             'alokasi.*.skema.*.qty_dikerjakan' => 'required|numeric|min:1',
             'alokasi.*.skema.*.instruksi_pengerjaan' => 'nullable|string'
         ]);
@@ -93,6 +97,8 @@ class ProduksiController extends Controller
 
         try {
             DB::beginTransaction();
+
+            $dataLama = PesanService::getSnapshotPesanan($id_pesan);
 
             foreach ($request->alokasi as $itemAlokasi) {
                 $item = PesananItem::findOrFail($itemAlokasi['id_pesanan_item']);
@@ -108,7 +114,8 @@ class ProduksiController extends Controller
                     PesananItemProduksi::create([
                         'id_pesanan_item' => $item->id,
                         'tipe_pengerjaan' => $skema['tipe_pengerjaan'],
-                        'id_vendor' => $skema['id_vendor'] ?? null,
+                        'id_vendor' => $skema['tipe_pengerjaan'] === 'vendor' ? $skema['id_vendor'] : null,
+                        'id_staf_pelaksana' => $skema['tipe_pengerjaan'] === 'sendiri' ? $skema['id_staf_pelaksana'] : null,
                         'qty_dikerjakan' => $skema['qty_dikerjakan'],
                         'status_pengerjaan' => 'menunggu',
                         'instruksi_pengerjaan' => $skema['instruksi_pengerjaan'] ?? null,
@@ -121,6 +128,16 @@ class ProduksiController extends Controller
                 $pesanan->status_operasional = 'proses_pengerjaan';
                 $pesanan->save();
             }
+
+            $dataBaru = PesanService::getSnapshotPesanan($id_pesan);
+
+            PesanService::catatLog(
+                $id_pesan,
+                'alokasi_pekerjaan',
+                'Staf mengatur alokasi pengerjaan produksi (In-House / Vendor) dan mengubah status ke Proses Pengerjaan',
+                $dataLama,
+                $dataBaru
+            );
 
             DB::commit();
             return back()->with('success', 'Alokasi produksi berhasil disimpan dan status diubah ke Proses Pengerjaan.');
@@ -166,6 +183,9 @@ class ProduksiController extends Controller
             DB::beginTransaction();
 
             $item = $schedule->pesananItem;
+            $id_pesan = $item->id_pesan;
+
+            $dataLama = PesanService::getSnapshotPesanan($id_pesan);
 
             if ($schedule->tipe_pengerjaan === 'sendiri' && $schedule->status_pengerjaan !== 'selesai' && $item->id_sku !== 'PRD-0001-SKU-001') {
 
@@ -257,6 +277,19 @@ class ProduksiController extends Controller
                 'hasil_desain' => $pathHasil
             ]);
 
+            $dataBaru = PesanService::getSnapshotPesanan($id_pesan);
+
+            $labelTipe = $schedule->tipe_pengerjaan === 'vendor' ? 'Vendor' : 'In-House';
+            $namaProduk = $item->nama_produk_snapshot;
+
+            PesanService::catatLog(
+                $id_pesan,
+                'selesai_produksi',
+                "Pengerjaan item '{$namaProduk}' oleh {$labelTipe} telah diselesaikan",
+                $dataLama,
+                $dataBaru
+            );
+
             DB::commit();
             return back()->with('success', 'Progress item produksi berhasil diperbarui.');
 
@@ -298,6 +331,8 @@ class ProduksiController extends Controller
             $pesanan = Pesan::with(['pesananItem.pesananItemFinishing', 'pembayaran'])
                 ->where('id_pesan', $id_pesan)
                 ->firstOrFail();
+
+            $dataLama = PesanService::getSnapshotPesanan($id_pesan);
 
             // 1. Update data pengiriman dan status operasional
             $pesanan->update([
@@ -356,6 +391,16 @@ class ProduksiController extends Controller
                 }
             }
 
+            $dataBaru = PesanService::getSnapshotPesanan($id_pesan);
+
+            PesanService::catatLog(
+                $id_pesan,
+                'pindah_pengantaran',
+                'Pesanan masuk ke tahap pengantaran / siap diambil, dan rincian ekspedisi diperbarui',
+                $dataLama,
+                $dataBaru
+            );
+
             DB::commit();
             return back()->with('success', 'Pesanan berhasil diproses dan masuk ke tahap pengantaran.');
 
@@ -399,6 +444,8 @@ class ProduksiController extends Controller
         DB::beginTransaction();
 
         try {
+            $dataLama = PesanService::getSnapshotPesanan($id_pesan);
+
             // 2. Update status operasional & resi
             $pesanan->status_operasional = 'proses_pengantaran';
 
@@ -423,7 +470,7 @@ class ProduksiController extends Controller
                     }
 
                     // Cek biar nggak double
-                    $jurnalSudahAda = \App\Models\BukuBesar::where('id_referensi', $pesanan->id_pesan)
+                    $jurnalSudahAda = BukuBesar::where('id_referensi', $pesanan->id_pesan)
                         ->where('id_akun', $akunPiutang)
                         ->where('keterangan', 'like', '%Piutang%')
                         ->exists();
@@ -451,6 +498,21 @@ class ProduksiController extends Controller
                     }
                 }
             }
+
+            $dataBaru = PesanService::getSnapshotPesanan($id_pesan);
+
+            $keteranganLog = "Pesanan reguler dikirim dan status berubah menjadi Proses Pengantaran.";
+            if ($request->filled('nomor_resi')) {
+                $keteranganLog .= " (No. Resi: {$request->nomor_resi})";
+            }
+
+            PesanService::catatLog(
+                $id_pesan,
+                'kirim_pesanan',
+                $keteranganLog,
+                $dataLama,
+                $dataBaru
+            );
 
             DB::commit();
             return back()->with('success', 'Status pesanan berhasil diubah ke Proses Pengantaran & Piutang Tercatat!');
