@@ -219,22 +219,9 @@ class PesanController extends Controller
 
             $id_pesan = PesanService::generateId();
             $kode_transaksi = PesanService::generateKodeTransaksi();
-            $maxHari = 1;
-
-            if (in_array($request->status_pembayaran, ['dibayar_sebagian', 'lunas'])) {
-                foreach ($request->items as $item) {
-                    $estimasi = $item['estimasi_pengerjaan'] ?? 'Reguler';
-                    if (preg_match('/(\d+)/', $estimasi, $matches)) {
-                        $hari = (int) $matches[1];
-                        if ($hari > $maxHari) {
-                            $maxHari = $hari;
-                        }
-                    }
-                }
-            }
 
             $waktuDeadline = in_array($request->status_pembayaran, ['dibayar_sebagian', 'lunas'])
-                ? PesanService::hitungDeadlineKerja(now(), $maxHari)
+                ? PesanService::hitungDeadlineKerja($request->items)
                 : null;
 
             $pesanan = Pesan::create([
@@ -380,6 +367,8 @@ class PesanController extends Controller
                 $request->nominal_bayar,
                 auth()->user()?->staf?->id_staf
             );
+
+            event(new ProduksiBaruEvent($pesanan));
 
             $dataBaru = PesanService::getSnapshotPesanan($pesanan->id_pesan);
 
@@ -615,18 +604,7 @@ class PesanController extends Controller
             if ($pesan->status_pembayaran === 'belum_lunas' && is_null($pesan->waktu_deadline)) {
                 $dataLama = PesanService::getSnapshotPesanan($id_pesan);
 
-                $maxHari = 1;
-                foreach ($pesan->pesananItem as $item) {
-                    if (preg_match('/(\d+)/', $item->estimasi_pengerjaan_snapshot, $matches)) {
-                        $hari = (int) $matches[1];
-                        if ($hari > $maxHari) {
-                            $maxHari = $hari;
-                        }
-                    }
-                }
-
-                $waktuAwal = $pesan->tanggal_pesan ?? now();
-                $pesan->waktu_deadline = PesanService::hitungDeadlineKerja($maxHari);
+                $pesan->waktu_deadline = PesanService::hitungDeadlineKerja($pesan->pesananItem);;
 
                 $pesan->status_operasional = 'menunggu_diproses';
                 $pesan->save();

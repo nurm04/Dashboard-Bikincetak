@@ -165,18 +165,7 @@ class PembayaranController extends Controller
             }
 
             if (in_array($pesan->status_pembayaran, ['dibayar_sebagian', 'lunas']) && is_null($pesan->waktu_deadline)) {
-                $maxHari = 1;
-
-                foreach ($pesan->pesananItem as $item) {
-                    if (preg_match('/(\d+)/', $item->estimasi_pengerjaan_snapshot, $matches)) {
-                        $hari = (int) $matches[1];
-                        if ($hari > $maxHari) {
-                            $maxHari = $hari;
-                        }
-                    }
-                }
-
-                $pesan->waktu_deadline = PesanService::hitungDeadlineKerja($maxHari);
+                $pesan->waktu_deadline = PesanService::hitungDeadlineKerja($pesan->pesananItem);
             }
 
             $pesan->save();

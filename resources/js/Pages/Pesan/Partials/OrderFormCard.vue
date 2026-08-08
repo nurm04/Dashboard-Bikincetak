@@ -44,6 +44,7 @@ const form = ref({
     catatan: '',
     custom_nama_produk: '',
     custom_harga_satuan: 0,
+    custom_sla_price: 0, // Ditambahkan untuk menampung harga pengerjaan custom
     custom_attributes: {},
 });
 
@@ -93,7 +94,7 @@ watch(() => props.editData, async (newVal) => {
     form.value = {
         id_produk: '', id_sku: '', estimasi_pengerjaan: 'Reguler', finishings: {},
         desainPayload: { tipe_file: 'upload', file: null, link_file: '' }, jumlah: 1, catatan: '',
-        custom_nama_produk: '', custom_harga_satuan: 0, custom_attributes: {}
+        custom_nama_produk: '', custom_harga_satuan: 0, custom_sla_price: 0, custom_attributes: {}
     };
 
     const isEditingCustom = newVal.id_sku === 'PRD-0001-SKU-001';
@@ -103,6 +104,7 @@ watch(() => props.editData, async (newVal) => {
         form.value.id_sku = 'PRD-0001-SKU-001';
         form.value.custom_nama_produk = newVal.nama_produk_snapshot;
         form.value.custom_harga_satuan = newVal.harga_satuan_snapshot;
+        form.value.custom_sla_price = newVal.harga_pengerjaan_snapshot || 0; // Load SLA produk custom
     } else {
         await fetchDetailProduk(form.value.id_produk);
     }
@@ -201,12 +203,10 @@ const diskonMember = computed(() => {
 const totalDiskonSatuan = computed(() => diskonGrosir.value + diskonMember.value);
 const hargaSatuanSnapshot = computed(() => Math.max(0, hargaDasarAwal.value - totalDiskonSatuan.value));
 
-// ==== RUMUS ASLI LU CUMA DIGANTI VARIABELNYA AJA ====
 const hargaSatuProdukFull = computed(() => {
     // Gabung harga Dasar dengan hasil hitungan dari FormCetakBuku.vue
     return hargaSatuanSnapshot.value + biayaTambahanCustom.value;
 });
-// ===================================
 
 const pengerjaanOptions = computed(() => {
     if (isCustomProduct.value || isJasaDesain.value) return [];
@@ -258,7 +258,10 @@ const totalHargaProdukUtama = computed(() => hargaSatuProdukFull.value * form.va
 const totalProduk = computed(() => totalHargaProdukUtama.value + totalFinishing.value);
 
 const totalSla = computed(() => {
-    if (isCustomProduct.value || isJasaDesain.value) return 0;
+    if (isJasaDesain.value) return 0;
+
+    // Pastikan custom SLA terbaca untuk produk custom (PRD-0001)
+    if (isCustomProduct.value) return Number(form.value.custom_sla_price) || 0;
 
     const p = selectedSku.value?.harga_pengerjaan?.find(o => o.pengerjaan === form.value.estimasi_pengerjaan);
 
@@ -357,6 +360,7 @@ watch(() => form.value.id_produk, (val) => {
         form.value.custom_harga_satuan = 0;
         form.value.finishings = {};
         form.value.estimasi_pengerjaan = 'Reguler';
+        form.value.custom_sla_price = 0; // Reset saat switch mode
         form.value.custom_attributes = {};
         form.value.jumlah = 1;
     } else if (val === 'PRD-0002') {
@@ -416,8 +420,8 @@ const handleFormSubmit = () => {
         nama_produk_snapshot: isCustomProduct.value ? form.value.custom_nama_produk : selectedSku.value?.nama_sku,
         jumlah: form.value.jumlah,
         catatan: form.value.catatan,
-        estimasi_pengerjaan: form.value.estimasi_pengerjaan,
 
+        estimasi_pengerjaan: form.value.estimasi_pengerjaan,
         tipe_kalkulasi: tipeKalkulasi.value,
 
         harga_dasar_awal_snapshot: hargaDasarAwal.value,
@@ -425,6 +429,8 @@ const handleFormSubmit = () => {
         rincian_diskon_snapshot: props.isPosMode ? rincianDiskon : JSON.stringify(rincianDiskon),
 
         harga_satuan_snapshot: hargaSatuanSnapshot.value,
+
+        // harga pengerjaan akan mengambil nilai dari "totalSla" di mana untuk produk custom sudah diarahkan membaca custom_sla_price
         harga_pengerjaan_snapshot: totalSla.value,
 
         finishing: props.isPosMode ? finishingPayload.value : JSON.stringify(finishingPayload.value),
@@ -480,9 +486,14 @@ const handleFormSubmit = () => {
                 <h3 class="flex items-center gap-2 mb-2 text-xs font-black tracking-widest uppercase text-primary">Spesifikasi Dasar</h3>
                 <div class="space-y-5">
                     <CustomSelectSearch v-model="form.id_produk" label="Pilih Produk Master" :options="listProduks" labelKey="nama_produk" valueKey="id_produk" placeholder="-- Cari Produk --" />
+
                     <template v-if="isCustomProduct">
                         <CustomInput label="Nama Produk / Pesanan" type="text" v-model="form.custom_nama_produk" placeholder="Ketik nama pesanan secara manual..." />
                         <CustomInput label="Harga Satuan (Rp)" type="number" v-model="form.custom_harga_satuan" />
+
+                        <!-- TAMBAHAN: Field Estimasi Pengerjaan & Harga Pengerjaan khusus Custom Product -->
+                        <CustomInput label="Estimasi Pengerjaan" type="text" v-model="form.estimasi_pengerjaan" placeholder="Cth: 1 Hari, Kilat, dll..." />
+                        <CustomInputNumber label="Harga Pengerjaan (Rp)" v-model="form.custom_sla_price" placeholder="Tarif pengerjaan (opsional)..." />
                     </template>
 
                     <template v-else>

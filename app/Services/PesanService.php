@@ -184,33 +184,99 @@ class PesanService
         return $rincian['grand_total'];
     }
 
-    public static function hitungDeadlineKerja($jumlahHari)
+    public static function hitungDeadlineKerja($items)
     {
-        // 1. Waktu mutlak dihitung mulai dari detik ini (saat pesanan dilempar ke produksi)
-        $waktu = Carbon::now();
+        $maxJam = 0;
+        $maxHari = 0;
 
-        // 2. Tambahkan estimasi hari pengerjaan terlebih dahulu
-        for ($i = 0; $i < $jumlahHari; $i++) {
-            $waktu->addDay();
+        // 1. Looping array item untuk mencari SLA terlama
+        foreach ($items as $item) {
+            $estimasi = '';
 
-            // Jika setelah ditambah 1 hari jatuhnya hari Minggu, lewati (tambah 1 hari lagi)
-            if ($waktu->isSunday()) {
-                $waktu->addDay();
+            // DETEKSI SMART: Cek apakah item berupa Array (dari Request API)
+            // atau Object Model (dari query Database PesananItem)
+            if (is_array($item)) {
+                $estimasi = $item['estimasi_pengerjaan'] ?? $item['estimasi_pengerjaan_snapshot'] ?? '';
+            } elseif (is_object($item)) {
+                $estimasi = $item->estimasi_pengerjaan ?? $item->estimasi_pengerjaan_snapshot ?? '';
+            }
+
+            // Regex untuk format Hari (contoh: "1 Hari", "2 Hari Reguler")
+            if (preg_match('/(\d+)\s*hari/i', $estimasi, $matches)) {
+                $hari = (int) $matches[1];
+                if ($hari > $maxHari) $maxHari = $hari;
+            }
+            // Regex untuk format Jam (contoh: "2 Jam", "12 Jam Kilat")
+            elseif (preg_match('/(\d+)\s*jam/i', $estimasi, $matches)) {
+                $jam = (int) $matches[1];
+                if ($jam > $maxJam) $maxJam = $jam;
             }
         }
 
-        // 3. Penyesuaian Jam Kerja (07:00 - 17:00)
-        if ($waktu->hour >= 17) {
-            // Jika deadline jatuh setelah jam 17:00, geser ke besok paginya jam 07:00
-            $waktu->addDay()->startOfDay()->addHours(7);
+        // Fallback default jika teks tidak jelas / murni kosong (Otomatis 1 Hari)
+        if ($maxHari === 0 && $maxJam === 0) {
+            $maxHari = 1;
+        }
 
-            // Pastikan jika "besok" itu hari Minggu, geser lagi ke hari Senin jam 07:00
-            if ($waktu->isSunday()) {
+        $waktu = Carbon::now();
+
+        // ============================================
+        // PRIORITAS 1: KALKULASI JIKA ADA FORMAT "HARI" TERLAMA
+        // ============================================
+        if ($maxHari > 0) {
+            for ($i = 0; $i < $maxHari; $i++) {
                 $waktu->addDay();
+                if ($waktu->isSunday()) {
+                    $waktu->addDay(); // Lompati hari Minggu
+                }
             }
-        } elseif ($waktu->hour < 7) {
-            // Jika deadline jatuh sebelum jam 07:00 (misal jam 5 subuh), set pas jam 07:00 pagi di hari tersebut
-            $waktu->startOfDay()->addHours(7);
+            // Sesuaikan dengan jam operasional toko
+            if ($waktu->hour >= 17) {
+                $waktu->addDay()->setTime(7, 0, 0);
+                if ($waktu->isSunday()) $waktu->addDay();
+            } elseif ($waktu->hour < 7) {
+                $waktu->setTime(7, 0, 0);
+            }
+            return $waktu;
+        }
+
+        // ============================================
+        // PRIORITAS 2: KALKULASI JIKA MURNI FORMAT "JAM" (Cth: 2 Jam Kilat)
+        // Hanya memakan waktu pada Jam Operasional (07:00 - 17:00)
+        // ============================================
+        if ($maxJam > 0) {
+            // Jika order masuk di luar jam kerja, geser waktu mulai ke jam buka terdekat
+            if ($waktu->isSunday()) {
+                $waktu->addDay()->setTime(7, 0, 0);
+            } elseif ($waktu->hour >= 17) {
+                $waktu->addDay()->setTime(7, 0, 0);
+                if ($waktu->isSunday()) $waktu->addDay();
+            } elseif ($waktu->hour < 7) {
+                $waktu->setTime(7, 0, 0);
+            }
+
+            $sisaMenit = $maxJam * 60; // Ubah ke menit agar perhitungannya presisi
+
+            while ($sisaMenit > 0) {
+                $tutup = $waktu->copy()->setTime(17, 0, 0);
+                $menitTersisaHariIni = $waktu->diffInMinutes($tutup);
+
+                if ($sisaMenit <= $menitTersisaHariIni) {
+                    // Sisa pengerjaan bisa diselesaikan hari ini juga
+                    $waktu->addMinutes($sisaMenit);
+                    $sisaMenit = 0;
+                } else {
+                    // Waktu hari ini keburu habis (toko tutup), sisa pekerjaan dilanjut besok paginya
+                    $sisaMenit -= $menitTersisaHariIni;
+                    $waktu->addDay()->setTime(7, 0, 0);
+
+                    // Pastikan besok bukan hari libur (Minggu)
+                    if ($waktu->isSunday()) {
+                        $waktu->addDay();
+                    }
+                }
+            }
+            return $waktu;
         }
 
         return $waktu;
