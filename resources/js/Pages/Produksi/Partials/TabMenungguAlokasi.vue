@@ -31,6 +31,17 @@ const getFileDisplay = (item) => {
     return null;
 };
 
+// MENDETEKSI ID STAF YANG SEDANG LOGIN OTOMATIS
+const getCurrentStafId = () => {
+    if (props.currentUser?.staf?.id_staf) return props.currentUser.staf.id_staf;
+    if (props.currentUser?.id_staf) return props.currentUser.id_staf;
+    if (props.stafs && props.currentUser) {
+        const found = props.stafs.find(s => s.user_id === props.currentUser.id || s.id_user === props.currentUser.id);
+        if (found) return found.id_staf;
+    }
+    return null;
+};
+
 // Alokasi Logic
 const isAlokasiModalOpen = ref(false);
 const selectedOrderAlokasi = ref(null);
@@ -43,8 +54,13 @@ const openAlokasiModal = (pesanan) => {
         nama_produk: item.nama_produk_snapshot,
         total_qty: item.jumlah,
         is_desain: item.id_sku?.startsWith('PRD-0002') || false,
-        // <-- TAMBAHAN: id_staf_pelaksana dimasukkan ke state awal
-        skema: [{ tipe_pengerjaan: 'sendiri', id_vendor: null, id_staf_pelaksana: null, qty_dikerjakan: item.jumlah, instruksi_pengerjaan: '' }]
+        skema: [{
+            tipe_pengerjaan: 'sendiri',
+            id_vendor: null,
+            id_staf_pelaksana: getCurrentStafId(), // Otomatis diset ke user login tanpa perlu UI Select
+            qty_dikerjakan: item.jumlah,
+            instruksi_pengerjaan: ''
+        }]
     }));
     isAlokasiModalOpen.value = true;
 };
@@ -72,7 +88,6 @@ const addSkema = (itemIndex) => {
 
     // Hanya bisa tambah pelaksana kalau masih ada sisa quantity
     if (sisa > 0) {
-        // <-- TAMBAHAN: id_staf_pelaksana disertakan saat menambah baris pelaksana baru
         item.skema.push({ tipe_pengerjaan: 'vendor', id_vendor: null, id_staf_pelaksana: null, qty_dikerjakan: sisa, instruksi_pengerjaan: '' });
     } else {
         alertStore.show('Seluruh Qty pesanan sudah dialokasikan! Kurangi Qty pelaksana lain terlebih dahulu.', 'warning');
@@ -138,7 +153,6 @@ const submitAlokasi = () => {
             </div>
 
             <div class="p-4 sm:p-5">
-                <!-- REVISI TABEL: overflow-x-auto dan min-w-[600px] -->
                 <div class="overflow-x-auto pb-2 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:bg-base-300 [&::-webkit-scrollbar-thumb]:rounded-full">
                     <table class="w-full text-sm text-left min-w-150">
                         <thead class="text-[10px] uppercase tracking-widest border-b-2 text-base-content/50 border-base-300">
@@ -181,7 +195,6 @@ const submitAlokasi = () => {
                     </table>
                 </div>
 
-                <!-- REVISI TOMBOL BAWAH: w-full di HP -->
                 <div class="flex flex-col justify-end pt-4 mt-6 border-t sm:flex-row border-base-200" v-if="currentUser?.role !== 'vendor'">
                     <button v-if="$can('produksi', 'ubah')" @click="openAlokasiModal(pesanan)" class="w-full px-8 font-bold tracking-wide sm:w-auto btn btn-neutral rounded-xl">Alokasikan Pengerjaan</button>
                 </div>
@@ -219,12 +232,15 @@ const submitAlokasi = () => {
                                 <div class="space-y-4 sm:space-y-3">
                                     <div v-for="(skema, skemaIndex) in item.skema" :key="skemaIndex" class="flex flex-col items-start gap-3 p-3 border sm:p-0 sm:border-none rounded-xl border-base-200 bg-base-50/50 sm:bg-transparent sm:flex-row sm:items-end">
 
-                                        <!-- JENIS PELAKSANA (Tambahan event @change untuk mereset id terkait) -->
+                                        <!-- JENIS PELAKSANA -->
                                         <div class="w-full sm:w-1/4">
-                                            <label class="block mb-1 text-[11px] font-black uppercase tracking-widest text-base-content/50">Pelaksana</label>
+                                            <label class="block mb-1 text-[11px] font-black uppercase tracking-widest text-base-content/50">Tipe Pelaksana</label>
                                             <select
                                                 v-model="skema.tipe_pengerjaan"
-                                                @change="skema.id_vendor = null; skema.id_staf_pelaksana = null"
+                                                @change="
+                                                    skema.id_vendor = null;
+                                                    skema.id_staf_pelaksana = skema.tipe_pengerjaan === 'sendiri' ? getCurrentStafId() : null;
+                                                "
                                                 class="w-full font-bold select select-sm select-bordered rounded-xl"
                                             >
                                                 <option value="sendiri">In-House</option>
@@ -232,21 +248,14 @@ const submitAlokasi = () => {
                                             </select>
                                         </div>
 
-                                        <!-- JIKA TIPE: VENDOR -->
+                                        <!-- BLOK "PILIH STAF (IN-HOUSE)" DIHAPUS SEPENUHNYA -->
+
+                                        <!-- JIKA TIPE: VENDOR (Tetap Tampil Jika Pilih Vendor) -->
                                         <div v-if="skema.tipe_pengerjaan === 'vendor'" class="w-full sm:w-1/4">
                                             <label class="block mb-1 text-[11px] font-black uppercase tracking-widest text-base-content/50">Pilih Vendor</label>
                                             <select v-model="skema.id_vendor" required class="w-full font-bold select select-sm select-bordered rounded-xl">
                                                 <option :value="null" disabled>Pilih Vendor...</option>
                                                 <option v-for="v in vendors" :key="v.id_vendor" :value="v.id_vendor">{{ v.nama_vendor }}</option>
-                                            </select>
-                                        </div>
-
-                                        <!-- JIKA TIPE: IN-HOUSE (SENDIRI) -->
-                                        <div v-if="skema.tipe_pengerjaan === 'sendiri'" class="w-full sm:w-1/4">
-                                            <label class="block mb-1 text-[11px] font-black uppercase tracking-widest text-base-content/50">Pilih Staf (In-House)</label>
-                                            <select v-model="skema.id_staf_pelaksana" required class="w-full font-bold select select-sm select-bordered rounded-xl">
-                                                <option :value="null" disabled>Pilih Staf Produksi...</option>
-                                                <option v-for="s in stafs" :key="s.id_staf" :value="s.id_staf">{{ s.user?.name || s.id_staf }}</option>
                                             </select>
                                         </div>
 
@@ -282,7 +291,6 @@ const submitAlokasi = () => {
                     </form>
                 </div>
 
-                <!-- REVISI TOMBOL MODAL: flex-col-reverse di HP -->
                 <div class="flex flex-col-reverse gap-3 p-4 border-t sm:p-5 sm:flex-row sm:justify-end border-base-200 bg-base-50/50 rounded-b-2xl">
                     <button type="button" @click="closeAlokasiModal" class="w-full font-bold tracking-wider uppercase sm:w-auto btn btn-sm btn-ghost rounded-xl text-[10px] sm:text-xs">Batal</button>
                     <button type="button" @click="submitAlokasi" :disabled="alokasiForm.processing" class="w-full px-8 font-bold tracking-wider uppercase sm:w-auto btn btn-sm btn-neutral rounded-xl text-[10px] sm:text-xs">Simpan Alokasi</button>
