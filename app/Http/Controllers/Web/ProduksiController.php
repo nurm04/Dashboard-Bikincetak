@@ -401,6 +401,17 @@ class ProduksiController extends Controller
                 $dataBaru
             );
 
+            $rekening = [
+                'bank' => env('BANK_NAME'),
+                'nomor' => env('BANK_NUMBER'),
+                'atas_nama' => env('BANK_OWNER'),
+            ];
+
+            PesanService::kirimNotifikasiStatus(
+                $pesanan,
+                "proses_pengantaran"
+            );
+
             DB::commit();
             return back()->with('success', 'Pesanan berhasil diproses dan masuk ke tahap pengantaran.');
 
@@ -512,6 +523,17 @@ class ProduksiController extends Controller
                 $keteranganLog,
                 $dataLama,
                 $dataBaru
+            );
+
+            $rekening = [
+                'bank' => env('BANK_NAME'),
+                'nomor' => env('BANK_NUMBER'),
+                'atas_nama' => env('BANK_OWNER'),
+            ];
+
+            PesanService::kirimNotifikasiStatus(
+                $pesanan,
+                "proses_pengantaran"
             );
 
             DB::commit();

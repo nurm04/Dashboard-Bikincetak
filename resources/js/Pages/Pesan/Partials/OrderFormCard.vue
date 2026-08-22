@@ -44,7 +44,7 @@ const form = ref({
     catatan: '',
     custom_nama_produk: '',
     custom_harga_satuan: 0,
-    custom_sla_price: 0, // Ditambahkan untuk menampung harga pengerjaan custom
+    custom_sla_price: 0,
     custom_attributes: {},
 });
 
@@ -104,7 +104,7 @@ watch(() => props.editData, async (newVal) => {
         form.value.id_sku = 'PRD-0001-SKU-001';
         form.value.custom_nama_produk = newVal.nama_produk_snapshot;
         form.value.custom_harga_satuan = newVal.harga_satuan_snapshot;
-        form.value.custom_sla_price = newVal.harga_pengerjaan_snapshot || 0; // Load SLA produk custom
+        form.value.custom_sla_price = newVal.harga_pengerjaan_snapshot || 0;
     } else {
         await fetchDetailProduk(form.value.id_produk);
     }
@@ -147,73 +147,49 @@ const skuOptions = computed(() => (detailProduk.value?.skus || []).map(s => ({ v
 const selectedSku = computed(() => (detailProduk.value?.skus || []).find(s => s.id_sku === form.value.id_sku) || null);
 const tipeKalkulasi = computed(() => selectedSku.value?.tipe_kalkulasi || 'standard');
 
-// Reset tambahan biaya ketika SKU/Tipe diganti
 watch(tipeKalkulasi, () => {
     biayaTambahanCustom.value = 0;
 });
 
-const finishingPayload = computed(() => {
-    if (isCustomProduct.value || isJasaDesain.value) return [];
-
-    const data = [];
-    Object.values(form.value.finishings).forEach(idSkuFin => {
-        if (!idSkuFin) return;
-
-        const fin = selectedSku.value?.opsi_finishing?.find(f => String(f.id_sku_finishing) === String(idSkuFin));
-        if (!fin) return;
-
-        const isKaliQty = fin.kali_jumlah_pesan === true || fin.kali_jumlah_pesan === 1 || fin.kali_jumlah_pesan === '1';
-
-        data.push({
-            id_sku_finishing: fin.id_sku_finishing,
-            nama_finishing_snapshot: `${fin.kategori_finishing}: ${fin.nama_pilihan}`,
-            harga_finishing_snapshot: fin.harga_tambahan,
-            tipe: fin.tipe || 'nominal',
-            kali_jumlah_pesan: isKaliQty
-        });
-    });
-    return data;
-});
-
-const hargaDasarAwal = computed(() => {
-    if (isCustomProduct.value) return Number(form.value.custom_harga_satuan) || 0;
-    return Number(selectedSku.value?.harga_dasar) || 0;
-});
-
-const diskonGrosir = computed(() => {
-    if (isCustomProduct.value || !selectedSku.value) return 0;
-    const tier = [...(selectedSku.value.harga_bertingkat || [])]
+// ==============================================================================
+// 🌟 HELPER: Mengambil Data Harga Berdasarkan Qty (Dukungan Tier Bertingkat)
+// ==============================================================================
+const getActiveTier = (tiersArray, qtyPesan) => {
+    if (!tiersArray || tiersArray.length === 0) return null;
+    return [...tiersArray]
         .sort((a, b) => b.min - a.min)
-        .find(t => form.value.jumlah >= t.min && (t.max === 0 || t.max === null || form.value.jumlah <= t.max));
+        .find(t => qtyPesan >= t.min && (t.max === 0 || t.max === null || qtyPesan <= t.max));
+};
 
-    if (!tier) return 0;
-    return tier.tipe === 'persen' ? hargaDasarAwal.value * (Number(tier.nilai) / 100) : Number(tier.nilai);
-});
+const getActiveFinishingPrice = (finishingObj, qtyPesan) => {
+    let activeHarga = Number(finishingObj.harga_tambahan) || 0;
+    let activeTipe = finishingObj.tipe || 'nominal';
 
-const diskonMember = computed(() => {
-    if (isCustomProduct.value) return 0;
-    const roleId = activeCustomer.value?.id_role_customer;
-    if (!roleId || !selectedSku.value?.diskon_customer) return 0;
-    const d = selectedSku.value.diskon_customer.find(d => String(d.id_role_customer) === String(roleId));
+    const activeTier = getActiveTier(finishingObj.harga_bertingkat, qtyPesan);
+    if (activeTier) {
+        activeHarga = Number(activeTier.nilai);
+        activeTipe = activeTier.tipe;
+    }
 
-    if (!d) return 0;
-    return d.tipe === 'persen' ? hargaDasarAwal.value * (Number(d.nilai) / 100) : Number(d.nilai);
-});
+    return { harga: activeHarga, tipe: activeTipe };
+};
 
-const totalDiskonSatuan = computed(() => diskonGrosir.value + diskonMember.value);
-const hargaSatuanSnapshot = computed(() => Math.max(0, hargaDasarAwal.value - totalDiskonSatuan.value));
-
-const hargaSatuProdukFull = computed(() => {
-    // Gabung harga Dasar dengan hasil hitungan dari FormCetakBuku.vue
-    return hargaSatuanSnapshot.value + biayaTambahanCustom.value;
-});
-
+// ==============================================================================
+// 🌟 INTEGRASI MATRIKS SLA: Mengambil Harga Pokok Produk
+// ==============================================================================
 const pengerjaanOptions = computed(() => {
     if (isCustomProduct.value || isJasaDesain.value) return [];
-    const list = (selectedSku.value?.harga_pengerjaan || []).map(p => {
-        const labelBiaya = p.tipe === 'persen' ? `${p.nilai}%` : `Rp ${Number(p.nilai).toLocaleString('id-ID')}`;
-        return { value: p.pengerjaan, label: `${p.pengerjaan} (+ ${labelBiaya})` };
+
+    // Tarik daftar SLA unik dari matriks harga_bertingkat
+    const hbs = selectedSku.value?.harga_bertingkat || [];
+    const uniqueSlas = [...new Set(hbs.map(h => h.pengerjaan))].filter(Boolean);
+
+    const list = uniqueSlas.map(sla => {
+        // Kita tidak nampilin biaya tambahan (+) di dropdown lagi,
+        // karena harga SLA sudah otomatis jadi Harga Dasar Produk.
+        return { value: sla, label: sla };
     });
+
     if (isCustomSla.value) {
         list.push({ value: form.value.estimasi_pengerjaan, label: `${form.value.estimasi_pengerjaan} (Custom)` });
     }
@@ -222,31 +198,83 @@ const pengerjaanOptions = computed(() => {
 
 const isCustomSla = computed(() => {
     if (isCustomProduct.value || isJasaDesain.value) return false;
-    if (!form.value.estimasi_pengerjaan || form.value.estimasi_pengerjaan === 'Reguler') return false;
-    const p = selectedSku.value?.harga_pengerjaan?.find(o => o.pengerjaan === form.value.estimasi_pengerjaan);
-    return !p;
+    if (!form.value.estimasi_pengerjaan) return false;
+    const hbs = selectedSku.value?.harga_bertingkat || [];
+    const exists = hbs.some(h => h.pengerjaan === form.value.estimasi_pengerjaan);
+    return !exists;
+});
+
+// Menemukan blok matriks untuk Qty dan SLA yang dipilih
+const activeHargaBertingkat = computed(() => {
+    if (isCustomProduct.value || !selectedSku.value) return null;
+    const hbs = selectedSku.value.harga_bertingkat || [];
+    let sla = form.value.estimasi_pengerjaan;
+
+    let tiers = hbs.filter(h => h.pengerjaan === sla);
+    if (tiers.length === 0) {
+        tiers = hbs.filter(h => h.pengerjaan === hbs[0]?.pengerjaan); // Fallback ke SLA pertama
+    }
+
+    const qty = Number(form.value.jumlah) || 1;
+    return getActiveTier(tiers, qty) || tiers[0] || null;
+});
+
+// Harga dasar awal adalah harga di "Qty 1" untuk SLA yang dipilih
+const hargaSatuanDasarSla = computed(() => {
+    if (isCustomProduct.value) return Number(form.value.custom_harga_satuan) || 0;
+
+    const hbs = selectedSku.value?.harga_bertingkat || [];
+    const sla = activeHargaBertingkat.value?.pengerjaan || form.value.estimasi_pengerjaan;
+
+    const tier1 = hbs.find(h => h.pengerjaan === sla && h.min === 1);
+    if (tier1) return Number(tier1.nilai);
+
+    if (activeHargaBertingkat.value) return Number(activeHargaBertingkat.value.nilai);
+    return Number(selectedSku.value?.harga_dasar) || 0;
+});
+
+// Diskon Grosir = Harga Qty 1 - Harga Qty Saat ini (Untuk SLA yang sama)
+const diskonGrosir = computed(() => {
+    if (isCustomProduct.value || !activeHargaBertingkat.value) return 0;
+    const currentPrice = Number(activeHargaBertingkat.value.nilai);
+    return Math.max(0, hargaSatuanDasarSla.value - currentPrice);
+});
+// ==============================================================================
+
+const diskonMember = computed(() => {
+    if (isCustomProduct.value) return 0;
+    const roleId = activeCustomer.value?.id_role_customer;
+    if (!roleId || !selectedSku.value?.diskon_customer) return 0;
+    const d = selectedSku.value.diskon_customer.find(d => String(d.id_role_customer) === String(roleId));
+
+    if (!d) return 0;
+
+    const hargaSetelahGrosir = Math.max(0, hargaSatuanDasarSla.value - diskonGrosir.value);
+    return d.tipe === 'persen' ? hargaSetelahGrosir * (Number(d.nilai) / 100) : Number(d.nilai);
+});
+
+const totalDiskonSatuan = computed(() => diskonGrosir.value + diskonMember.value);
+const hargaSatuanSnapshot = computed(() => Math.max(0, hargaSatuanDasarSla.value - totalDiskonSatuan.value));
+
+const hargaSatuProdukFull = computed(() => {
+    return hargaSatuanSnapshot.value + biayaTambahanCustom.value;
 });
 
 const totalFinishing = computed(() => {
     if (isCustomProduct.value || isJasaDesain.value) return 0;
     let total = 0;
+    const qty = Number(form.value.jumlah) || 1;
 
     Object.values(form.value.finishings).forEach(idSkuFin => {
         if (!idSkuFin) return;
         const fin = selectedSku.value?.opsi_finishing?.find(f => String(f.id_sku_finishing) === String(idSkuFin));
         if (!fin) return;
 
-        let biaya = 0;
-        const tipeFinishing = fin.tipe || 'nominal'; // Cegah nilai null/kosong
-
-        if (tipeFinishing === 'persen') {
-            biaya = hargaSatuProdukFull.value * (Number(fin.harga_tambahan) / 100);
-        } else {
-            biaya = Number(fin.harga_tambahan) || 0;
-        }
+        const { harga, tipe } = getActiveFinishingPrice(fin, qty);
+        let biaya = tipe === 'persen' ? hargaSatuProdukFull.value * (harga / 100) : (harga || 0);
 
         if (fin.kali_jumlah_pesan) {
-            biaya = biaya * Number(form.value.jumlah || 1);
+            biaya = biaya * qty;
         }
 
         total += biaya;
@@ -257,26 +285,12 @@ const totalFinishing = computed(() => {
 const totalHargaProdukUtama = computed(() => hargaSatuProdukFull.value * form.value.jumlah);
 const totalProduk = computed(() => totalHargaProdukUtama.value + totalFinishing.value);
 
+// Total SLA sekarang hanya digunakan kalau Custom SLA diinput manual oleh Admin.
+// Harga SLA dari matriks CSV sudah melebur ke `hargaSatuanDasarSla`
 const totalSla = computed(() => {
     if (isJasaDesain.value) return 0;
-
-    // Pastikan custom SLA terbaca untuk produk custom (PRD-0001)
-    if (isCustomProduct.value) return Number(form.value.custom_sla_price) || 0;
-
-    const p = selectedSku.value?.harga_pengerjaan?.find(o => o.pengerjaan === form.value.estimasi_pengerjaan);
-
-    // Jika SLA Custom, ambil angka murni dari input SLA Custom
-    if (!p) {
-        return isCustomSla.value ? (Number(form.value.custom_sla_price) || 0) : 0;
-    }
-
-    const tipeSla = p.tipe || 'nominal'; // Cegah nilai null/kosong
-
-    if (tipeSla === 'persen') {
-        return totalProduk.value * (Number(p.nilai) / 100);
-    } else {
-        return Number(p.nilai) || 0;
-    }
+    if (isCustomProduct.value || isCustomSla.value) return Number(form.value.custom_sla_price) || 0;
+    return 0;
 });
 
 const subtotalItem = computed(() => totalProduk.value + totalSla.value);
@@ -284,15 +298,20 @@ const subtotalItem = computed(() => totalProduk.value + totalSla.value);
 const finishingGroups = computed(() => {
     if (isCustomProduct.value || isJasaDesain.value) return {};
     const groups = {};
+    const qty = Number(form.value.jumlah) || 1;
+
     selectedSku.value?.opsi_finishing?.forEach(fin => {
         if (!groups[fin.kategori_finishing]) {
             groups[fin.kategori_finishing] = { options: [] };
         }
 
+        const { harga, tipe } = getActiveFinishingPrice(fin, qty);
+        const labelBiaya = tipe === 'persen' ? `${harga}%` : `Rp ${harga.toLocaleString('id-ID')}`;
+
         groups[fin.kategori_finishing].options.push({
             value: fin.id_sku_finishing,
-            label: `${fin.nama_pilihan} (+ Rp ${fin.harga_tambahan.toLocaleString('id-ID')})`,
-            harga: Number(fin.harga_tambahan)
+            label: `${fin.nama_pilihan} (+ ${labelBiaya})`,
+            harga: harga
         });
     });
 
@@ -340,7 +359,6 @@ watch(() => form.value.id_sku, (newVal, oldVal) => {
     const groups = finishingGroups.value;
     for (const cat in groups) {
         const opts = groups[cat].options;
-        // Cari opsi yang harganya Rp 0 (kalau 0 semua, otomatis terpilih urutan paling pertama)
         const zeroOpt = opts.find(o => o.harga === 0);
         if (zeroOpt) {
             form.value.finishings[cat] = zeroOpt.value;
@@ -350,7 +368,11 @@ watch(() => form.value.id_sku, (newVal, oldVal) => {
     }
 
     form.value.jumlah = selectedSku.value.minimum_pesan || 1;
-    form.value.estimasi_pengerjaan = selectedSku.value.harga_pengerjaan?.[0]?.pengerjaan || 'Reguler';
+
+    // Default SLA dipilih otomatis dari baris matriks pertama
+    const hbs = selectedSku.value.harga_bertingkat || [];
+    const uniqueSlas = [...new Set(hbs.map(h => h.pengerjaan))].filter(Boolean);
+    form.value.estimasi_pengerjaan = uniqueSlas.length > 0 ? uniqueSlas[0] : 'Reguler';
 });
 
 watch(() => form.value.id_produk, (val) => {
@@ -360,7 +382,7 @@ watch(() => form.value.id_produk, (val) => {
         form.value.custom_harga_satuan = 0;
         form.value.finishings = {};
         form.value.estimasi_pengerjaan = 'Reguler';
-        form.value.custom_sla_price = 0; // Reset saat switch mode
+        form.value.custom_sla_price = 0;
         form.value.custom_attributes = {};
         form.value.jumlah = 1;
     } else if (val === 'PRD-0002') {
@@ -383,6 +405,32 @@ const handleAddCustomSla = (newSlaValue) => {
     form.value.custom_sla_price = 0;
 };
 
+const finishingPayload = computed(() => {
+    if (isCustomProduct.value || isJasaDesain.value) return [];
+
+    const data = [];
+    const qty = Number(form.value.jumlah) || 1;
+
+    Object.values(form.value.finishings).forEach(idSkuFin => {
+        if (!idSkuFin) return;
+
+        const fin = selectedSku.value?.opsi_finishing?.find(f => String(f.id_sku_finishing) === String(idSkuFin));
+        if (!fin) return;
+
+        const isKaliQty = fin.kali_jumlah_pesan === true || fin.kali_jumlah_pesan === 1 || fin.kali_jumlah_pesan === '1';
+        const { harga, tipe } = getActiveFinishingPrice(fin, qty);
+
+        data.push({
+            id_sku_finishing: fin.id_sku_finishing,
+            nama_finishing_snapshot: `${fin.kategori_finishing}: ${fin.nama_pilihan}`,
+            harga_finishing_snapshot: harga,
+            tipe: tipe,
+            kali_jumlah_pesan: isKaliQty
+        });
+    });
+    return data;
+});
+
 const handleFormSubmit = () => {
     if (isCustomProduct.value && !form.value.custom_nama_produk) {
         alertStore.show('Nama produk custom wajib diisi!', 'error');
@@ -396,12 +444,8 @@ const handleFormSubmit = () => {
     const rincianDiskon = [];
 
     if (diskonGrosir.value > 0) {
-        const tier = [...(selectedSku.value.harga_bertingkat || [])]
-            .sort((a, b) => b.min - a.min)
-            .find(t => form.value.jumlah >= t.min && (t.max === 0 || t.max === null || form.value.jumlah <= t.max));
-
         rincianDiskon.push({
-            nama: tier?.tipe === 'persen' ? `Harga Grosir Qty ${form.value.jumlah} (${tier.nilai}%)` : `Harga Grosir Qty ${form.value.jumlah}`,
+            nama: `Harga Grosir Qty ${form.value.jumlah}`,
             nominal: diskonGrosir.value
         });
     }
@@ -424,13 +468,12 @@ const handleFormSubmit = () => {
         estimasi_pengerjaan: form.value.estimasi_pengerjaan,
         tipe_kalkulasi: tipeKalkulasi.value,
 
-        harga_dasar_awal_snapshot: hargaDasarAwal.value,
+        harga_dasar_awal_snapshot: hargaSatuanDasarSla.value,
         total_diskon_snapshot: totalDiskonSatuan.value,
         rincian_diskon_snapshot: props.isPosMode ? rincianDiskon : JSON.stringify(rincianDiskon),
 
         harga_satuan_snapshot: hargaSatuanSnapshot.value,
 
-        // harga pengerjaan akan mengambil nilai dari "totalSla" di mana untuk produk custom sudah diarahkan membaca custom_sla_price
         harga_pengerjaan_snapshot: totalSla.value,
 
         finishing: props.isPosMode ? finishingPayload.value : JSON.stringify(finishingPayload.value),
@@ -448,7 +491,7 @@ const handleFormSubmit = () => {
         ...(props.isPosMode && {
             master_diskon_customer: isCustomProduct.value ? [] : selectedSku.value?.diskon_customer || [],
             master_harga_bertingkat: isCustomProduct.value ? [] : selectedSku.value?.harga_bertingkat || [],
-            master_harga_pengerjaan: isCustomProduct.value ? [] : selectedSku.value?.harga_pengerjaan || [],
+            master_harga_pengerjaan: [], // Sudah dilebur ke matriks
         })
     };
 
@@ -462,7 +505,7 @@ const handleFormSubmit = () => {
         <div class="absolute inset-0 pointer-events-none opacity-[0.03] z-0 rounded-2xl overflow-hidden" style="background-image: radial-gradient(currentColor 1.5px, transparent 1.5px); background-size: 24px 24px;"></div>
         <div class="absolute top-0 left-0 w-full h-1.5 bg-primary z-10 rounded-t-2xl"></div>
 
-        <div v-if="isFetching || isSubmitting" class="absolute inset-0 z-50 flex items-center justify-center bg-base-100/60 backdrop-blur-sm rounded-2xl">
+        <div v-if="isFetching" class="absolute inset-0 z-50 flex items-center justify-center bg-base-100/60 backdrop-blur-sm rounded-2xl">
             <span class="loading loading-spinner loading-lg text-primary"></span>
         </div>
 
@@ -491,7 +534,6 @@ const handleFormSubmit = () => {
                         <CustomInput label="Nama Produk / Pesanan" type="text" v-model="form.custom_nama_produk" placeholder="Ketik nama pesanan secara manual..." />
                         <CustomInput label="Harga Satuan (Rp)" type="number" v-model="form.custom_harga_satuan" />
 
-                        <!-- TAMBAHAN: Field Estimasi Pengerjaan & Harga Pengerjaan khusus Custom Product -->
                         <CustomInput label="Estimasi Pengerjaan" type="text" v-model="form.estimasi_pengerjaan" placeholder="Cth: 1 Hari, Kilat, dll..." />
                         <CustomInputNumber label="Harga Pengerjaan (Rp)" v-model="form.custom_sla_price" placeholder="Tarif pengerjaan (opsional)..." />
                     </template>
@@ -507,7 +549,7 @@ const handleFormSubmit = () => {
                             valueKey="value"
                             :add-option="true"
                             @onCreate="handleAddCustomSla"
-                            placeholder="Pilih atau Ketik SLA Custom..."
+                            placeholder="Pilih SLA Matriks..."
                         />
                         <div v-if="isCustomSla && !isJasaDesain" class="p-4 mt-3 border border-dashed rounded-xl bg-primary/5 border-primary/30">
                             <h4 class="mb-3 text-[10px] font-bold tracking-widest uppercase text-primary">Tarif Tambahan SLA Custom</h4>
@@ -521,7 +563,6 @@ const handleFormSubmit = () => {
 
                     <template v-if="!isJasaDesain">
 
-                        <!-- KOMPONEN KHUSUS DIPANGGIL DISINI -->
                         <component
                             :is="activeFormKalkulator"
                             v-if="activeFormKalkulator"
@@ -573,7 +614,6 @@ const handleFormSubmit = () => {
             </div>
         </div>
 
-        <!-- Panel Bawah tetap z-10 (lebih rendah dari z-30 di atas) -->
         <div class="relative z-10 flex flex-col items-center justify-between gap-4 px-8 py-5 border-t bg-base-100/90 backdrop-blur-md border-base-200 sm:flex-row rounded-b-2xl">
             <div class="text-center sm:text-left">
                 <p class="text-[10px] font-black uppercase tracking-widest text-base-content/40 mb-1">Subtotal Item Ini</p>

@@ -9,11 +9,11 @@ use App\Http\Controllers\Web\HakAksesController;
 use App\Http\Controllers\Web\ModulController;
 use App\Http\Controllers\Web\PembayaranController;
 use App\Http\Controllers\Web\PembelianBahanController;
+use App\Http\Controllers\Web\PenawaranController;
 use App\Http\Controllers\Web\PesanController;
 use App\Http\Controllers\Web\Produk\DiskonCustomerController;
 use App\Http\Controllers\Web\Produk\FinishingController;
 use App\Http\Controllers\Web\Produk\HargaBertingkatController;
-use App\Http\Controllers\Web\Produk\HargaPengerjaanController;
 use App\Http\Controllers\Web\Produk\KategoriController;
 use App\Http\Controllers\Web\Produk\KomposisiController;
 use App\Http\Controllers\Web\Produk\PilihanFinishingController;
@@ -27,6 +27,7 @@ use App\Http\Controllers\Web\ProduksiController;
 use App\Http\Controllers\Web\ProfilController;
 use App\Http\Controllers\Web\ShippingController;
 use App\Http\Controllers\Web\TagihanVendorController;
+use App\Http\Controllers\Web\User\AbsensiController;
 use App\Http\Controllers\Web\User\AlamatController;
 use App\Http\Controllers\Web\User\CustomerController;
 use App\Http\Controllers\Web\User\RoleCustomerController;
@@ -152,6 +153,13 @@ Route::middleware('auth')->group(function () {
             Route::resource('staf', StafController::class);
             Route::post('/role-staf', [RoleStafController::class, 'store'])->name('role-staf.store');
         });
+        Route::get('/absensi', [AbsensiController::class, 'index'])->name('absensi.index');
+        Route::post('/absensi', [AbsensiController::class, 'store'])->name('absensi.store');
+        Route::get('/absensi/rekap', [AbsensiController::class, 'rekap'])->name('absensi.rekap');
+        Route::get('/absensi/create', [AbsensiController::class, 'create'])->name('absensi.create');
+        Route::post('/absensi/manual', [AbsensiController::class, 'storeManual'])->name('absensi.storeManual');
+        Route::get('/absensi/{id}/edit', [AbsensiController::class, 'edit'])->name('absensi.edit');
+        Route::put('/absensi/{id}', [AbsensiController::class, 'update'])->name('absensi.update');
         Route::resource('kategori', KategoriController::class)->middleware('akses:kategori');
         Route::middleware('akses:produk')->group(function () {
             Route::resource('produk', ProdukController::class);
@@ -159,6 +167,8 @@ Route::middleware('auth')->group(function () {
             Route::post('produk/{id}/varian', [ProdukVarianController::class, 'syncVarian'])->middleware('akses:produk,ubah')->name('produk.syncVarian');
         });
         Route::middleware('akses:produk-sku')->group(function () {
+            Route::get('/produk/sku/{id_sku}/edit', [ProdukSkuController::class, 'editSku'])->name('sku.edit');
+            Route::put('/produk/sku/{id_sku}', [ProdukSkuController::class, 'updateSku'])->name('sku.update');
             Route::post('/produk/sku/{id_produk}/import-csv', [ProdukSkuController::class, 'importCsv'])->middleware('akses:produk-sku,ubah')->name('sku.importCsv');
             Route::get('produk/{id}/sku', [ProdukController::class, 'sku'])->middleware('akses:produk-sku,ubah')->name('produk.sku');
             Route::post('produk/{id}/sku', [ProdukSkuController::class, 'syncSku'])->middleware('akses:produk-sku,ubah')->name('produk.syncSku');
@@ -167,8 +177,6 @@ Route::middleware('auth')->group(function () {
             Route::post('/sku/{id_sku}/finishing/sync', [SkuFinishingController::class, 'sync'])->middleware('akses:produk-sku,ubah')->name('sku.syncFinishing');
             Route::get('/sku/{id_sku}/harga-bertingkat', [ProdukSkuController::class, 'hargaBertingkat'])->name('sku.hargaBertingkat');
             Route::post('/sku/{id_sku}/harga-bertingkat/sync', [HargaBertingkatController::class, 'sync'])->middleware('akses:produk-sku,ubah')->name('sku.syncHargaBertingkat');
-            Route::get('/sku/{id_sku}/harga-pengerjaan', [ProdukSkuController::class, 'hargaPengerjaan'])->name('sku.hargaPengerjaan');
-            Route::post('/sku/{id_sku}/harga-pengerjaan/sync', [HargaPengerjaanController::class, 'sync'])->middleware('akses:produk-sku,ubah')->name('sku.syncHargaPengerjaan');
             Route::get('/sku/{id_sku}/diskon-customer', [ProdukSkuController::class, 'diskonCustomer'])->name('sku.diskonCustomer');
             Route::post('/sku/{id_sku}/diskon-customer/sync', [DiskonCustomerController::class, 'sync'])->middleware('akses:produk-sku,ubah')->name('sku.syncdiskonCustomer');
             Route::get('/sku/{id_sku}/komposisi', [ProdukSkuController::class, 'komposisi'])->name('sku.komposisi');
@@ -190,6 +198,15 @@ Route::middleware('auth')->group(function () {
         Route::resource('bahan-baku', BahanBakuController::class)->middleware('akses:bahan-baku');
         Route::resource('pembelian-bahan', PembelianBahanController::class)->middleware('akses:pembelian-bahan');
         Route::resource('voucher', VoucherController::class)->middleware('akses:voucher');
+        Route::middleware('akses:penawaran')->prefix('penawaran')->name('penawaran.')->group(function () {
+            Route::get('/', [PenawaranController::class, 'index'])->name('index');
+            Route::get('/create', [PenawaranController::class, 'create'])->name('create');
+            Route::post('/', [PenawaranController::class, 'store'])->name('store');
+            Route::get('/{id}', [PenawaranController::class, 'detail'])->name('detail');
+            Route::patch('/{id}/status', [PenawaranController::class, 'updateStatus'])->middleware('akses:penawaran,ubah')->name('update-status');
+            Route::get('/{id}/cetak', [PenawaranController::class, 'cetak'])->name('cetak');
+            Route::post('/{id}/convert-to-so', [PenawaranController::class, 'convertToSO'])->name('convert-to-so');
+        });
         Route::middleware('akses:pesan')->group(function () {
             Route::get('pesan', [PesanController::class, 'index'])->name('pesan.index');
             Route::post('pesan', [PesanController::class, 'store'])->name('pesan.store');

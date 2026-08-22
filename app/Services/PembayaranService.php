@@ -62,4 +62,55 @@ class PembayaranService
 
         return $pembayaran;
     }
+
+    public static function catatPembayaranGateway($pesanan, $nominalBayar, $metode, $detailGateway, $referenceId = null)
+    {
+        if ($nominalBayar <= 0) return null;
+
+        $idPembayaran = self::generateId();
+
+        $pembayaran = Pembayaran::create([
+            'id_pembayaran'       => $idPembayaran,
+            'id_pesan'            => $pesanan->id_pesan,
+            'nominal_bayar'       => $nominalBayar,
+            'metode_pembayaran'   => $metode,
+            'status_pembayaran'   => 'berhasil',
+            'payment_type_detail' => $detailGateway,
+            'reference_id'        => $referenceId,
+            'id_staf'             => null,
+        ]);
+
+        // LOGIKA JURNAL SAMA PERSIS DENGAN PEMBAYARAN CONTROLLER
+        $akunKas = BukuBesarController::getAkunId('Kas Bank (BCA/Mandiri/dll)');
+
+        if (in_array($pesanan->status_operasional, ['proses_pengantaran', 'selesai'])) {
+            $akunLawan = BukuBesarController::getAkunId('Piutang Usaha (Customer)');
+            $ketLawan = "Pelunasan Piutang Pesanan #{$pesanan->id_pesan}";
+        } else {
+            $akunLawan = BukuBesarController::getAkunId('Pendapatan Jasa Percetakan');
+            $ketLawan = "Pendapatan Penjualan Pesanan #{$pesanan->id_pesan}";
+        }
+
+        BukuBesarController::catatJurnal(
+            $akunKas,
+            $idPembayaran,
+            'pendapatan',
+            "Penerimaan Pembayaran Gateway Pesanan #{$pesanan->id_pesan}",
+            $nominalBayar,
+            0
+        );
+
+        BukuBesarController::catatJurnal(
+            $akunLawan,
+            $idPembayaran,
+            'pendapatan',
+            $ketLawan,
+            0,
+            $nominalBayar
+        );
+
+        event(new ProduksiBaruEvent($pesanan));
+
+        return $pembayaran;
+    }
 }

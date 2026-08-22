@@ -18,7 +18,7 @@ defineEmits(['update:modelValue']);
         </label>
 
         <div
-            class="flex w-full transition border rounded-lg shadow-sm bg-base-100 border-base-300 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary overflow-hidden"
+            class="flex w-full overflow-hidden transition border rounded-lg shadow-sm bg-base-100 border-base-300 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary"
             style="border-style: solid !important; border-width: 1px !important;"
         >
             <textarea
@@ -27,7 +27,7 @@ defineEmits(['update:modelValue']);
                 :required="required"
                 :rows="rows"
                 @input="$emit('update:modelValue', $event.target.value)"
-                class="w-full px-4 py-3 text-sm transition bg-transparent border-none outline-none focus:ring-0 text-base-content placeholder:text-base-content/30 resize-none"
+                class="w-full px-4 py-3 text-sm transition bg-transparent border-none outline-none resize-y focus:ring-0 text-base-content placeholder:text-base-content/30"
                 style="border: none !important; box-shadow: none !important; outline: none !important;"
             ></textarea>
         </div>

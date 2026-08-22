@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Web;
 
 use App\Events\ProduksiBaruEvent;
 use App\Http\Controllers\Controller;
-use App\Models\BahanBaku;
 use App\Models\Customer;
 use App\Models\Komposisi;
 use App\Models\Pesan;
@@ -207,7 +206,7 @@ class PesanController extends Controller
             'items.*.harga_dasar_awal_snapshot' => 'nullable|numeric',
             'items.*.total_diskon_snapshot' => 'nullable|numeric',
 
-            'items.*.atribut_custom_snapshot' => 'nullable', // <-- Atribut JSON
+            'items.*.atribut_custom_snapshot' => 'nullable',
 
             'items.*.file_desain' => 'nullable',
             'items.*.tipe_file' => 'nullable|string|in:upload,link,email',
@@ -229,6 +228,7 @@ class PesanController extends Controller
                 'kode_transaksi' => $kode_transaksi,
                 'id_customer' => $request->id_customer,
                 'id_alamat' => $request->id_alamat,
+                'sumber_pesanan' => 'pos_kasir',
                 'status_operasional' => 'menunggu_diproses',
                 'status_pembayaran' => $request->status_pembayaran,
                 'waktu_deadline' => $waktuDeadline,
@@ -265,7 +265,7 @@ class PesanController extends Controller
                     if (!is_array($atributCustomArray)) $atributCustomArray = [];
                 } elseif (is_array($atributCustomRaw)) {
                     $atributCustomArray = $atributCustomRaw;
-                    $atributCustomRaw = json_encode($atributCustomArray); // Simpan sebagai String untuk DB
+                    $atributCustomRaw = json_encode($atributCustomArray);
                 }
 
                 // 3. Set Berat Total & HPP
@@ -334,11 +334,10 @@ class PesanController extends Controller
                     'file_desain' => $fileDesainData,
                     'catatan' => $item['catatan'] ?? null,
 
-                    // Masukkan sebagai Raw JSON String supaya pasti tembus ke DB
                     'atribut_custom_snapshot' => empty($atributCustomArray) ? null : $atributCustomRaw
                 ]);
 
-                // 5. Finishing Loop dengan TIPE & KALI JUMLAH PESAN
+                // 5. FINISHING LOOP: SIMPAN JUGA TIPE & KALI JUMLAH PESAN
                 if (!$isCustom && !empty($finishing) && is_array($finishing)) {
                     foreach ($finishing as $fin) {
                         $skuFinishingAsli = SkuFinishing::find($fin['id_sku_finishing']);
@@ -351,11 +350,14 @@ class PesanController extends Controller
                             ->sum('hpp');
 
                         PesananItemFinishing::create([
-                            'id_pesanan_item'        => $pesananItem->id,
-                            'id_sku_finishing'       => $fin['id_sku_finishing'],
-                            'nama_finishing_snapshot'=> $fin['nama_finishing_snapshot'],
+                            'id_pesanan_item'         => $pesananItem->id,
+                            'id_sku_finishing'        => $fin['id_sku_finishing'],
+                            'nama_finishing_snapshot' => $fin['nama_finishing_snapshot'],
                             'harga_finishing_snapshot'=> $fin['harga_finishing_snapshot'],
-                            'hpp_finishing_snapshot' => $hppFinishing,
+                            'hpp_finishing_snapshot'  => $hppFinishing,
+                            // 👇 TAMBAHAN KOLOM AGAR KALKULASI BACKEND AMAN 👇
+                            'tipe'                    => $fin['tipe'] ?? 'nominal',
+                            'kali_jumlah_pesan'       => $fin['kali_jumlah_pesan'] ?? false,
                         ]);
                     }
                 }
@@ -368,7 +370,8 @@ class PesanController extends Controller
                 auth()->user()?->staf?->id_staf
             );
 
-            event(new ProduksiBaruEvent($pesanan));
+            // 🌟 HITUNG RINCIAN PESANAN MENGGUNAKAN METHOD YANG SUDAH ADA 🌟
+            $rincian = PesanService::kalkulasiRincianPesanan($pesanan->load('pesananItem.pesananItemFinishing', 'pembayaran'));
 
             $dataBaru = PesanService::getSnapshotPesanan($pesanan->id_pesan);
 
@@ -380,6 +383,20 @@ class PesanController extends Controller
                 $dataBaru
             );
 
+            $rekening = [
+                'bank' => env('BANK_NAME'),
+                'nomor' => env('BANK_NUMBER'),
+                'atas_nama' => env('BANK_OWNER'),
+            ];
+
+            // 🌟 KIRIM NOTIFIKASI CHECKOUT DENGAN PARAMETER YANG BENAR 🌟
+            PesanService::kirimNotifikasiCheckout(
+                $pesanan,
+                (int) $rincian['subtotal'],
+                (int) $rincian['kode_unik'],
+                $rekening
+            );
+
             DB::commit();
 
             return redirect()->route('pesan.index')->with('success', 'Pesanan berhasil dibuat!');
@@ -388,135 +405,6 @@ class PesanController extends Controller
             DB::rollBack();
             Log::error('Gagal membuat pesanan: ' . $e->getMessage());
             return back()->with('error', 'Gagal membuat pesanan: ' . $e->getMessage());
-        }
-    }
-
-    public function updateOperasional(Request $request, $id_pesan)
-    {
-        $request->validate([
-            'status_operasional' => 'required|in:keranjang,menunggu_diproses,proses_pengerjaan,proses_pengantaran,selesai,batal'
-        ]);
-
-        $pesanan = Pesan::with([
-            'pesananItem.pesananItemFinishing.skuFinishing',
-            'customer.user'
-        ])->where(
-            'id_pesan',
-            $id_pesan
-        )->firstOrFail();
-
-        $statusLama = $pesanan->status_operasional;
-        $statusBaru = $request->status_operasional;
-
-        try {
-            DB::beginTransaction();
-
-            // KETIKA STATUS BERUBAH KE PROSES PENGERJAAN -> POTONG STOK & HITUNG HPP
-            if ($statusBaru === 'proses_pengerjaan' && $statusLama !== 'proses_pengerjaan') {
-
-                $items = $pesanan->pesananItem;
-                $totalHppPesanan = 0;
-
-                foreach ($items as $item) {
-                    $totalHppPesanan += ((float) $item->hpp_satuan_snapshot * $item->jumlah);
-
-                    // =====================================
-                    // 1. CARI JUMLAH LEMBAR FISIK DARI JSON
-                    // =====================================
-                    $attr = is_string($item->atribut_custom_snapshot) ? json_decode($item->atribut_custom_snapshot, true) : $item->atribut_custom_snapshot;
-                    $jumlahHalaman = isset($attr['Jumlah Halaman']) ? max(1, (int)$attr['Jumlah Halaman']) : 1;
-                    $sisiCetak = isset($attr['Sisi Cetak']) ? max(1, (int)$attr['Sisi Cetak']) : 1;
-
-                    $jumlahLembar = ceil($jumlahHalaman / $sisiCetak);
-
-                    $finishingTerpilih = collect($item->pesananItemFinishing ?? [])
-                        ->map(fn($f) => $f->skuFinishing->id_pilihan_finishing ?? null)
-                        ->filter()
-                        ->toArray();
-
-                    foreach ($item->pesananItemFinishing ?? [] as $finishing) {
-                        $totalHppPesanan += ((float) $finishing->hpp_finishing_snapshot * $item->jumlah);
-                    }
-
-                    $semuaKomposisi = Komposisi::where('id_sku', $item->id_sku)->get();
-
-                    // =====================================
-                    // 2. PEMOTONGAN STOK BERDASARKAN BOM
-                    // =====================================
-                    foreach ($semuaKomposisi as $komp) {
-                        if (is_null($komp->id_pilihan_finishing) || in_array($komp->id_pilihan_finishing, $finishingTerpilih)) {
-
-                            $bahan = BahanBaku::lockForUpdate()->findOrFail($komp->id_bahan_baku);
-
-                            // BEDA RUMUS ANTARA BAHAN UTAMA (KERTAS ISI) & FINISHING
-                            if (is_null($komp->id_pilihan_finishing)) {
-                                // Bahan Utama: BOM x QTY Pesan x Lembar Buku
-                                $qty_dipakai = $komp->jumlah_pakai * (float) $item->jumlah * $jumlahLembar;
-                            } else {
-                                // Finishing: BOM x QTY Pesan (Cover tetep 1 buku = 1 set cover)
-                                $qty_dipakai = $komp->jumlah_pakai * (float) $item->jumlah;
-                            }
-
-                            $bahan->stok_sekarang -= $qty_dipakai;
-                            $bahan->save();
-                        }
-                    }
-                }
-
-                // if ($totalHppPesanan > 0) {
-                //     BukuBesarController::catatHppPenjualan($pesanan->id_pesan, $totalHppPesanan);
-                // }
-            }
-
-            if ($statusBaru === 'proses_pengantaran' && $statusLama !== 'proses_pengantaran') {
-                $ekspedisiDipilih = strtolower($pesanan->ekspedisi_nama ?? '');
-
-                if ($ekspedisiDipilih === 'kurir toko') {
-                    $pesanan->nomor_resi = 'LOKAL-' . date('ymd') . '-' . strtoupper(Str::random(4));
-                }
-            }
-
-            if ($statusBaru === 'batal') {
-                $pesanan->tanggal_selesai = null;
-            }
-
-            if ($statusBaru === 'selesai') {
-                $pesanan->tanggal_selesai = now();
-            } elseif ($statusBaru !== 'batal') {
-                $pesanan->tanggal_selesai = null;
-            }
-
-            $pesanan->status_operasional = $statusBaru;
-            $pesanan->save();
-
-            DB::commit();
-
-            if (!in_array($statusBaru, ['keranjang','menunggu_diproses']))
-            {
-                $pesanan->load('customer.user');
-
-                PesanService::kirimNotifikasiStatus(
-                    $pesanan,
-                    $statusBaru
-                );
-            }
-            return back()->with('success', 'Status Operasional berhasil diperbarui.');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            Log::error(
-                'Update Operasional Gagal',
-                [
-                    'id_pesan' => $id_pesan,
-                    'status' => $request->status_operasional,
-                    'message' => $e->getMessage(),
-                    'file' => $e->getFile(),
-                    'line' => $e->getLine(),
-                ]
-            );
-
-            return back()->with('error', 'Gagal update operasional: ' . $e->getMessage());
         }
     }
 

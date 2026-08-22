@@ -22,6 +22,7 @@ class Pesan extends Model
         'id_alamat',
         'tanggal_pesan',
         'tanggal_selesai',
+        'sumber_pesanan',
         'status_operasional',
         'status_pembayaran',
         'waktu_deadline',
@@ -38,6 +39,10 @@ class Pesan extends Model
         'tanggal_selesai' => 'datetime',
     ];
 
+    public function penawaranAsal()
+    {
+        return $this->hasOne(Penawaran::class, 'id_pesan_terkait', 'id_pesan');
+    }
     public function logs(): HasMany
     {
         return $this->hasMany(PesananLog::class, 'id_pesan', 'id_pesan')->latest();

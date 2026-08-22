@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class ProdukSku extends Model
 {
     use HasFactory;
+
     protected $table = 'produk_sku';
     protected $primaryKey = 'id_sku';
     public $incrementing = false;
@@ -19,8 +20,16 @@ class ProdukSku extends Model
         'id_sku',
         'id_produk',
         'nama_sku',
+        'gambar',
+        'satuan',
         'minimum_pesan',
         'harga',
+        'deskripsi',
+        'tipe_kalkulasi',  // TAMBAHAN
+    ];
+
+    protected $casts = [
+        'gambar' => 'array',
     ];
 
     protected $touches = ['produk'];
@@ -29,34 +38,39 @@ class ProdukSku extends Model
     {
         return $this->hasMany(Voucher::class, 'id_sku_target', 'id_sku');
     }
+
     public function pesananItem(): HasMany
     {
         return $this->hasMany(PesananItem::class, 'id_sku', 'id_sku');
     }
+
     public function skuFinishing(): HasMany
     {
         return $this->hasMany(SkuFinishing::class, 'id_sku', 'id_sku');
     }
+
     public function diskonCustomer(): HasMany
     {
         return $this->hasMany(DiskonCustomer::class, 'id_sku', 'id_sku');
     }
+
     public function hargaBertingkat(): HasMany
     {
         return $this->hasMany(HargaBertingkat::class, 'id_sku', 'id_sku');
     }
-    public function hargaPengerjaan(): HasMany
-    {
-        return $this->hasMany(HargaPengerjaan::class, 'id_sku', 'id_sku');
-    }
+
+    // ❌ Relasi hargaPengerjaan dihapus karena tabelnya sudah dibasmi ❌
+
     public function komposisi(): HasMany
     {
         return $this->hasMany(Komposisi::class, 'id_sku', 'id_sku');
     }
+
     public function skuDetailPilihan(): HasMany
     {
         return $this->hasMany(SkuDetailPilihan::class, 'id_sku', 'id_sku');
     }
+
     public function produk(): BelongsTo
     {
         return $this->belongsTo(Produk::class, 'id_produk', 'id_produk');

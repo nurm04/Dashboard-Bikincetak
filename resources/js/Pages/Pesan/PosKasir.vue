@@ -19,8 +19,6 @@ const props = defineProps({
     customers: Array,
     vouchers: Array,
     enumPembayaran: Array,
-    kategoris: Array,
-    produks: Array,
 });
 
 // ==========================================
@@ -64,7 +62,6 @@ const clearAllFilesDB = async () => {
 // ==========================================
 // 2. STATE FORM & LOCAL STORAGE
 // ==========================================
-// FIX: Tambahkan Opsi Pembayaran agar tampil di UI dan sinkron dengan Controller
 const pembayaranOptionsForm = [
     { value: 'belum_lunas', label: 'Belum Bayar' },
     { value: 'dibayar_sebagian', label: 'Bayar Sebagian (DP)' },
@@ -130,6 +127,7 @@ const alamatOptions = computed(() => {
     }));
 });
 
+// 👇 FUNGSI SAKTI YANG UDAH DISINKRONKAN DENGAN MATRIKS SLA
 const recalculateCartItems = (selectedCust) => {
     if (cartItems.value.length === 0) return;
 
@@ -142,27 +140,38 @@ const recalculateCartItems = (selectedCust) => {
         hasUpdates = true;
 
         const qty = Number(item.jumlah) || 1;
-        const hargaAwal = item.harga_dasar_awal_snapshot || 0;
+        const hargaAwalSla = item.harga_dasar_awal_snapshot || 0;
+
+        let diskonGrosir = 0;
+        let namaDiskonGrosir = '';
+
+        // Ambil tier grosir berdasarkan Qty (hanya membandingkan harga awal SLA dengan tier yg berlaku)
+        let activeTier = null;
+        if (item.master_harga_bertingkat && item.master_harga_bertingkat.length > 0) {
+             const tiersSlaSama = item.master_harga_bertingkat.filter(t => t.pengerjaan === item.estimasi_pengerjaan_snapshot);
+
+             activeTier = [...tiersSlaSama]
+                .sort((a, b) => b.min - a.min)
+                .find(t => qty >= t.min && (t.max === 0 || t.max === null || qty <= t.max));
+
+             if (activeTier) {
+                 // Diskon Grosir = Harga Qty 1 (Awal) - Harga Tier Saat Ini
+                 diskonGrosir = Math.max(0, hargaAwalSla - Number(activeTier.nilai));
+                 namaDiskonGrosir = `Harga Grosir Qty ${qty}`;
+             }
+        }
+
         let diskonMember = 0;
         let namaDiskonMember = '';
 
         if (roleId) {
             const d = item.master_diskon_customer.find(x => String(x.id_role_customer) === String(roleId));
             if (d) {
-                diskonMember = d.tipe === 'persen' ? hargaAwal * (Number(d.nilai) / 100) : Number(d.nilai);
+                // Diskon Member dihitung DARI HARGA SETELAH POTONG GROSIR
+                const hargaSetelahGrosir = Math.max(0, hargaAwalSla - diskonGrosir);
+                diskonMember = d.tipe === 'persen' ? hargaSetelahGrosir * (Number(d.nilai) / 100) : Number(d.nilai);
                 namaDiskonMember = d.tipe === 'persen' ? `Diskon ${roleName} (${d.nilai}%)` : `Diskon ${roleName} (Nominal)`;
             }
-        }
-
-        let diskonGrosir = 0;
-        let namaDiskonGrosir = '';
-        const tier = [...(item.master_harga_bertingkat || [])]
-            .sort((a, b) => b.min - a.min)
-            .find(t => qty >= t.min && (t.max === 0 || t.max === null || qty <= t.max));
-
-        if (tier) {
-            diskonGrosir = tier.tipe === 'persen' ? hargaAwal * (Number(tier.nilai) / 100) : Number(tier.nilai);
-            namaDiskonGrosir = tier.tipe === 'persen' ? `Harga Grosir Qty ${qty} (${tier.nilai}%)` : `Harga Grosir Qty ${qty}`;
         }
 
         const rincianDiskon = [];
@@ -172,9 +181,11 @@ const recalculateCartItems = (selectedCust) => {
         const totalDiskonSatuan = diskonGrosir + diskonMember;
         item.total_diskon_snapshot = totalDiskonSatuan;
         item.rincian_diskon_snapshot = rincianDiskon;
-        item.harga_satuan_snapshot = Math.max(0, hargaAwal - totalDiskonSatuan);
 
-        // ==== PERBAIKAN RUMUS CETAK BUKU & METERAN DI KERANJANG ====
+        // Update Harga Satuan (Harga 1 Murni - Total Diskon)
+        item.harga_satuan_snapshot = Math.max(0, hargaAwalSla - totalDiskonSatuan);
+
+        // ==== KALKULASI ULANG MULTIPLIER METERAN / BUKU ====
         let hargaSatuProdukFull = item.harga_satuan_snapshot;
 
         if (item.tipe_kalkulasi === 'cetak_buku') {
@@ -182,14 +193,11 @@ const recalculateCartItems = (selectedCust) => {
             if (isNaN(hal) || hal < 1) hal = 1;
 
             let sisi = 1;
-            (item.pesanan_item_finishing || []).forEach(fin => {
-                if (fin && fin.nama_finishing_snapshot) {
-                    const label = fin.nama_finishing_snapshot.toLowerCase();
-                    if (label.includes('2 sisi') || label.includes('dua sisi') || label.includes('bolak')) {
-                        sisi = 2;
-                    }
-                }
-            });
+            // Deteksi "Sisi Cetak" dari string nama produk (karena sekarang udah jadi varian SKU, bukan finishing)
+            const namaSkuLengkap = (item.nama_produk_snapshot || '').toLowerCase();
+            if (namaSkuLengkap.includes('2 sisi') || namaSkuLengkap.includes('dua sisi') || namaSkuLengkap.includes('bolak')) {
+                sisi = 2;
+            }
 
             const tambahanHalaman = Math.max(0, hal - 1);
             const biayaHalaman = tambahanHalaman * sisi * 1500;
@@ -205,21 +213,16 @@ const recalculateCartItems = (selectedCust) => {
             // Kali harga satuan dengan luas efektif
             hargaSatuProdukFull = hargaSatuProdukFull * luas;
         }
-        // =========================================================
 
         const totalHargaProduk = hargaSatuProdukFull * qty;
         const totalFinishing = hitungTotalFinishing(item, qty, hargaSatuProdukFull);
+
         const newTotalProduk = totalHargaProduk + totalFinishing;
 
-        if (item.master_harga_pengerjaan) {
-            const p = item.master_harga_pengerjaan.find(o => o.pengerjaan === item.estimasi_pengerjaan_snapshot);
-            if (p) {
-                item.harga_pengerjaan_snapshot = p.tipe === 'persen' ? newTotalProduk * (Number(p.nilai) / 100) : Number(p.nilai);
-            }
-        }
+        // SLA custom manual tetep ditahan kalau user sempet input
+        item.total_sla = Number(item.harga_pengerjaan_snapshot) || 0;
 
         item.total_produk = newTotalProduk;
-        item.total_sla = item.harga_pengerjaan_snapshot;
         item.subtotal = newTotalProduk + item.total_sla;
 
         return item;
@@ -253,13 +256,28 @@ watch(() => form.id_customer, (newId, oldId) => {
 // ==========================================
 // 4. LOGIKA PENGIRIMAN & ONGKIR
 // ==========================================
+// ==========================================
+// 4. LOGIKA PENGIRIMAN & ONGKIR
+// ==========================================
 const ekspedisiOptions = [
     { id: 'Ambil di Toko', nama: 'Ambil di Toko (Rp 0)' },
     { id: 'Kurir Toko', nama: 'Kurir Lokal / Instan' },
-    { id: 'jne', nama: 'JNE' },
-    { id: 'sicepat', nama: 'SiCepat' },
-    { id: 'jnt', nama: 'J&T' },
+    { id: 'jne', nama: 'JNE (Jalur Nugraha Ekakurir)' },
     { id: 'pos', nama: 'POS Indonesia' },
+    { id: 'tiki', nama: 'TIKI' },
+    { id: 'sicepat', nama: 'SiCepat Ekspres' },
+    { id: 'jnt', nama: 'J&T Express' },
+    { id: 'ninja', nama: 'Ninja Xpress' },
+    { id: 'anteraja', nama: 'AnterAja' },
+    { id: 'lion', nama: 'Lion Parcel' },
+    { id: 'wahana', nama: 'Wahana Prestasi Logistik' },
+    { id: 'rpx', nama: 'RPX Holding' },
+    { id: 'sap', nama: 'SAP Express' },
+    { id: 'ide', nama: 'ID Express' },
+    { id: 'ncs', nama: 'NCS Express' },
+    { id: 'rex', nama: 'REX Express' },
+    { id: 'sentral', nama: 'Sentral Cargo' },
+    { id: 'indah', nama: 'Indah Logistik' }
 ];
 
 const manualLayananOptions = [
@@ -447,20 +465,15 @@ const hitungTotalItem = (item) => {
     const qty = Number(item.jumlah) || 1;
     let hargaSatuProdukFull = Number(item.harga_satuan_snapshot) || 0;
 
-    // ==== PERBAIKAN RUMUS CETAK BUKU & METERAN MASTER RECALCULATE ====
     if (item.tipe_kalkulasi === 'cetak_buku') {
         let hal = parseInt(item.atribut_custom_snapshot?.['Jumlah Halaman'], 10);
         if (isNaN(hal) || hal < 1) hal = 1;
 
         let sisi = 1;
-        (item.pesanan_item_finishing || []).forEach(fin => {
-            if (fin && fin.nama_finishing_snapshot) {
-                const label = fin.nama_finishing_snapshot.toLowerCase();
-                if (label.includes('2 sisi') || label.includes('dua sisi') || label.includes('bolak')) {
-                    sisi = 2;
-                }
-            }
-        });
+        const namaSkuLengkap = (item.nama_produk_snapshot || '').toLowerCase();
+        if (namaSkuLengkap.includes('2 sisi') || namaSkuLengkap.includes('dua sisi') || namaSkuLengkap.includes('bolak')) {
+             sisi = 2;
+        }
 
         const tambahanHalaman = Math.max(0, hal - 1);
         const biayaHalaman = tambahanHalaman * sisi * 1500;
@@ -473,10 +486,8 @@ const hitungTotalItem = (item) => {
         }
         if (luas < 1) luas = 1;
 
-        // Harga per pcs = (harga dasar) x (luas yg terpakai)
         hargaSatuProdukFull = hargaSatuProdukFull * luas;
     }
-    // =======================================================
 
     const totalHargaProduk = hargaSatuProdukFull * qty;
     const totalFinishing = hitungTotalFinishing(item, qty, hargaSatuProdukFull);

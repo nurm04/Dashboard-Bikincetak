@@ -38,50 +38,76 @@ const getCustomAttributes = (item) => {
     return (typeof attr === 'object' && Object.keys(attr).length > 0) ? attr : null;
 };
 
-const isKaliJumlahPesan = (fin) => Boolean(fin.sku_finishing?.kali_jumlah_pesan);
+// 👇 PERBAIKAN: Cari deteksi sisi dari Nama Produk/SKU, BUKAN dari array Finishing
+const getSisiFromSkuName = (item) => {
+    let sisi = 1;
+    const namaSkuLengkap = (item.nama_produk_snapshot || '').toLowerCase();
+    if (namaSkuLengkap.includes('2 sisi') || namaSkuLengkap.includes('dua sisi') || namaSkuLengkap.includes('bolak')) {
+        sisi = 2;
+    }
+    return sisi;
+};
 
-// FUNGSI UTAMA YANG DIPERBAIKI
-// FUNGSI UTAMA YANG DIPERBAIKI (Deteksi via Atribut, bukan tipe_kalkulasi)
+// Deteksi aman untuk kali_jumlah_pesan (sama seperti OrderItemsTable)
+const isKaliJumlahPesan = (fin) => {
+    if (fin.kali_jumlah_pesan !== undefined) return Boolean(fin.kali_jumlah_pesan);
+    if (fin.sku_finishing?.kali_jumlah_pesan !== undefined) return Boolean(fin.sku_finishing?.kali_jumlah_pesan);
+    return true; // Default safety
+};
+
+// ==========================================
+// PERBAIKAN FUNGSI GET SUBTOTAL (DI SAMAKAN DENGAN OrderItemsTable)
+// ==========================================
 const getDisplaySubtotal = (item) => {
-    let hargaAwal = Number(item.harga_satuan_snapshot) || 0;
+    let baseNet = Number(item.harga_satuan_snapshot) || 0;
+    let qty = Number(item.jumlah) || 1;
+
     const attr = getCustomAttributes(item);
     const finishings = item.pesanan_item_finishing || item.finishing || [];
 
-    // 1. LOGIC BUKU (Deteksi dari adanya 'Jumlah Halaman')
-    if (attr && attr['Jumlah Halaman'] !== undefined) {
-        let sisi = 1;
-        finishings.forEach(f => {
-            const namaFin = (f.nama_finishing_snapshot || '').toLowerCase();
-            if (namaFin.includes('dua sisi') || namaFin.includes('2 sisi') || namaFin.includes('bolak')) {
-                sisi = 2;
-            }
-        });
-        let hal = parseInt(attr['Jumlah Halaman'], 10);
-        if (isNaN(hal) || hal < 1) hal = 1;
-        hargaAwal += (Math.max(0, hal - 1) * sisi * 1500);
-    }
-    // 2. LOGIC METERAN (Deteksi dari adanya 'Luas Dihargai (m2)')
-    else if (attr && attr['Luas Dihargai (m2)'] !== undefined) {
-        let luas = parseFloat(attr['Luas Dihargai (m2)']) || 1;
-        if (luas < 1) luas = 1;
+    // 👇 PERBAIKAN PANGGIL FUNGSI
+    const sisi = getSisiFromSkuName(item);
 
-        hargaAwal = hargaAwal * luas;
+    // 1. LOGIC BUKU (Tambahan Halaman)
+    if (item.tipe_kalkulasi === 'cetak_buku') {
+        let hal = 1;
+        if (attr && attr['Jumlah Halaman'] !== undefined) {
+             hal = parseInt(attr['Jumlah Halaman'], 10);
+             if (isNaN(hal) || hal < 1) hal = 1;
+        }
+        baseNet += (Math.max(0, hal - 1) * sisi * 1500);
     }
 
-    // 3. Kalikan Harga Dasar dengan QTY
-    let total = hargaAwal * (Number(item.jumlah) || 1);
+    // 2. LOGIC METERAN (Luas Area)
+    if (item.tipe_kalkulasi === 'cetak_meteran') {
+        let luas = 1;
+        if (attr && attr['Luas Dihargai (m2)'] !== undefined) {
+             luas = parseFloat(attr['Luas Dihargai (m2)']);
+             if (isNaN(luas) || luas < 1) luas = 1;
+        }
+        baseNet = baseNet * luas;
+    }
 
-    // 4. Hitung Tambahan Finishing
+    const fisikUtamaNet = baseNet;
+    let totalFinishingSatuanNet = 0;
+    let totalFinishingGlobal = 0; // Untuk finishing borongan (tidak dikali qty)
+
+    // 3. Hitung Tambahan Finishing
     finishings.forEach(f => {
         const isKaliQty = isKaliJumlahPesan(f);
-        let val = f.tipe === 'persen'
-            ? (hargaAwal * (Number(f.harga_finishing_snapshot) / 100))
-            : (Number(f.harga_finishing_snapshot) || 0);
+        const isPersen = f.tipe === 'persen';
 
-        total += (isKaliQty ? val * item.jumlah : val);
+        let valNet = isPersen ? (fisikUtamaNet * (Number(f.harga_finishing_snapshot) / 100)) : (Number(f.harga_finishing_snapshot) || 0);
+
+        if (isKaliQty) {
+            totalFinishingSatuanNet += valNet;
+        } else {
+            totalFinishingGlobal += valNet;
+        }
     });
 
-    return total;
+    const finalSatuanNet = baseNet + totalFinishingSatuanNet;
+    return (finalSatuanNet * qty) + totalFinishingGlobal;
 };
 
 // Jumlahkan Subtotal Item DITAMBAH SLA di Grand Total Tagihan
@@ -299,7 +325,6 @@ const goBack = () => {
 
                 <div class="lg:col-span-4 xl:col-span-3">
                     <div class="sticky top-24">
-                        <!-- LEMPAR COMPUTED PROPERTIES KE SINI -->
                         <OrderSummary
                             :total_tagihan="computedTotalTagihan"
                             :harga_ongkir="pesanan.harga_ongkir"

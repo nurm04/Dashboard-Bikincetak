@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Produk;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB; // 👇 WAJIB TAMBAH INI
 
 class ProdukController extends Controller
 {
@@ -41,6 +42,7 @@ class ProdukController extends Controller
                 return [
                     'nama_sku' => $sku->nama_sku,
                     'harga' => $sku->harga,
+                    'satuan' => $sku->satuan,
                     'tipe_kalkulasi' => $sku->tipe_kalkulasi,
                 ];
             })->toArray();
@@ -70,10 +72,10 @@ class ProdukController extends Controller
                 'kategori',
                 'varians.pilihanVarian',
                 'produkSku.skuDetailPilihan',
-                'produkSku.hargaPengerjaan',
                 'produkSku.hargaBertingkat',
                 'produkSku.diskonCustomer',
-                'produkSku.skuFinishing.pilihanFinishing.finishing'
+                'produkSku.skuFinishing.pilihanFinishing.finishing',
+                'produkSku.skuFinishing.hargaBertingkat'
             ])
             ->where('is_active', true)
             ->findOrFail($id);
@@ -91,21 +93,55 @@ class ProdukController extends Controller
                 'kategori' => $produk->kategori ? $produk->kategori->nama_kategori : null,
                 'is_active' => $produk->is_active,
                 'gambar_urls' => $gambarUrls,
-                'varians' => $produk->varians,
+
+                // Memaksa baca Pivot Database!
+                'varians' => $produk->varians->map(function ($varian) use ($id) {
+                    $jenis = $varian->pivot->jenis_varian ?? null;
+
+                    // Kalau relasi withPivot gagal, paksa cari manual di DB
+                    if (!$jenis) {
+                        $pivot = DB::table('produk_varian')
+                            ->where('id_produk', $id)
+                            ->where('id_varian', $varian->id_varian)
+                            ->first();
+                        $jenis = $pivot ? $pivot->jenis_varian : 'utama';
+                    }
+
+                    return [
+                        'id_varian' => $varian->id_varian,
+                        'nama_varian' => $varian->nama_varian,
+                        'jenis_varian' => $jenis,
+                        'pilihan_varian' => $varian->pilihanVarian
+                    ];
+                }),
 
                 'skus' => $produk->produkSku->map(function ($sku) {
+                    // 👇 PERBAIKAN FATAL: Memastikan Gambar Menjadi ARRAY!
+                    $gambarArray = [];
+                    if (!empty($sku->gambar)) {
+                        // Jika berupa string JSON, decode jadi array
+                        if (is_string($sku->gambar)) {
+                            $decoded = json_decode($sku->gambar, true);
+                            $gambarArray = is_array($decoded) ? $decoded : [$sku->gambar];
+                        }
+                        // Jika sudah array dari cast model
+                        else if (is_array($sku->gambar)) {
+                            $gambarArray = $sku->gambar;
+                        }
+                    }
+
                     return [
                         'id_sku' => $sku->id_sku,
                         'nama_sku' => $sku->nama_sku,
+                        'gambar' => $gambarArray, // 👈 KIRIM ARRAY YANG UDAH BERSIH
+                        'satuan' => $sku->satuan,
                         'deskripsi' => $sku->deskripsi,
                         'tipe_kalkulasi' => $sku->tipe_kalkulasi,
                         'minimum_pesan' => $sku->minimum_pesan,
                         'harga_dasar' => $sku->harga,
 
                         'kombinasi_pilihan' => $sku->skuDetailPilihan->pluck('id_pilihan'),
-
                         'harga_bertingkat' => $sku->hargaBertingkat,
-                        'harga_pengerjaan' => $sku->hargaPengerjaan,
                         'diskon_customer' => $sku->diskonCustomer,
 
                         'opsi_finishing' => $sku->skuFinishing->map(function ($finishing) {
@@ -118,6 +154,14 @@ class ProdukController extends Controller
                                 'harga_tambahan' => $finishing->harga_tambahan,
                                 'tipe' => $finishing->tipe ?? 'nominal',
                                 'kali_jumlah_pesan' => (bool) $finishing->kali_jumlah_pesan,
+                                'harga_bertingkat' => $finishing->hargaBertingkat->map(function ($tier) {
+                                    return [
+                                        'min' => (int) $tier->min,
+                                        'max' => (int) $tier->max,
+                                        'tipe' => $tier->tipe,
+                                        'nilai' => (float) $tier->nilai,
+                                    ];
+                                })->values()->toArray(),
                             ];
                         })
                     ];
@@ -130,16 +174,9 @@ class ProdukController extends Controller
             ], 200);
 
         } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Produk tidak ditemukan atau sedang tidak aktif'
-            ], 404);
-
+            return response()->json(['success' => false, 'message' => 'Produk tidak ditemukan'], 404);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
-            ], 500);
+            return response()->json(['success' => false, 'message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
         }
     }
 }

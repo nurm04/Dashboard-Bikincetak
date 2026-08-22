@@ -14,7 +14,8 @@ const props = defineProps({
     produk: Object,
 });
 
-const headers = ['Nama SKU / ID SKU', 'Daftar Finishing', 'Daftar Harga Grosir', 'Daftar Harga Pengerjaan', 'Daftar Diskon', 'Aksi'];
+// 👇 1. Hapus 'Daftar Harga Pengerjaan' dari Header Tabel 👇
+const headers = ['Nama SKU / ID SKU', 'Daftar Finishing', 'Daftar Harga Bertingkat', 'Daftar Diskon', 'Aksi'];
 
 // --- STATE DELETE ---
 const isDeleteModalOpen = ref(false);
@@ -24,23 +25,22 @@ const formDelete = useForm({});
 // --- STATE IMPORT CSV ---
 const isImportModalOpen = ref(false);
 const importForm = useForm({
-    skala_import: 'produk_ini', // [TAMBAHAN] Pilihan skala: 'produk_ini' atau 'semua_produk'
+    skala_import: 'produk_ini',
     tipe_import: 'sku_finishing',
     file_csv: null,
 });
 
-// [TAMBAHAN] Opsi skala import
 const skalaOptions = computed(() => [
     { value: 'produk_ini', label: `Hanya untuk Produk Ini (${props.produk?.id_produk})` },
     { value: 'semua_produk', label: 'Berlaku untuk Semua Produk (Sesuai ID di CSV)' },
 ]);
 
+// 👇 2. Hapus opsi 'harga_pengerjaan' dari dropdown import 👇
 const importOptions = [
-    { value: 'sku_finishing', label: '1. Data Tambahan Finishing' },
-    { value: 'harga_bertingkat', label: '2. Data Harga Bertingkat (Grosir)' },
-    { value: 'harga_pengerjaan', label: '3. Data Harga Pengerjaan (SLA)' },
-    { value: 'diskon_customer', label: '4. Data Diskon Customer (Member)' },
-    { value: 'komposisi', label: '5. Data Komposisi (BOM)' },
+    { value: 'sku_finishing', label: '1. Data Master Finishing & Harga Grosir' },
+    { value: 'harga_bertingkat', label: '2. Data Harga Bertingkat (Matriks SLA)' },
+    { value: 'diskon_customer', label: '3. Data Diskon Customer (Member)' },
+    { value: 'komposisi', label: '4. Data Komposisi (BOM)' },
 ];
 
 // --- FUNGSI DELETE ---
@@ -97,19 +97,19 @@ const downloadTemplate = () => {
 
     let headerArray = [];
     let rowContoh = [];
+    let rowContoh2 = [];
 
-    // [UPDATE] Coba berikan contoh SKU dari produk ini jika ada
     const contohSku = props.produk?.produk_sku?.[0]?.id_sku || "PRD-001-SKU-001";
 
     if (tipe === 'sku_finishing') {
-        headerArray = ["id_sku", "id_pilihan_finishing", "minimum_pesan", "harga_tambahan"];
-        rowContoh = [contohSku, "FIN-001", "1", "5000"];
+        headerArray = ["id_sku", "id_pilihan_finishing", "minimum_pesan", "harga_tambahan", "tipe", "kali_jumlah_pesan", "min", "max", "tipe", "nilai"];
+        rowContoh = [contohSku, "FIN-001", "1", "40000", "nominal", "1", "1", "50", "nominal", "40000"];
+        rowContoh2 = ["", "", "", "", "", "", "51", "99", "nominal", "38000"];
     } else if (tipe === 'harga_bertingkat') {
-        headerArray = ["id_sku", "min", "max", "tipe", "nilai"];
-        rowContoh = [contohSku, "10", "50", "nominal", "2000"];
-    } else if (tipe === 'harga_pengerjaan') {
-        headerArray = ["id_sku", "pengerjaan", "tipe", "nilai"];
-        rowContoh = [contohSku, "1 Hari Jadi", "persen", "50"];
+        headerArray = ["id_sku", "jumlah", "5 Hari", "3 Hari", "1 Hari"];
+        rowContoh = [contohSku, "1 pack", "100000", "125000", "190000"];
+        rowContoh2 = ["", "2 pack", "97500", "120000", "185000"];
+    } else if (tipe === 'diskon_customer') {
     } else if (tipe === 'diskon_customer') {
         headerArray = ["id_sku", "id_role_customer", "tipe", "nilai"];
         rowContoh = [contohSku, "ROLE-RESELLER", "persen", "10"];
@@ -120,6 +120,9 @@ const downloadTemplate = () => {
 
     csvContent += headerArray.join(",") + "\r\n";
     csvContent += rowContoh.join(",") + "\r\n";
+    if (rowContoh2.length > 0) {
+        csvContent += rowContoh2.join(",") + "\r\n";
+    }
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -132,14 +135,12 @@ const downloadTemplate = () => {
 </script>
 
 <template>
-    <!-- MODAL DELETE (Dibiarkan Sesuai Aslinya) -->
     <CustomAlertConfirm
         :show="isDeleteModalOpen" type="error" title="Hapus Data Produk Sku"
         message="Menghapus Produk Sku akan menghapus seluruh harga grosir dan harga pengerjaan di dalamnya secara permanen. Lanjutkan? "
         confirmText="Ya, Hapus Semua" @close="closeDeleteModal" @confirm="doDelete"
     />
 
-    <!-- MODAL IMPORT CSV -->
     <dialog :class="['modal', { 'modal-open': isImportModalOpen }]">
         <div class="modal-box bg-base-100 rounded-2xl max-w-lg">
             <h3 class="font-black text-lg mb-4 flex items-center gap-2">
@@ -148,7 +149,6 @@ const downloadTemplate = () => {
             </h3>
 
             <div class="space-y-4">
-                <!-- [TAMBAHAN] Pilihan Skala Import -->
                 <CustomSelect
                     v-model="importForm.skala_import"
                     label="Skala Penerapan Data"
@@ -197,10 +197,8 @@ const downloadTemplate = () => {
 
     <StafLayout>
         <template #header>
-            <!-- REVISI: flex-col di mobile, flex-row di desktop, tambah gap-4 -->
             <div class="flex flex-col md:flex-row md:items-center justify-between w-full gap-4">
                 <div class="flex items-center gap-4">
-                    <!-- REVISI: Tambah shrink-0 biar tombol back ga penyok -->
                     <Link :href="route('produk.index')" class="btn btn-sm btn-circle btn-ghost ring-1 ring-base-300 shrink-0">
                         <ArrowLeft class="w-4 h-4" />
                     </Link>
@@ -209,7 +207,6 @@ const downloadTemplate = () => {
                     </h2>
                 </div>
 
-                <!-- REVISI: Tambah w-full md:w-auto biar tombolnya menuhi layar pas di HP -->
                 <button @click="isImportModalOpen = true" class="w-full md:w-auto btn btn-sm btn-primary rounded-xl text-xs font-black uppercase tracking-widest shadow-md shadow-primary/20">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>
                     Import CSV
@@ -219,10 +216,8 @@ const downloadTemplate = () => {
 
         <div class="min-h-screen px-4 py-3 sm:px-6 lg:px-8">
             <div class="mx-auto max-w-7xl">
-                <!-- ISI TABLE -->
                 <CustomTable :headers="headers">
-                   <tr v-for="sku in props.produk.produk_sku" :key="sku.id_sku" class="transition-colors hover:bg-base-200/50">
-                        <!-- REVISI: Tambah whitespace-nowrap di semua td biar tabel aman pas di-scroll mobile -->
+                    <tr v-for="sku in props.produk.produk_sku" :key="sku.id_sku" class="transition-colors hover:bg-base-200/50">
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="font-bold text-base-content">{{ sku.nama_sku }}</div>
                             <div class="text-[10px] text-primary font-medium">{{ sku.id_sku }}</div>
@@ -239,19 +234,10 @@ const downloadTemplate = () => {
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div v-if="sku.harga_bertingkat?.length > 0" class="flex items-center gap-2">
                                 <span class="font-black badge badge-primary badge-sm">{{ sku.harga_bertingkat.length }}</span>
-                                <span class="text-[10px] font-bold uppercase opacity-50">Level Grosir</span>
+                                <span class="text-[10px] font-bold uppercase opacity-50">Matriks SLA</span>
                             </div>
                             <span v-else class="text-[10px] italic opacity-30">Belum diatur</span>
                         </td>
-
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div v-if="sku.harga_pengerjaan?.length > 0" class="flex items-center gap-2">
-                                <span class="font-black text-white badge badge-info badge-sm">{{ sku.harga_pengerjaan.length }}</span>
-                                <span class="text-[10px] font-bold uppercase opacity-50">Opsi Estimasi</span>
-                            </div>
-                            <span v-else class="text-[10px] italic opacity-30">Belum diatur</span>
-                        </td>
-
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div v-if="sku.diskon_customer?.length > 0" class="flex items-center gap-2">
                                 <span class="font-black text-white badge badge-warning badge-sm">{{ sku.diskon_customer.length }}</span>
@@ -265,9 +251,9 @@ const downloadTemplate = () => {
                                 <div class="px-4 py-2 text-[10px] font-black text-base-content/20 uppercase tracking-widest border-b border-base-300/50 mb-1">
                                     Menu Produk
                                 </div>
+                                <Link v-if="$can('produk-sku', 'ubah')" :href="route('sku.edit', sku.id_sku)" @click="close" class="flex items-center w-full px-4 py-2.5 text-sm font-bold text-info hover:bg-info/10 transition-colors">Edit Sku Dasar</Link>
                                 <Link v-if="$can('produk-sku', 'tambah')" :href="route('sku.finishing', sku.id_sku)" @click="close" class="flex items-center px-4 py-2.5 text-sm font-bold text-success hover:bg-success/10 transition-colors">Finishing</Link>
-                                <Link v-if="$can('produk-sku', 'tambah')" :href="route('sku.hargaBertingkat', sku.id_sku)" @click="close" class="flex items-center px-4 py-2.5 text-sm font-bold text-primary hover:bg-primary/10 transition-colors">Harga Bertingkat</Link>
-                                <Link v-if="$can('produk-sku', 'tambah')" :href="route('sku.hargaPengerjaan', sku.id_sku)" @click="close" class="flex items-center px-4 py-2.5 text-sm font-bold text-info hover:bg-info/10 transition-colors">Harga Pengerjaan</Link>
+                                <Link v-if="$can('produk-sku', 'tambah')" :href="route('sku.hargaBertingkat', sku.id_sku)" @click="close" class="flex items-center px-4 py-2.5 text-sm font-bold text-primary hover:bg-primary/10 transition-colors">Matriks SLA & Harga</Link>
                                 <Link v-if="$can('produk-sku', 'tambah')" :href="route('sku.diskonCustomer', sku.id_sku)" @click="close" class="flex items-center px-4 py-2.5 text-sm font-bold text-warning hover:bg-warning/10 transition-colors">Diskon Member</Link>
                                 <Link v-if="$can('produk-sku', 'tambah')" :href="route('sku.komposisi', sku.id_sku)" @click="close" class="flex items-center px-4 py-2.5 text-sm font-bold text-base-content hover:bg-base-content/10 transition-colors">Komposisi Produk</Link>
                                 <div class="my-1 border-t border-base-300/50"></div>
@@ -276,7 +262,7 @@ const downloadTemplate = () => {
                         </td>
                     </tr>
                     <tr v-if="props.produk.produk_sku.length === 0">
-                        <td colspan="6" class="px-6 py-20 text-center">
+                        <td colspan="5" class="px-6 py-20 text-center">
                             <div class="flex flex-col items-center opacity-30">
                                 <p class="text-sm font-bold tracking-widest uppercase">Belum ada Sku di Produk {{ props.produk.id_produk }}</p>
                             </div>

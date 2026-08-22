@@ -14,6 +14,7 @@ class HargaBertingkatController extends Controller
     {
         $request->validate([
             'hargas' => 'present|array',
+            'hargas.*.pengerjaan' => 'required|string', // 👇 TAMBAHAN: Validasi SLA/Pengerjaan
             'hargas.*.min' => 'required|integer|min:1',
             'hargas.*.max' => 'required|integer|min:0',
             'hargas.*.tipe' => 'required|in:nominal,persen',
@@ -23,15 +24,18 @@ class HargaBertingkatController extends Controller
         try {
             DB::beginTransaction();
 
+            // Hapus data matriks harga lama
             HargaBertingkat::where('id_sku', $id_sku)->delete();
 
+            // Insert ulang data matriks harga baru
             foreach ($request->hargas as $item) {
                 HargaBertingkat::create([
-                    'id_sku' => $id_sku,
-                    'min' => $item['min'],
-                    'max' => $item['max'],
-                    'tipe' => $item['tipe'],
-                    'nilai' => $item['nilai'],
+                    'id_sku'     => $id_sku,
+                    'pengerjaan' => $item['pengerjaan'] ?? 'Reguler', // 👇 TAMBAHAN: Simpan SLA
+                    'min'        => $item['min'],
+                    'max'        => $item['max'],
+                    'tipe'       => $item['tipe'],
+                    'nilai'      => $item['nilai'],
                 ]);
             }
 

@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, computed } from 'vue';
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
+import { Printer, ArrowLeft } from 'lucide-vue-next'; // Tambahan ikon
 
 const props = defineProps({
     item: Object,
@@ -11,6 +12,10 @@ onMounted(() => {
         window.print();
     }, 500);
 });
+
+const printDocument = () => {
+    window.print();
+};
 
 const isAmbilDiToko = computed(() => {
     return !props.item?.pesan?.ekspedisi_nama || props.item?.pesan?.ekspedisi_nama === 'Ambil di Toko';
@@ -62,8 +67,24 @@ const getValidAttributes = (atributStr) => {
 <template>
     <Head :title="`Label SPK - ${cleanProductName(item?.nama_produk_snapshot)}`" />
 
+    <!-- 👇 NAVBAR BARU (MIRIP CETAK DOKUMEN & NOTA) 👇 -->
+    <div class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-3 bg-white border-b shadow-sm print:hidden border-base-300">
+        <div class="flex items-center gap-4">
+            <Link :href="route('pesan.detail', item?.pesan?.id_pesan)" class="flex items-center justify-center transition-colors btn btn-sm btn-circle btn-ghost ring-1 ring-base-300 hover:bg-base-200 text-base-content">
+                <ArrowLeft class="w-4 h-4" />
+            </Link>
+            <div class="text-sm font-bold text-base-content">Kembali ke Detail</div>
+        </div>
+        <button @click="printDocument" class="flex items-center gap-2 px-4 font-bold text-white transition-colors shadow-sm btn btn-primary btn-sm rounded-xl hover:bg-primary-focus">
+            <Printer class="w-4 h-4" />
+            <span>Cetak Sekarang (Ctrl+P)</span>
+        </button>
+    </div>
+    <!-- 👆 END NAVBAR 👆 -->
+
     <!-- Print styling dioptimalkan khusus printer thermal (78mm - 80mm) -->
-    <div class="flex justify-center min-h-screen p-4 font-sans text-black bg-gray-100 print:p-0 print:bg-white">
+    <!-- Tambahan pt-20 biar gak ketutup navbar di mode layar -->
+    <div class="flex justify-center min-h-screen p-4 pt-20 font-sans text-black bg-gray-100 print:p-0 print:pt-0 print:bg-white">
 
         <!-- Lebar standar Thermal Printer 80mm adalah sekitar 302px (80mm) -->
         <div class="w-full max-w-75.5 bg-white print:w-full print:max-w-none print:m-0 shadow-lg print:shadow-none mx-auto overflow-hidden">
@@ -87,7 +108,7 @@ const getValidAttributes = (atributStr) => {
                 <!-- INFO PRODUK UTAMA -->
                 <div class="mb-3 text-center">
                     <p class="text-[9px] uppercase font-bold text-black mb-1 tracking-wider border-b border-black inline-block pb-0.5">DETAIL ITEM</p>
-                    <h2 class="text-sm font-black leading-tight uppercase px-1">{{ cleanProductName(item?.nama_produk_snapshot) }}</h2>
+                    <h2 class="px-1 text-sm font-black leading-tight uppercase">{{ cleanProductName(item?.nama_produk_snapshot) }}</h2>
 
                     <!-- QTY Sangat Besar agar terlihat jelas oleh operator -->
                     <div class="flex items-baseline justify-center gap-1 mt-1">
@@ -145,7 +166,7 @@ const getValidAttributes = (atributStr) => {
                         </span>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-black border-dashed">
+                    <div class="grid grid-cols-2 gap-2 pt-2 mt-2 border-t border-black border-dashed">
                         <div>
                             <span class="font-black uppercase text-[9px] block mb-0.5">Berat Item:</span>
                             <span class="font-bold text-[11px]">{{ item?.total_berat_snapshot || 0 }} gram</span>
@@ -158,7 +179,7 @@ const getValidAttributes = (atributStr) => {
 
                     <div class="mt-2 p-1.5 border border-black bg-black text-white">
                         <span class="font-bold uppercase text-[9px] block mb-0.5 text-center tracking-widest">Kurir Pengiriman:</span>
-                        <span class="font-black text-xs uppercase block leading-tight text-center">
+                        <span class="block text-xs font-black leading-tight text-center uppercase">
                             {{ isAmbilDiToko ? 'AMBIL DI TOKO' : `${item?.pesan?.ekspedisi_nama} - ${item?.pesan?.ekspedisi_layanan}` }}
                         </span>
                     </div>

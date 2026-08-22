@@ -72,7 +72,7 @@ const toggleSettingsDropdown = () => {
             </button>
         </div>
 
-        <nav class="flex-1 py-6 space-y-2 overflow-y-auto pb-24 lg:pb-6" :class="isMiniMode ? 'px-2' : 'px-4'">
+        <nav class="flex-1 py-6 pb-24 space-y-2 overflow-y-auto lg:pb-6" :class="isMiniMode ? 'px-2' : 'px-4'">
             <p v-if="!isMiniMode" class="text-[10px] font-black text-base-content/30 uppercase tracking-widest ml-3 mb-4">Navigasi Utama</p>
 
             <Link :href="route('dashboard')"
@@ -276,6 +276,25 @@ const toggleSettingsDropdown = () => {
                 <svg class="w-5 h-5 shrink-0" :class="!isMiniMode && 'mr-3'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z"></path></svg>
                 <span v-if="!isMiniMode">Pembelian Bahan</span>
             </Link>
+
+            <!-- 👇 LINK PENAWARAN BARU 👇 -->
+            <Link v-if="$can('penawaran')" :href="route('penawaran.index')"
+                class="flex items-center py-3 text-sm font-bold transition-all duration-300 rounded-xl"
+                :class="{
+                    'bg-primary text-white shadow-lg shadow-primary/30': route().current('penawaran.*'),
+                    'text-base-content/70 hover:bg-base-200 hover:text-base-content': !route().current('penawaran.*'),
+                    'translate-x-1': !isMiniMode && route().current('penawaran.*'),
+                    'hover:translate-x-1': !isMiniMode && !route().current('penawaran.*'),
+                    'justify-center px-0': isMiniMode,
+                    'px-4': !isMiniMode
+                }"
+                :title="isMiniMode ? 'Penawaran' : ''"
+                @click="emit('closeMobile')"
+            >
+                <svg class="w-5 h-5 shrink-0" :class="!isMiniMode && 'mr-3'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                <span v-if="!isMiniMode">Penawaran</span>
+            </Link>
+            <!-- 👆 AKHIR LINK PENAWARAN 👆 -->
 
             <Link v-if="$can('pesan')" :href="route('pesan.index')"
                 class="flex items-center py-3 text-sm font-bold transition-all duration-300 rounded-xl"

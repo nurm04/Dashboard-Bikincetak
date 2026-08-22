@@ -1,6 +1,7 @@
 <script setup>
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import { onMounted, computed } from 'vue';
+import { Printer, ArrowLeft } from 'lucide-vue-next'; // TAMBAHAN ICON
 
 const props = defineProps({
     pesanan: Object,
@@ -152,7 +153,12 @@ const cleanProductName = (name) => {
     return name.replace(/^[A-Za-z]+-\d+-/, '').replace(/-/g, ' ');
 };
 
+const printDocument = () => {
+    window.print();
+};
+
 onMounted(() => {
+    // Timeout biarin agak lambat sedikit biar render sempurna
     setTimeout(() => {
         window.print();
     }, 500);
@@ -162,151 +168,167 @@ onMounted(() => {
 <template>
     <Head :title="`Nota - ${pesanan.id_pesan}`" />
 
-    <div class="max-w-xl p-6 mx-auto font-sans text-xs text-black bg-white print:p-0 print:max-w-none">
-        <div class="flex justify-end gap-2 mb-6 print:hidden">
-            <button @click="window.print()" class="px-4 py-2 text-xs font-medium text-white transition-colors rounded shadow bg-neutral hover:bg-neutral/80">
-                🖨️ Cetak Nota
-            </button>
+    <!-- 👇 NAVBAR BARU (MIRIP CETAK DOKUMEN) 👇 -->
+    <div class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-3 bg-white border-b shadow-sm print:hidden border-base-300">
+        <div class="flex items-center gap-4">
+            <Link :href="route('pesan.detail', pesanan.id_pesan)" class="btn btn-sm btn-circle btn-ghost ring-1 ring-base-300 hover:bg-base-200 transition-colors flex items-center justify-center text-base-content">
+                <ArrowLeft class="w-4 h-4" />
+            </Link>
+            <div class="font-bold text-base-content text-sm">Kembali ke Detail</div>
         </div>
+        <button @click="printDocument" class="btn btn-primary btn-sm rounded-xl px-4 flex items-center gap-2 hover:bg-primary-focus transition-colors text-white font-bold shadow-sm">
+            <Printer class="w-4 h-4" />
+            <span>Cetak Sekarang (Ctrl+P)</span>
+        </button>
+    </div>
+    <!-- 👆 END NAVBAR 👆 -->
 
-        <div class="p-5 space-y-4 bg-white border border-black">
-            <!-- Header Toko & Tujuan -->
-            <div class="flex items-start justify-between pb-4 border-b border-black">
-                <div>
-                    <h1 class="text-2xl font-black tracking-tight text-blue-950">BIKIN CETAK</h1>
-                    <p class="text-[10px] italic text-gray-700">Digital Printing, Offset, Merchandise</p>
-                    <p class="text-[9px] mt-1.5 text-gray-800 leading-tight">
-                        WA : 081213139490 | Email : order@bikincetak.co.id <br>
-                        Alamat : Jl. Barata Jaya XVII No. 3 Gubeng - Surabaya
-                    </p>
-                </div>
-                <div class="text-right text-xs space-y-0.5">
-                    <p>Surabaya, {{ formatSimpleDate(pesanan.created_at) }}</p>
-                    <p class="pt-1 font-medium">Kepada Yth.</p>
-                    <p class="font-bold uppercase">{{ pesanan.customer?.user?.name || '-' }}</p>
-                    <p class="text-[11px] text-gray-700 max-w-50 truncate uppercase">{{ pesanan.alamat?.kota || pesanan.alamat?.detail_alamat || 'Surabaya' }}</p>
-                    <p class="pt-1 font-medium">Kode Transaksi</p>
-                    <p class="mt-1 text-sm font-bold tracking-wide uppercase">{{ pesanan.kode_transaksi }}</p>
-                </div>
-            </div>
-
-            <div class="text-xs font-bold tracking-wider uppercase">INVOICE</div>
-
-            <!-- Tabel Barang -->
-            <table class="w-full text-xs border border-collapse border-black">
-                <thead>
-                    <tr class="border-b border-black bg-gray-50">
-                        <th class="p-2 font-bold text-left border-r border-black">Nama Barang</th>
-                        <th class="w-12 p-2 font-bold text-center border-r border-black">Qty</th>
-                        <th class="w-24 p-2 font-bold text-right border-r border-black">Satuan Rp.</th>
-                        <th class="w-24 p-2 font-bold text-right">Total Rp.</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="item in pesanan.pesanan_item" :key="item.id" class="align-top border-b border-black">
-                        <td class="p-2 border-r border-black">
-                            <div class="font-semibold">{{ cleanProductName(item.nama_produk_snapshot) }}</div>
-
-                            <div class="text-[9.5px] text-gray-800 mt-1.5 leading-tight space-y-0.5">
-                                <div v-if="getCustomAttributesDisplay(item)">
-                                    <span v-for="(val, key) in getCustomAttributesDisplay(item)" :key="key" class="block">
-                                        • {{ key.toUpperCase() }}: {{ val }}
-                                    </span>
-                                </div>
-
-                                <div v-if="item.pesanan_item_finishing?.length">
-                                    <span v-for="(fin, fIdx) in item.pesanan_item_finishing" :key="fIdx" class="block">
-                                        • {{ fin.kategori_finishing ? fin.kategori_finishing.toUpperCase() + ': ' : '' }}{{ fin.nama_finishing_snapshot }}
-                                        <span class="italic opacity-75">
-                                            ({{ fin.tipe === 'persen' ? `${fin.harga_finishing_snapshot}%` : `Rp ${formatRupiah(fin.harga_finishing_snapshot)}` }})
-                                        </span>
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div v-if="getParsedItem(item).sla > 0" class="mt-2 text-[10px] font-bold text-gray-900">
-                                + SLA ({{ item.estimasi_pengerjaan_snapshot || item.estimasi_pengerjaan }}): Rp {{ formatRupiah(getParsedItem(item).sla) }}
-                            </div>
-                            <div v-if="getParsedItem(item).finishingFlat > 0" class="mt-0.5 text-[10px] font-bold text-gray-900">
-                                + Jasa Tambahan (Flat): Rp {{ formatRupiah(getParsedItem(item).finishingFlat) }}
-                            </div>
-                        </td>
-                        <td class="p-2 font-semibold text-center border-r border-black">{{ item.jumlah }}</td>
-                        <!-- SATUAN AKAN TEPAT SESUAI HARGA DASAR + FINISHING PCS -->
-                        <td class="p-2 text-right border-r border-black">{{ formatRupiah(getDisplayHargaSatuan(item)) }}</td>
-                        <td class="p-2 font-semibold text-right">{{ formatRupiah(getDisplaySubtotal(item)) }}</td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <!-- Bagian Bawah -->
-            <div class="grid grid-cols-2 gap-4 pt-2">
-
-                <!-- Kolom Kiri: Kurir & Rekening -->
-                <div class="space-y-4 text-xs">
+    <!-- BACKGROUND WRAPPER BIAR DI BROWSER TERLIHAT RAPI SEPERTI KERTAS -->
+    <div class="min-h-screen bg-gray-100 pt-20 pb-10 print:bg-transparent print:p-0">
+        
+        <!-- CONTAINER NOTA -->
+        <div class="max-w-2xl p-6 mx-auto font-sans text-xs text-black bg-white shadow-lg print:p-0 print:shadow-none print:max-w-none">
+            
+            <div class="p-5 space-y-4 bg-white border border-black rounded-sm">
+                <!-- Header Toko & Tujuan -->
+                <div class="flex items-start justify-between pb-4 border-b border-black">
                     <div>
-                        <p class="font-bold">Delivery</p>
-                        <p class="text-gray-800 uppercase">{{ pesanan.ekspedisi_nama || 'Di Ambil' }} <span v-if="pesanan.ekspedisi_layanan && !pesanan.ekspedisi_nama?.includes('Ambil')">- {{ pesanan.ekspedisi_layanan }}</span></p>
+                        <h1 class="text-2xl font-black tracking-tight text-blue-950">BIKIN CETAK</h1>
+                        <p class="text-[10px] italic text-gray-700">Digital Printing, Offset, Merchandise</p>
+                        <p class="text-[9px] mt-1.5 text-gray-800 leading-tight">
+                            WA : 081213139490 | Email : order@bikincetak.co.id <br>
+                            Alamat : Jl. Barata Jaya XVII No. 3 Gubeng - Surabaya
+                        </p>
                     </div>
-                    <div class="space-y-0.5 pt-2">
-                        <p class="font-medium">Pembayaran :</p>
-                        <p class="font-bold">{{ bank_name }} {{ bank_number }}</p>
-                        <p class="italic text-[10px]">an/ {{ bank_owner }}</p>
+                    <div class="text-right text-xs space-y-0.5">
+                        <p>Surabaya, {{ formatSimpleDate(pesanan.created_at) }}</p>
+                        <p class="pt-1 font-medium">Kepada Yth.</p>
+                        <p class="font-bold uppercase">{{ pesanan.customer?.user?.name || '-' }}</p>
+                        <p class="text-[11px] text-gray-700 max-w-50 truncate uppercase">{{ pesanan.alamat?.kota || pesanan.alamat?.detail_alamat || 'Surabaya' }}</p>
+                        <p class="pt-1 font-medium">Kode Transaksi</p>
+                        <p class="mt-1 text-sm font-bold tracking-wide uppercase">{{ pesanan.kode_transaksi }}</p>
+                    </div>
+                </div>
+
+                <div class="text-xs font-bold tracking-wider uppercase">INVOICE</div>
+
+                <!-- Tabel Barang -->
+                <table class="w-full text-xs border border-collapse border-black">
+                    <thead>
+                        <tr class="border-b border-black bg-gray-50">
+                            <th class="p-2 font-bold text-left border-r border-black">Nama Barang</th>
+                            <th class="w-12 p-2 font-bold text-center border-r border-black">Qty</th>
+                            <th class="w-24 p-2 font-bold text-right border-r border-black">Satuan Rp.</th>
+                            <th class="w-28 p-2 font-bold text-right">Total Rp.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="item in pesanan.pesanan_item" :key="item.id" class="align-top border-b border-black">
+                            <td class="p-2 border-r border-black">
+                                <div class="font-semibold">{{ cleanProductName(item.nama_produk_snapshot) }}</div>
+
+                                <div class="text-[9.5px] text-gray-800 mt-1.5 leading-tight space-y-0.5">
+                                    <div v-if="getCustomAttributesDisplay(item)">
+                                        <span v-for="(val, key) in getCustomAttributesDisplay(item)" :key="key" class="block">
+                                            • {{ key.toUpperCase() }}: {{ val }}
+                                        </span>
+                                    </div>
+
+                                    <div v-if="item.pesanan_item_finishing?.length">
+                                        <span v-for="(fin, fIdx) in item.pesanan_item_finishing" :key="fIdx" class="block">
+                                            • {{ fin.kategori_finishing ? fin.kategori_finishing.toUpperCase() + ': ' : '' }}{{ fin.nama_finishing_snapshot }}
+                                            <span class="italic opacity-75">
+                                                ({{ fin.tipe === 'persen' ? `${fin.harga_finishing_snapshot}%` : `Rp ${formatRupiah(fin.harga_finishing_snapshot)}` }})
+                                            </span>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div v-if="getParsedItem(item).sla > 0" class="mt-2 text-[10px] font-bold text-gray-900">
+                                    + SLA ({{ item.estimasi_pengerjaan_snapshot || item.estimasi_pengerjaan }}): Rp {{ formatRupiah(getParsedItem(item).sla) }}
+                                </div>
+                                <div v-if="getParsedItem(item).finishingFlat > 0" class="mt-0.5 text-[10px] font-bold text-gray-900">
+                                    + Jasa Tambahan (Flat): Rp {{ formatRupiah(getParsedItem(item).finishingFlat) }}
+                                </div>
+                            </td>
+                            <td class="p-2 font-semibold text-center border-r border-black">{{ item.jumlah }}</td>
+                            <!-- SATUAN AKAN TEPAT SESUAI HARGA DASAR + FINISHING PCS -->
+                            <td class="p-2 text-right border-r border-black">{{ formatRupiah(getDisplayHargaSatuan(item)) }}</td>
+                            <td class="p-2 font-semibold text-right">{{ formatRupiah(getDisplaySubtotal(item)) }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- Bagian Bawah -->
+                <div class="grid grid-cols-2 gap-4 pt-2">
+
+                    <!-- Kolom Kiri: Kurir & Rekening -->
+                    <div class="space-y-4 text-xs">
+                        <div>
+                            <p class="font-bold">Delivery</p>
+                            <p class="text-gray-800 uppercase">{{ pesanan.ekspedisi_nama || 'Di Ambil' }} <span v-if="pesanan.ekspedisi_layanan && !pesanan.ekspedisi_nama?.includes('Ambil')">- {{ pesanan.ekspedisi_layanan }}</span></p>
+                        </div>
+                        <div class="space-y-0.5 pt-2">
+                            <p class="font-medium">Pembayaran :</p>
+                            <p class="font-bold">{{ bank_name }} {{ bank_number }}</p>
+                            <p class="italic text-[10px]">an/ {{ bank_owner }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Kolom Kanan: Rincian Nominal Dinamis -->
+                    <div class="space-y-1 text-xs">
+                        <div class="flex justify-between py-1 text-gray-700 border-b border-gray-300">
+                            <span>Subtotal Produk</span>
+                            <span>{{ formatRupiah(totalHargaSeluruhBarang) }}</span>
+                        </div>
+                        <div v-if="totalOngkir > 0" class="flex justify-between py-1 text-gray-700 border-b border-gray-300">
+                            <span>Ongkos Kirim</span>
+                            <span>{{ formatRupiah(totalOngkir) }}</span>
+                        </div>
+                        <div v-if="kodeUnik > 0" class="flex justify-between py-1 text-gray-700 border-b border-gray-300">
+                            <span>Kode Unik</span>
+                            <span>{{ formatRupiah(kodeUnik) }}</span>
+                        </div>
+                        <div v-if="diskonVoucher > 0" class="flex justify-between py-1 font-bold text-green-600 border-b border-gray-300">
+                            <span>Diskon Voucher</span>
+                            <span>- {{ formatRupiah(diskonVoucher) }}</span>
+                        </div>
+                        <div class="flex justify-between py-1.5 border-b-2 border-black font-black text-[13px]">
+                            <span>GRAND TOTAL</span>
+                            <!-- GRAND TOTAL YANG BARU & AKURAT -->
+                            <span>{{ formatRupiah(totalTagihan) }}</span>
+                        </div>
+                        <div class="flex justify-between py-1 font-bold text-green-700">
+                            <span>Telah Dibayar</span>
+                            <span>{{ formatRupiah(telahDibayar) }}</span>
+                        </div>
+                        <div class="flex justify-between py-1 font-bold" :class="sisaTagihan > 0 ? 'text-red-600' : ''">
+                            <span>Sisa Tagihan</span>
+                            <!-- SISA TAGIHAN YANG BARU & AKURAT -->
+                            <span>{{ formatRupiah(sisaTagihan) }}</span>
+                        </div>
+
+                        <!-- STEMPEL STATUS DINAMIS -->
+                        <div class="flex justify-end pt-4">
+                            <span v-if="sisaTagihan <= 0" class="text-green-600 font-black text-sm border-2 border-green-600 px-4 py-0.5 rotate-[-4deg] inline-block tracking-widest uppercase">
+                                LUNAS
+                            </span>
+                            <span v-else-if="telahDibayar > 0" class="text-orange-500 font-black text-sm border-2 border-orange-500 px-4 py-0.5 rotate-[-4deg] inline-block tracking-widest uppercase">
+                                DP / SEBAGIAN
+                            </span>
+                            <span v-else class="text-red-600 font-black text-sm border-2 border-red-600 px-4 py-0.5 rotate-[-4deg] inline-block tracking-widest uppercase">
+                                BELUM BAYAR
+                            </span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Kolom Kanan: Rincian Nominal Dinamis -->
-                <div class="space-y-1 text-xs">
-                    <div class="flex justify-between py-1 text-gray-700 border-b border-gray-300">
-                        <span>Subtotal Produk</span>
-                        <span>{{ formatRupiah(totalHargaSeluruhBarang) }}</span>
-                    </div>
-                    <div v-if="totalOngkir > 0" class="flex justify-between py-1 text-gray-700 border-b border-gray-300">
-                        <span>Ongkos Kirim</span>
-                        <span>{{ formatRupiah(totalOngkir) }}</span>
-                    </div>
-                    <div v-if="kodeUnik > 0" class="flex justify-between py-1 text-gray-700 border-b border-gray-300">
-                        <span>Kode Unik</span>
-                        <span>{{ formatRupiah(kodeUnik) }}</span>
-                    </div>
-                    <div v-if="diskonVoucher > 0" class="flex justify-between py-1 font-bold text-green-600 border-b border-gray-300">
-                        <span>Diskon Voucher</span>
-                        <span>- {{ formatRupiah(diskonVoucher) }}</span>
-                    </div>
-                    <div class="flex justify-between py-1.5 border-b-2 border-black font-black text-[13px]">
-                        <span>GRAND TOTAL</span>
-                        <!-- GRAND TOTAL YANG BARU & AKURAT -->
-                        <span>{{ formatRupiah(totalTagihan) }}</span>
-                    </div>
-                    <div class="flex justify-between py-1 font-bold text-green-700">
-                        <span>Telah Dibayar</span>
-                        <span>{{ formatRupiah(telahDibayar) }}</span>
-                    </div>
-                    <div class="flex justify-between py-1 font-bold" :class="sisaTagihan > 0 ? 'text-red-600' : ''">
-                        <span>Sisa Tagihan</span>
-                        <!-- SISA TAGIHAN YANG BARU & AKURAT -->
-                        <span>{{ formatRupiah(sisaTagihan) }}</span>
-                    </div>
-
-                    <!-- STEMPEL STATUS DINAMIS -->
-                    <div class="flex justify-end pt-4">
-                        <span v-if="sisaTagihan <= 0" class="text-green-600 font-black text-sm border-2 border-green-600 px-4 py-0.5 rotate-[-4deg] inline-block tracking-widest uppercase">
-                            LUNAS
-                        </span>
-                        <span v-else-if="telahDibayar > 0" class="text-orange-500 font-black text-sm border-2 border-orange-500 px-4 py-0.5 rotate-[-4deg] inline-block tracking-widest uppercase">
-                            DP / SEBAGIAN
-                        </span>
-                        <span v-else class="text-red-600 font-black text-sm border-2 border-red-600 px-4 py-0.5 rotate-[-4deg] inline-block tracking-widest uppercase">
-                            BELUM BAYAR
-                        </span>
-                    </div>
+                <!-- Footer Timestamp -->
+                <div class="pt-4 border-t border-gray-300 flex justify-end text-[10px] text-gray-500 italic">
+                    print on {{ formatDate(new Date()) }}
                 </div>
             </div>
 
-            <!-- Footer Timestamp -->
-            <div class="pt-4 border-t border-gray-300 flex justify-end text-[10px] text-gray-500 italic">
-                print on {{ formatDate(new Date()) }}
-            </div>
         </div>
     </div>
 </template>
@@ -315,6 +337,8 @@ onMounted(() => {
     body {
         background: white !important;
         color: black !important;
+        margin: 0;
+        padding: 0;
     }
     @page {
         size: portrait;

@@ -733,27 +733,370 @@ class KomposisiSeeder extends Seeder
             // ['id_sku' => 'PRD-4002-SKU-012', 'id_bahan_baku' => 'BAHAN-0067', 'id_pilihan_finishing' => 'FIN-011-001', 'jumlah_pakai' => 1, 'hpp' => 1500, 'created_at' => $now, 'updated_at' => $now],
             // ['id_sku' => 'PRD-4002-SKU-012', 'id_bahan_baku' => 'BAHAN-0068', 'id_pilihan_finishing' => 'FIN-011-002', 'jumlah_pakai' => 1, 'hpp' => 3500, 'created_at' => $now, 'updated_at' => $now],
 
-            // ====================================================================================
-            // KOMPOSISI PRODUK & FINISHING
-            // ====================================================================================
+            // // ====================================================================================
+            // // KOMPOSISI PRODUK & FINISHING
+            // // ====================================================================================
 
-            // --- SKU-001 (Bendera Umbul Umbul - Kain Satin - BAHAN-0069 @ Rp 15.000 / m2) ---
-            // Base Kain (Tanpa Finishing Khusus / Menempel di SKU)
-            ['id_sku' => 'PRD-3011-SKU-001', 'id_bahan_baku' => 'BAHAN-0069', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 1, 'hpp' => 15000, 'created_at' => $now, 'updated_at' => $now],
-            // Finishing Jahit Obras
-            ['id_sku' => 'PRD-3011-SKU-001', 'id_bahan_baku' => 'BAHAN-0071', 'id_pilihan_finishing' => 'FIN-017-001', 'jumlah_pakai' => 0.05, 'hpp' => 900, 'created_at' => $now, 'updated_at' => $now],
-            // Finishing Jahit Obras & Tali
-            ['id_sku' => 'PRD-3011-SKU-001', 'id_bahan_baku' => 'BAHAN-0071', 'id_pilihan_finishing' => 'FIN-017-002', 'jumlah_pakai' => 0.05, 'hpp' => 900, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-3011-SKU-001', 'id_bahan_baku' => 'BAHAN-0072', 'id_pilihan_finishing' => 'FIN-017-002', 'jumlah_pakai' => 1, 'hpp' => 500, 'created_at' => $now, 'updated_at' => $now],
+            // // --- SKU-001 (Bendera Umbul Umbul - Kain Satin - BAHAN-0069 @ Rp 15.000 / m2) ---
+            // // Base Kain (Tanpa Finishing Khusus / Menempel di SKU)
+            // ['id_sku' => 'PRD-3011-SKU-001', 'id_bahan_baku' => 'BAHAN-0069', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 1, 'hpp' => 15000, 'created_at' => $now, 'updated_at' => $now],
+            // // Finishing Jahit Obras
+            // ['id_sku' => 'PRD-3011-SKU-001', 'id_bahan_baku' => 'BAHAN-0071', 'id_pilihan_finishing' => 'FIN-017-001', 'jumlah_pakai' => 0.05, 'hpp' => 900, 'created_at' => $now, 'updated_at' => $now],
+            // // Finishing Jahit Obras & Tali
+            // ['id_sku' => 'PRD-3011-SKU-001', 'id_bahan_baku' => 'BAHAN-0071', 'id_pilihan_finishing' => 'FIN-017-002', 'jumlah_pakai' => 0.05, 'hpp' => 900, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-3011-SKU-001', 'id_bahan_baku' => 'BAHAN-0072', 'id_pilihan_finishing' => 'FIN-017-002', 'jumlah_pakai' => 1, 'hpp' => 500, 'created_at' => $now, 'updated_at' => $now],
 
-            // --- SKU-002 (Bendera Umbul Umbul - Kain TC - BAHAN-0070 @ Rp 12.000 / m2) ---
-            // Base Kain (Tanpa Finishing Khusus / Menempel di SKU)
-            ['id_sku' => 'PRD-3011-SKU-002', 'id_bahan_baku' => 'BAHAN-0070', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 1, 'hpp' => 12000, 'created_at' => $now, 'updated_at' => $now],
-            // Finishing Jahit Obras
-            ['id_sku' => 'PRD-3011-SKU-002', 'id_bahan_baku' => 'BAHAN-0071', 'id_pilihan_finishing' => 'FIN-017-001', 'jumlah_pakai' => 0.05, 'hpp' => 900, 'created_at' => $now, 'updated_at' => $now],
-            // Finishing Jahit Obras & Tali
-            ['id_sku' => 'PRD-3011-SKU-002', 'id_bahan_baku' => 'BAHAN-0071', 'id_pilihan_finishing' => 'FIN-017-002', 'jumlah_pakai' => 0.05, 'hpp' => 900, 'created_at' => $now, 'updated_at' => $now],
-            ['id_sku' => 'PRD-3011-SKU-002', 'id_bahan_baku' => 'BAHAN-0072', 'id_pilihan_finishing' => 'FIN-017-002', 'jumlah_pakai' => 1, 'hpp' => 500, 'created_at' => $now, 'updated_at' => $now],
+            // // // --- SKU-002 (Bendera Umbul Umbul - Kain TC - BAHAN-0070 @ Rp 12.000 / m2) ---
+            // // Base Kain (Tanpa Finishing Khusus / Menempel di SKU)
+            // ['id_sku' => 'PRD-3011-SKU-002', 'id_bahan_baku' => 'BAHAN-0070', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 1, 'hpp' => 12000, 'created_at' => $now, 'updated_at' => $now],
+            // // Finishing Jahit Obras
+            // ['id_sku' => 'PRD-3011-SKU-002', 'id_bahan_baku' => 'BAHAN-0071', 'id_pilihan_finishing' => 'FIN-017-001', 'jumlah_pakai' => 0.05, 'hpp' => 900, 'created_at' => $now, 'updated_at' => $now],
+            // // Finishing Jahit Obras & Tali
+            // ['id_sku' => 'PRD-3011-SKU-002', 'id_bahan_baku' => 'BAHAN-0071', 'id_pilihan_finishing' => 'FIN-017-002', 'jumlah_pakai' => 0.05, 'hpp' => 900, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-3011-SKU-002', 'id_bahan_baku' => 'BAHAN-0072', 'id_pilihan_finishing' => 'FIN-017-002', 'jumlah_pakai' => 1, 'hpp' => 500, 'created_at' => $now, 'updated_at' => $now],
+
+            // // ==============================================================================
+            // // 1. KOMPOSISI SKU: KARTU NAMA ART CARTON 260 GSM (PRD-5001-SKU-001)
+            // // ==============================================================================
+
+            // // Base Kertas (Wajib / Menempel Langsung di SKU)
+            // // Kebutuhan: 4 Lembar A3+ per Box | HPP: 4 x Rp 850 = Rp 3.400
+            // ['id_sku' => 'PRD-5001-SKU-001', 'id_bahan_baku' => 'BAHAN-0007', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 4, 'hpp' => 3400, 'created_at' => $now, 'updated_at' => $now],
+
+            // // Finishing Laminasi Glossy
+            // // Kebutuhan: 4 Lembar A3+ per Box | HPP: 4 x Rp 400 = Rp 1.600
+            // ['id_sku' => 'PRD-5001-SKU-001', 'id_bahan_baku' => 'BAHAN-0034', 'id_pilihan_finishing' => 'FIN-001-001', 'jumlah_pakai' => 4, 'hpp' => 1600, 'created_at' => $now, 'updated_at' => $now],
+
+            // // Finishing Laminasi Doff / Matte
+            // // Kebutuhan: 4 Lembar A3+ per Box | HPP: 4 x Rp 500 = Rp 2.000
+            // ['id_sku' => 'PRD-5001-SKU-001', 'id_bahan_baku' => 'BAHAN-0035', 'id_pilihan_finishing' => 'FIN-001-002', 'jumlah_pakai' => 4, 'hpp' => 2000, 'created_at' => $now, 'updated_at' => $now],
+
+            // // Finishing Box Kartu Nama (Art Carton) -> UPDATE ID: BAHAN-0073
+            // // Kebutuhan: 1 Pcs per Box | HPP: 1 x Rp 1.200 = Rp 1.200
+            // ['id_sku' => 'PRD-5001-SKU-001', 'id_bahan_baku' => 'BAHAN-0073', 'id_pilihan_finishing' => 'FIN-012-001', 'jumlah_pakai' => 1, 'hpp' => 1200, 'created_at' => $now, 'updated_at' => $now],
+
+
+            // // ==============================================================================
+            // // 2. KOMPOSISI SKU: KARTU NAMA JASMINE (PRD-5001-SKU-002)
+            // // ==============================================================================
+
+            // // Base Kertas (Wajib / Menempel Langsung di SKU)
+            // // Kebutuhan: 4 Lembar A3+ per Box | HPP: 4 x Rp 1.500 = Rp 6.000
+            // ['id_sku' => 'PRD-5001-SKU-002', 'id_bahan_baku' => 'BAHAN-0013', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 4, 'hpp' => 6000, 'created_at' => $now, 'updated_at' => $now],
+
+            // // Finishing Box Kartu Nama (Jasmine) -> UPDATE ID: BAHAN-0073
+            // // Kebutuhan: 1 Pcs per Box | HPP: 1 x Rp 1.200 = Rp 1.200
+            // ['id_sku' => 'PRD-5001-SKU-002', 'id_bahan_baku' => 'BAHAN-0073', 'id_pilihan_finishing' => 'FIN-012-001', 'jumlah_pakai' => 1, 'hpp' => 1200, 'created_at' => $now, 'updated_at' => $now],
+
+
+            // // ==============================================================================
+            // // 1. PRD-5002-SKU-001 (Bulat 28 mm)
+            // // ==============================================================================
+            // // Base (Gagang + Karet 0.03 Lembar + Tinta 1 Warna Default 0.2 Botol)
+            // ['id_sku' => 'PRD-5002-SKU-001', 'id_bahan_baku' => 'BAHAN-0074', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 1, 'hpp' => 5000, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5002-SKU-001', 'id_bahan_baku' => 'BAHAN-0081', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.03, 'hpp' => 1050, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5002-SKU-001', 'id_bahan_baku' => 'BAHAN-0082', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.2, 'hpp' => 2000, 'created_at' => $now, 'updated_at' => $now],
+            // // Finishing Tambah Warna (Ekstra Tinta)
+            // ['id_sku' => 'PRD-5002-SKU-001', 'id_bahan_baku' => 'BAHAN-0082', 'id_pilihan_finishing' => 'FIN-013-001', 'jumlah_pakai' => 0.2, 'hpp' => 2000, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5002-SKU-001', 'id_bahan_baku' => 'BAHAN-0082', 'id_pilihan_finishing' => 'FIN-013-002', 'jumlah_pakai' => 0.4, 'hpp' => 4000, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5002-SKU-001', 'id_bahan_baku' => 'BAHAN-0082', 'id_pilihan_finishing' => 'FIN-013-003', 'jumlah_pakai' => 0.6, 'hpp' => 6000, 'created_at' => $now, 'updated_at' => $now],
+
+            // // ==============================================================================
+            // // 2. PRD-5002-SKU-002 (Bulat 35 mm)
+            // // ==============================================================================
+            // ['id_sku' => 'PRD-5002-SKU-002', 'id_bahan_baku' => 'BAHAN-0075', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 1, 'hpp' => 6000, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5002-SKU-002', 'id_bahan_baku' => 'BAHAN-0081', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.05, 'hpp' => 1750, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5002-SKU-002', 'id_bahan_baku' => 'BAHAN-0082', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.2, 'hpp' => 2000, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5002-SKU-002', 'id_bahan_baku' => 'BAHAN-0082', 'id_pilihan_finishing' => 'FIN-013-001', 'jumlah_pakai' => 0.2, 'hpp' => 2000, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5002-SKU-002', 'id_bahan_baku' => 'BAHAN-0082', 'id_pilihan_finishing' => 'FIN-013-002', 'jumlah_pakai' => 0.4, 'hpp' => 4000, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5002-SKU-002', 'id_bahan_baku' => 'BAHAN-0082', 'id_pilihan_finishing' => 'FIN-013-003', 'jumlah_pakai' => 0.6, 'hpp' => 6000, 'created_at' => $now, 'updated_at' => $now],
+
+            // // ==============================================================================
+            // // 3. PRD-5002-SKU-003 (Bulat 45 mm)
+            // // ==============================================================================
+            // ['id_sku' => 'PRD-5002-SKU-003', 'id_bahan_baku' => 'BAHAN-0076', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 1, 'hpp' => 8000, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5002-SKU-003', 'id_bahan_baku' => 'BAHAN-0081', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.08, 'hpp' => 2800, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5002-SKU-003', 'id_bahan_baku' => 'BAHAN-0082', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.3, 'hpp' => 3000, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5002-SKU-003', 'id_bahan_baku' => 'BAHAN-0082', 'id_pilihan_finishing' => 'FIN-013-001', 'jumlah_pakai' => 0.2, 'hpp' => 2000, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5002-SKU-003', 'id_bahan_baku' => 'BAHAN-0082', 'id_pilihan_finishing' => 'FIN-013-002', 'jumlah_pakai' => 0.4, 'hpp' => 4000, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5002-SKU-003', 'id_bahan_baku' => 'BAHAN-0082', 'id_pilihan_finishing' => 'FIN-013-003', 'jumlah_pakai' => 0.6, 'hpp' => 6000, 'created_at' => $now, 'updated_at' => $now],
+
+            // // ==============================================================================
+            // // 4. PRD-5002-SKU-004 (Oval 45 mm)
+            // // ==============================================================================
+            // ['id_sku' => 'PRD-5002-SKU-004', 'id_bahan_baku' => 'BAHAN-0077', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 1, 'hpp' => 7000, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5002-SKU-004', 'id_bahan_baku' => 'BAHAN-0081', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.06, 'hpp' => 2100, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5002-SKU-004', 'id_bahan_baku' => 'BAHAN-0082', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.2, 'hpp' => 2000, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5002-SKU-004', 'id_bahan_baku' => 'BAHAN-0082', 'id_pilihan_finishing' => 'FIN-013-001', 'jumlah_pakai' => 0.2, 'hpp' => 2000, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5002-SKU-004', 'id_bahan_baku' => 'BAHAN-0082', 'id_pilihan_finishing' => 'FIN-013-002', 'jumlah_pakai' => 0.4, 'hpp' => 4000, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5002-SKU-004', 'id_bahan_baku' => 'BAHAN-0082', 'id_pilihan_finishing' => 'FIN-013-003', 'jumlah_pakai' => 0.6, 'hpp' => 6000, 'created_at' => $now, 'updated_at' => $now],
+
+            // // ==============================================================================
+            // // 5. PRD-5002-SKU-005 (Oval 51 mm)
+            // // ==============================================================================
+            // ['id_sku' => 'PRD-5002-SKU-005', 'id_bahan_baku' => 'BAHAN-0078', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 1, 'hpp' => 8000, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5002-SKU-005', 'id_bahan_baku' => 'BAHAN-0081', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.08, 'hpp' => 2800, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5002-SKU-005', 'id_bahan_baku' => 'BAHAN-0082', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.3, 'hpp' => 3000, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5002-SKU-005', 'id_bahan_baku' => 'BAHAN-0082', 'id_pilihan_finishing' => 'FIN-013-001', 'jumlah_pakai' => 0.2, 'hpp' => 2000, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5002-SKU-005', 'id_bahan_baku' => 'BAHAN-0082', 'id_pilihan_finishing' => 'FIN-013-002', 'jumlah_pakai' => 0.4, 'hpp' => 4000, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5002-SKU-005', 'id_bahan_baku' => 'BAHAN-0082', 'id_pilihan_finishing' => 'FIN-013-003', 'jumlah_pakai' => 0.6, 'hpp' => 6000, 'created_at' => $now, 'updated_at' => $now],
+
+            // // ==============================================================================
+            // // 6. PRD-5002-SKU-006 (Persegi 27x55 mm)
+            // // ==============================================================================
+            // ['id_sku' => 'PRD-5002-SKU-006', 'id_bahan_baku' => 'BAHAN-0079', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 1, 'hpp' => 6000, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5002-SKU-006', 'id_bahan_baku' => 'BAHAN-0081', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.06, 'hpp' => 2100, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5002-SKU-006', 'id_bahan_baku' => 'BAHAN-0082', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.2, 'hpp' => 2000, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5002-SKU-006', 'id_bahan_baku' => 'BAHAN-0082', 'id_pilihan_finishing' => 'FIN-013-001', 'jumlah_pakai' => 0.2, 'hpp' => 2000, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5002-SKU-006', 'id_bahan_baku' => 'BAHAN-0082', 'id_pilihan_finishing' => 'FIN-013-002', 'jumlah_pakai' => 0.4, 'hpp' => 4000, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5002-SKU-006', 'id_bahan_baku' => 'BAHAN-0082', 'id_pilihan_finishing' => 'FIN-013-003', 'jumlah_pakai' => 0.6, 'hpp' => 6000, 'created_at' => $now, 'updated_at' => $now],
+
+            // // ==============================================================================
+            // // 7. PRD-5002-SKU-007 (Persegi 32x55 mm)
+            // // ==============================================================================
+            // ['id_sku' => 'PRD-5002-SKU-007', 'id_bahan_baku' => 'BAHAN-0080', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 1, 'hpp' => 7000, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5002-SKU-007', 'id_bahan_baku' => 'BAHAN-0081', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.07, 'hpp' => 2450, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5002-SKU-007', 'id_bahan_baku' => 'BAHAN-0082', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.3, 'hpp' => 3000, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5002-SKU-007', 'id_bahan_baku' => 'BAHAN-0082', 'id_pilihan_finishing' => 'FIN-013-001', 'jumlah_pakai' => 0.2, 'hpp' => 2000, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5002-SKU-007', 'id_bahan_baku' => 'BAHAN-0082', 'id_pilihan_finishing' => 'FIN-013-002', 'jumlah_pakai' => 0.4, 'hpp' => 4000, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5002-SKU-007', 'id_bahan_baku' => 'BAHAN-0082', 'id_pilihan_finishing' => 'FIN-013-003', 'jumlah_pakai' => 0.6, 'hpp' => 6000, 'created_at' => $now, 'updated_at' => $now],
+
+
+            // // ==============================================================================
+            // // 1. PRD-5003-SKU-001 (Amplop 11x23 cm - 1 Pack isi 100)
+            // // ==============================================================================
+
+            // // --- BASE KERTAS & CETAK 1 WARNA (Menempel Langsung di SKU) ---
+            // // 1 Pack Amplop Kosong
+            // ['id_sku' => 'PRD-5003-SKU-001', 'id_bahan_baku' => 'BAHAN-0083', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 1, 'hpp' => 25000, 'created_at' => $now, 'updated_at' => $now],
+            // // 1 Lembar Master/Film untuk Cetak 1 Warna Default
+            // ['id_sku' => 'PRD-5003-SKU-001', 'id_bahan_baku' => 'BAHAN-0085', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 1, 'hpp' => 8000, 'created_at' => $now, 'updated_at' => $now],
+            // // Pemakaian Tinta untuk 1 Warna Default
+            // ['id_sku' => 'PRD-5003-SKU-001', 'id_bahan_baku' => 'BAHAN-0084', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.05, 'hpp' => 4250, 'created_at' => $now, 'updated_at' => $now],
+
+            // // --- FINISHING: TAMBAH 1 WARNA (Total Cetak 2 Warna) ---
+            // ['id_sku' => 'PRD-5003-SKU-001', 'id_bahan_baku' => 'BAHAN-0085', 'id_pilihan_finishing' => 'FIN-013-001', 'jumlah_pakai' => 1, 'hpp' => 8000, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5003-SKU-001', 'id_bahan_baku' => 'BAHAN-0084', 'id_pilihan_finishing' => 'FIN-013-001', 'jumlah_pakai' => 0.05, 'hpp' => 4250, 'created_at' => $now, 'updated_at' => $now],
+
+            // // --- FINISHING: TAMBAH 2 WARNA (Total Cetak 3 Warna) ---
+            // ['id_sku' => 'PRD-5003-SKU-001', 'id_bahan_baku' => 'BAHAN-0085', 'id_pilihan_finishing' => 'FIN-013-002', 'jumlah_pakai' => 2, 'hpp' => 16000, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5003-SKU-001', 'id_bahan_baku' => 'BAHAN-0084', 'id_pilihan_finishing' => 'FIN-013-002', 'jumlah_pakai' => 0.1, 'hpp' => 8500, 'created_at' => $now, 'updated_at' => $now],
+
+            // // --- FINISHING: TAMBAH 3 WARNA (Total Cetak Full Color / 4 Warna) ---
+            // ['id_sku' => 'PRD-5003-SKU-001', 'id_bahan_baku' => 'BAHAN-0085', 'id_pilihan_finishing' => 'FIN-013-003', 'jumlah_pakai' => 3, 'hpp' => 24000, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5003-SKU-001', 'id_bahan_baku' => 'BAHAN-0084', 'id_pilihan_finishing' => 'FIN-013-003', 'jumlah_pakai' => 0.15, 'hpp' => 12750, 'created_at' => $now, 'updated_at' => $now],
+
+
+            // // ==============================================================================
+            // // 1. PRD-5004-SKU-001 (Stopper Tali Lanyard Saja)
+            // // ==============================================================================
+            // // Aksesoris Stopper saja (Tanpa Lanyard)
+            // ['id_sku' => 'PRD-5004-SKU-001', 'id_bahan_baku' => 'BAHAN-0089', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 1, 'hpp' => 800, 'created_at' => $now, 'updated_at' => $now],
+
+            // // ==============================================================================
+            // // 2. PRD-5004-SKU-002 (Tali Lanyard ID Card - Sublim)
+            // // ==============================================================================
+            // // --- BASE PRODUK (Menempel Langsung di SKU) ---
+            // ['id_sku' => 'PRD-5004-SKU-002', 'id_bahan_baku' => 'BAHAN-0086', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 1, 'hpp' => 800, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5004-SKU-002', 'id_bahan_baku' => 'BAHAN-0088', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 1, 'hpp' => 600, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5004-SKU-002', 'id_bahan_baku' => 'BAHAN-0087', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 1, 'hpp' => 2500, 'created_at' => $now, 'updated_at' => $now],
+
+            // // --- FINISHING: HOLDER ID CARD ---
+            // ['id_sku' => 'PRD-5004-SKU-002', 'id_bahan_baku' => 'BAHAN-0091', 'id_pilihan_finishing' => 'FIN-015-001', 'jumlah_pakai' => 1, 'hpp' => 1200, 'created_at' => $now, 'updated_at' => $now],
+            // // --- FINISHING: STOPPER TALI LANYARD ---
+            // ['id_sku' => 'PRD-5004-SKU-002', 'id_bahan_baku' => 'BAHAN-0089', 'id_pilihan_finishing' => 'FIN-016-001', 'jumlah_pakai' => 1, 'hpp' => 800, 'created_at' => $now, 'updated_at' => $now],
+
+
+            // // ==============================================================================
+            // // 3. PRD-5004-SKU-003 (Tali Yoyo ID Card)
+            // // ==============================================================================
+            // // --- BASE PRODUK (Menempel Langsung di SKU) ---
+            // ['id_sku' => 'PRD-5004-SKU-003', 'id_bahan_baku' => 'BAHAN-0090', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 1, 'hpp' => 1500, 'created_at' => $now, 'updated_at' => $now],
+            // ['id_sku' => 'PRD-5004-SKU-003', 'id_bahan_baku' => 'BAHAN-0092', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 1, 'hpp' => 500, 'created_at' => $now, 'updated_at' => $now],
+
+
+            // // ==============================================================================
+            // // 1. PRD-5005-SKU-001 (Kop Surat A4 Inkjet - 1 RIM / 500 Lembar)
+            // // ==============================================================================
+            // // Kertas HVS 80 Gsm
+            // ['id_sku' => 'PRD-5005-SKU-001', 'id_bahan_baku' => 'BAHAN-0001', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 250, 'hpp' => 75000, 'created_at' => $now, 'updated_at' => $now],
+            // // Tinta Inkjet
+            // ['id_sku' => 'PRD-5005-SKU-001', 'id_bahan_baku' => 'BAHAN-0093', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.1, 'hpp' => 30000, 'created_at' => $now, 'updated_at' => $now],
+            // // Kemasan Box Rim A4
+            // ['id_sku' => 'PRD-5005-SKU-001', 'id_bahan_baku' => 'BAHAN-0095', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 1, 'hpp' => 2500, 'created_at' => $now, 'updated_at' => $now],
+
+
+            // // ==============================================================================
+            // // 2. PRD-5005-SKU-002 (Kop Surat A4 Laser - 1 LOT / 100 Lembar)
+            // // ==============================================================================
+            // // Kertas HVS 80 Gsm
+            // ['id_sku' => 'PRD-5005-SKU-002', 'id_bahan_baku' => 'BAHAN-0001', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 50, 'hpp' => 15000, 'created_at' => $now, 'updated_at' => $now],
+            // // Click Charge Laser
+            // ['id_sku' => 'PRD-5005-SKU-002', 'id_bahan_baku' => 'BAHAN-0094', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 50, 'hpp' => 75000, 'created_at' => $now, 'updated_at' => $now],
+
+
+            // // ==============================================================================
+            // // 1. PRD-5006-SKU-001 (Map A4 - Art Carton 260 Gsm)
+            // // ==============================================================================
+            // // Kertas Art Carton 260 Gsm
+            // ['id_sku' => 'PRD-5006-SKU-001', 'id_bahan_baku' => 'BAHAN-0007', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 1, 'hpp' => 850, 'created_at' => $now, 'updated_at' => $now],
+            // // Ongkos Cetak / Click Charge
+            // ['id_sku' => 'PRD-5006-SKU-001', 'id_bahan_baku' => 'BAHAN-0094', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 1, 'hpp' => 1500, 'created_at' => $now, 'updated_at' => $now],
+            // // --- FINISHING: LAMINASI DOFF 1 SISI ---
+            // ['id_sku' => 'PRD-5006-SKU-001', 'id_bahan_baku' => 'BAHAN-0035', 'id_pilihan_finishing' => 'FIN-001-001', 'jumlah_pakai' => 1, 'hpp' => 500, 'created_at' => $now, 'updated_at' => $now],
+            // // --- FINISHING: LAMINASI GLOSSY 1 SISI ---
+            // ['id_sku' => 'PRD-5006-SKU-001', 'id_bahan_baku' => 'BAHAN-0034', 'id_pilihan_finishing' => 'FIN-001-002', 'jumlah_pakai' => 1, 'hpp' => 400, 'created_at' => $now, 'updated_at' => $now],
+
+
+            // // ==============================================================================
+            // // 1. PRD-5008-SKU-001 (Nama Dada Cemiti Gravoply 8x2 cm)
+            // // ==============================================================================
+            // // Pemotongan Bahan Gravoply (Fisik)
+            // ['id_sku' => 'PRD-5008-SKU-001', 'id_bahan_baku' => 'BAHAN-0100', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.0025, 'hpp' => 500, 'created_at' => $now, 'updated_at' => $now],
+            // // Pemakaian Peniti / Cemiti (Fisik)
+            // ['id_sku' => 'PRD-5008-SKU-001', 'id_bahan_baku' => 'BAHAN-0101', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 1, 'hpp' => 800, 'created_at' => $now, 'updated_at' => $now],
+
+
+            // // ==============================================================================
+            // // 1. PRD-5009-SKU-001 (Flashdisk Promosi Metal 4GB - Print UV 1 Sisi)
+            // // ==============================================================================
+            // // Fisik Flashdisk
+            // ['id_sku' => 'PRD-5009-SKU-001', 'id_bahan_baku' => 'BAHAN-0102', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 1, 'hpp' => 25000, 'created_at' => $now, 'updated_at' => $now],
+            // // Fisik Tinta UV
+            // ['id_sku' => 'PRD-5009-SKU-001', 'id_bahan_baku' => 'BAHAN-0105', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.001, 'hpp' => 450, 'created_at' => $now, 'updated_at' => $now],
+
+
+            // // ==============================================================================
+            // // 2. PRD-5009-SKU-002 (Flashdisk Kartu 8GB - Print UV Full Area 2 Sisi)
+            // // ==============================================================================
+            // // Fisik Flashdisk Kartu
+            // ['id_sku' => 'PRD-5009-SKU-002', 'id_bahan_baku' => 'BAHAN-0103', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 1, 'hpp' => 35000, 'created_at' => $now, 'updated_at' => $now],
+            // // Fisik Tinta UV
+            // ['id_sku' => 'PRD-5009-SKU-002', 'id_bahan_baku' => 'BAHAN-0105', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.005, 'hpp' => 2250, 'created_at' => $now, 'updated_at' => $now],
+
+
+            // // ==============================================================================
+            // // 3. PRD-5009-SKU-003 (Flashdisk Kartu 16GB - Print UV Full Area 2 Sisi)
+            // // ==============================================================================
+            // // Fisik Flashdisk Kartu
+            // ['id_sku' => 'PRD-5009-SKU-003', 'id_bahan_baku' => 'BAHAN-0104', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 1, 'hpp' => 40000, 'created_at' => $now, 'updated_at' => $now],
+            // // Fisik Tinta UV
+            // ['id_sku' => 'PRD-5009-SKU-003', 'id_bahan_baku' => 'BAHAN-0105', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.005, 'hpp' => 2250, 'created_at' => $now, 'updated_at' => $now],
+
+            // ==============================================================================
+            // 1. PRD-6001-SKU-001 (Nota NCR A4 - 2 Ply Default)
+            // ==============================================================================
+
+            // --- BASE KERTAS & CETAK 1 WARNA (Menempel di SKU) ---
+            ['id_sku' => 'PRD-6001-SKU-001', 'id_bahan_baku' => 'BAHAN-0106', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.1, 'hpp' => 5000, 'created_at' => $now, 'updated_at' => $now], // Top Putih
+            ['id_sku' => 'PRD-6001-SKU-001', 'id_bahan_baku' => 'BAHAN-0107', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.1, 'hpp' => 5000, 'created_at' => $now, 'updated_at' => $now], // Bottom Merah
+            ['id_sku' => 'PRD-6001-SKU-001', 'id_bahan_baku' => 'BAHAN-0085', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 1, 'hpp' => 8000, 'created_at' => $now, 'updated_at' => $now], // 1 Master Cetak
+            ['id_sku' => 'PRD-6001-SKU-001', 'id_bahan_baku' => 'BAHAN-0084', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.02, 'hpp' => 1700, 'created_at' => $now, 'updated_at' => $now], // Tinta 1 Warna
+
+            // --- FINISHING: TAMBAH WARNA ---
+            // Tambah 1 Warna (+1 Master, +Tinta)
+            ['id_sku' => 'PRD-6001-SKU-001', 'id_bahan_baku' => 'BAHAN-0085', 'id_pilihan_finishing' => 'FIN-013-001', 'jumlah_pakai' => 1, 'hpp' => 8000, 'created_at' => $now, 'updated_at' => $now],
+            ['id_sku' => 'PRD-6001-SKU-001', 'id_bahan_baku' => 'BAHAN-0084', 'id_pilihan_finishing' => 'FIN-013-001', 'jumlah_pakai' => 0.02, 'hpp' => 1700, 'created_at' => $now, 'updated_at' => $now],
+            // Tambah 2 Warna
+            ['id_sku' => 'PRD-6001-SKU-001', 'id_bahan_baku' => 'BAHAN-0085', 'id_pilihan_finishing' => 'FIN-013-002', 'jumlah_pakai' => 2, 'hpp' => 16000, 'created_at' => $now, 'updated_at' => $now],
+            ['id_sku' => 'PRD-6001-SKU-001', 'id_bahan_baku' => 'BAHAN-0084', 'id_pilihan_finishing' => 'FIN-013-002', 'jumlah_pakai' => 0.04, 'hpp' => 3400, 'created_at' => $now, 'updated_at' => $now],
+            // Tambah 3 Warna
+            ['id_sku' => 'PRD-6001-SKU-001', 'id_bahan_baku' => 'BAHAN-0085', 'id_pilihan_finishing' => 'FIN-013-003', 'jumlah_pakai' => 3, 'hpp' => 24000, 'created_at' => $now, 'updated_at' => $now],
+            ['id_sku' => 'PRD-6001-SKU-001', 'id_bahan_baku' => 'BAHAN-0084', 'id_pilihan_finishing' => 'FIN-013-003', 'jumlah_pakai' => 0.06, 'hpp' => 5100, 'created_at' => $now, 'updated_at' => $now],
+
+            // --- FINISHING: JUMLAH PLY (Lapisan Tembusan Tengah) ---
+            // 3 Ply (1x Middle)
+            ['id_sku' => 'PRD-6001-SKU-001', 'id_bahan_baku' => 'BAHAN-0108', 'id_pilihan_finishing' => 'FIN-018-001', 'jumlah_pakai' => 0.1, 'hpp' => 5500, 'created_at' => $now, 'updated_at' => $now],
+            // 4 Ply (2x Middle)
+            ['id_sku' => 'PRD-6001-SKU-001', 'id_bahan_baku' => 'BAHAN-0108', 'id_pilihan_finishing' => 'FIN-018-002', 'jumlah_pakai' => 0.2, 'hpp' => 11000, 'created_at' => $now, 'updated_at' => $now],
+            // 5 Ply (3x Middle)
+            ['id_sku' => 'PRD-6001-SKU-001', 'id_bahan_baku' => 'BAHAN-0108', 'id_pilihan_finishing' => 'FIN-018-003', 'jumlah_pakai' => 0.3, 'hpp' => 16500, 'created_at' => $now, 'updated_at' => $now],
+            // 6 Ply (4x Middle)
+            ['id_sku' => 'PRD-6001-SKU-001', 'id_bahan_baku' => 'BAHAN-0108', 'id_pilihan_finishing' => 'FIN-018-004', 'jumlah_pakai' => 0.4, 'hpp' => 22000, 'created_at' => $now, 'updated_at' => $now],
+
+
+            // ==============================================================================
+            // 2. PRD-6001-SKU-002 (Nota NCR A5 - 2 Ply Default)
+            // ==============================================================================
+
+            // --- BASE KERTAS & CETAK 1 WARNA (Setengah dari A4) ---
+            ['id_sku' => 'PRD-6001-SKU-002', 'id_bahan_baku' => 'BAHAN-0106', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.05, 'hpp' => 2500, 'created_at' => $now, 'updated_at' => $now],
+            ['id_sku' => 'PRD-6001-SKU-002', 'id_bahan_baku' => 'BAHAN-0107', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.05, 'hpp' => 2500, 'created_at' => $now, 'updated_at' => $now],
+            ['id_sku' => 'PRD-6001-SKU-002', 'id_bahan_baku' => 'BAHAN-0085', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.5, 'hpp' => 4000, 'created_at' => $now, 'updated_at' => $now],
+            ['id_sku' => 'PRD-6001-SKU-002', 'id_bahan_baku' => 'BAHAN-0084', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.01, 'hpp' => 850, 'created_at' => $now, 'updated_at' => $now],
+
+            // --- FINISHING: TAMBAH WARNA ---
+            // Tambah 1 Warna
+            ['id_sku' => 'PRD-6001-SKU-002', 'id_bahan_baku' => 'BAHAN-0085', 'id_pilihan_finishing' => 'FIN-013-001', 'jumlah_pakai' => 0.5, 'hpp' => 4000, 'created_at' => $now, 'updated_at' => $now],
+            ['id_sku' => 'PRD-6001-SKU-002', 'id_bahan_baku' => 'BAHAN-0084', 'id_pilihan_finishing' => 'FIN-013-001', 'jumlah_pakai' => 0.01, 'hpp' => 850, 'created_at' => $now, 'updated_at' => $now],
+            // Tambah 2 Warna
+            ['id_sku' => 'PRD-6001-SKU-002', 'id_bahan_baku' => 'BAHAN-0085', 'id_pilihan_finishing' => 'FIN-013-002', 'jumlah_pakai' => 1, 'hpp' => 8000, 'created_at' => $now, 'updated_at' => $now],
+            ['id_sku' => 'PRD-6001-SKU-002', 'id_bahan_baku' => 'BAHAN-0084', 'id_pilihan_finishing' => 'FIN-013-002', 'jumlah_pakai' => 0.02, 'hpp' => 1700, 'created_at' => $now, 'updated_at' => $now],
+            // Tambah 3 Warna
+            ['id_sku' => 'PRD-6001-SKU-002', 'id_bahan_baku' => 'BAHAN-0085', 'id_pilihan_finishing' => 'FIN-013-003', 'jumlah_pakai' => 1.5, 'hpp' => 12000, 'created_at' => $now, 'updated_at' => $now],
+            ['id_sku' => 'PRD-6001-SKU-002', 'id_bahan_baku' => 'BAHAN-0084', 'id_pilihan_finishing' => 'FIN-013-003', 'jumlah_pakai' => 0.03, 'hpp' => 2550, 'created_at' => $now, 'updated_at' => $now],
+
+            // --- FINISHING: JUMLAH PLY ---
+            ['id_sku' => 'PRD-6001-SKU-002', 'id_bahan_baku' => 'BAHAN-0108', 'id_pilihan_finishing' => 'FIN-018-001', 'jumlah_pakai' => 0.05, 'hpp' => 2750, 'created_at' => $now, 'updated_at' => $now], // 3 Ply
+            ['id_sku' => 'PRD-6001-SKU-002', 'id_bahan_baku' => 'BAHAN-0108', 'id_pilihan_finishing' => 'FIN-018-002', 'jumlah_pakai' => 0.1, 'hpp' => 5500, 'created_at' => $now, 'updated_at' => $now], // 4 Ply
+            ['id_sku' => 'PRD-6001-SKU-002', 'id_bahan_baku' => 'BAHAN-0108', 'id_pilihan_finishing' => 'FIN-018-003', 'jumlah_pakai' => 0.15, 'hpp' => 8250, 'created_at' => $now, 'updated_at' => $now], // 5 Ply
+            ['id_sku' => 'PRD-6001-SKU-002', 'id_bahan_baku' => 'BAHAN-0108', 'id_pilihan_finishing' => 'FIN-018-004', 'jumlah_pakai' => 0.2, 'hpp' => 11000, 'created_at' => $now, 'updated_at' => $now], // 6 Ply
+
+
+            // ==============================================================================
+            // 3. PRD-6001-SKU-003 (Nota NCR A6 - 2 Ply Default)
+            // ==============================================================================
+
+            // --- BASE KERTAS & CETAK 1 WARNA (Seperempat dari A4) ---
+            ['id_sku' => 'PRD-6001-SKU-003', 'id_bahan_baku' => 'BAHAN-0106', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.025, 'hpp' => 1250, 'created_at' => $now, 'updated_at' => $now],
+            ['id_sku' => 'PRD-6001-SKU-003', 'id_bahan_baku' => 'BAHAN-0107', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.025, 'hpp' => 1250, 'created_at' => $now, 'updated_at' => $now],
+            ['id_sku' => 'PRD-6001-SKU-003', 'id_bahan_baku' => 'BAHAN-0085', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.25, 'hpp' => 2000, 'created_at' => $now, 'updated_at' => $now],
+            ['id_sku' => 'PRD-6001-SKU-003', 'id_bahan_baku' => 'BAHAN-0084', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.005, 'hpp' => 425, 'created_at' => $now, 'updated_at' => $now],
+
+            // --- FINISHING: TAMBAH WARNA ---
+            // Tambah 1 Warna
+            ['id_sku' => 'PRD-6001-SKU-003', 'id_bahan_baku' => 'BAHAN-0085', 'id_pilihan_finishing' => 'FIN-013-001', 'jumlah_pakai' => 0.25, 'hpp' => 2000, 'created_at' => $now, 'updated_at' => $now],
+            ['id_sku' => 'PRD-6001-SKU-003', 'id_bahan_baku' => 'BAHAN-0084', 'id_pilihan_finishing' => 'FIN-013-001', 'jumlah_pakai' => 0.005, 'hpp' => 425, 'created_at' => $now, 'updated_at' => $now],
+            // Tambah 2 Warna
+            ['id_sku' => 'PRD-6001-SKU-003', 'id_bahan_baku' => 'BAHAN-0085', 'id_pilihan_finishing' => 'FIN-013-002', 'jumlah_pakai' => 0.5, 'hpp' => 4000, 'created_at' => $now, 'updated_at' => $now],
+            ['id_sku' => 'PRD-6001-SKU-003', 'id_bahan_baku' => 'BAHAN-0084', 'id_pilihan_finishing' => 'FIN-013-002', 'jumlah_pakai' => 0.01, 'hpp' => 850, 'created_at' => $now, 'updated_at' => $now],
+            // Tambah 3 Warna
+            ['id_sku' => 'PRD-6001-SKU-003', 'id_bahan_baku' => 'BAHAN-0085', 'id_pilihan_finishing' => 'FIN-013-003', 'jumlah_pakai' => 0.75, 'hpp' => 6000, 'created_at' => $now, 'updated_at' => $now],
+            ['id_sku' => 'PRD-6001-SKU-003', 'id_bahan_baku' => 'BAHAN-0084', 'id_pilihan_finishing' => 'FIN-013-003', 'jumlah_pakai' => 0.015, 'hpp' => 1275, 'created_at' => $now, 'updated_at' => $now],
+
+            // --- FINISHING: JUMLAH PLY ---
+            ['id_sku' => 'PRD-6001-SKU-003', 'id_bahan_baku' => 'BAHAN-0108', 'id_pilihan_finishing' => 'FIN-018-001', 'jumlah_pakai' => 0.025, 'hpp' => 1375, 'created_at' => $now, 'updated_at' => $now], // 3 Ply
+            ['id_sku' => 'PRD-6001-SKU-003', 'id_bahan_baku' => 'BAHAN-0108', 'id_pilihan_finishing' => 'FIN-018-002', 'jumlah_pakai' => 0.05, 'hpp' => 2750, 'created_at' => $now, 'updated_at' => $now], // 4 Ply
+            ['id_sku' => 'PRD-6001-SKU-003', 'id_bahan_baku' => 'BAHAN-0108', 'id_pilihan_finishing' => 'FIN-018-003', 'jumlah_pakai' => 0.075, 'hpp' => 4125, 'created_at' => $now, 'updated_at' => $now], // 5 Ply
+            ['id_sku' => 'PRD-6001-SKU-003', 'id_bahan_baku' => 'BAHAN-0108', 'id_pilihan_finishing' => 'FIN-018-004', 'jumlah_pakai' => 0.1, 'hpp' => 5500, 'created_at' => $now, 'updated_at' => $now], // 6 Ply
+
+
+            // ==============================================================================
+            // 4. PRD-6001-SKU-004 (Nota NCR 1/3 A4 - 2 Ply Default)
+            // ==============================================================================
+
+            // --- BASE KERTAS & CETAK 1 WARNA (Sepertiga dari A4) ---
+            ['id_sku' => 'PRD-6001-SKU-004', 'id_bahan_baku' => 'BAHAN-0106', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.033, 'hpp' => 1650, 'created_at' => $now, 'updated_at' => $now],
+            ['id_sku' => 'PRD-6001-SKU-004', 'id_bahan_baku' => 'BAHAN-0107', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.033, 'hpp' => 1650, 'created_at' => $now, 'updated_at' => $now],
+            ['id_sku' => 'PRD-6001-SKU-004', 'id_bahan_baku' => 'BAHAN-0085', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.333, 'hpp' => 2664, 'created_at' => $now, 'updated_at' => $now],
+            ['id_sku' => 'PRD-6001-SKU-004', 'id_bahan_baku' => 'BAHAN-0084', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.007, 'hpp' => 595, 'created_at' => $now, 'updated_at' => $now],
+
+            // --- FINISHING: TAMBAH WARNA ---
+            // Tambah 1 Warna
+            ['id_sku' => 'PRD-6001-SKU-004', 'id_bahan_baku' => 'BAHAN-0085', 'id_pilihan_finishing' => 'FIN-013-001', 'jumlah_pakai' => 0.333, 'hpp' => 2664, 'created_at' => $now, 'updated_at' => $now],
+            ['id_sku' => 'PRD-6001-SKU-004', 'id_bahan_baku' => 'BAHAN-0084', 'id_pilihan_finishing' => 'FIN-013-001', 'jumlah_pakai' => 0.007, 'hpp' => 595, 'created_at' => $now, 'updated_at' => $now],
+            // Tambah 2 Warna
+            ['id_sku' => 'PRD-6001-SKU-004', 'id_bahan_baku' => 'BAHAN-0085', 'id_pilihan_finishing' => 'FIN-013-002', 'jumlah_pakai' => 0.666, 'hpp' => 5328, 'created_at' => $now, 'updated_at' => $now],
+            ['id_sku' => 'PRD-6001-SKU-004', 'id_bahan_baku' => 'BAHAN-0084', 'id_pilihan_finishing' => 'FIN-013-002', 'jumlah_pakai' => 0.014, 'hpp' => 1190, 'created_at' => $now, 'updated_at' => $now],
+            // Tambah 3 Warna
+            ['id_sku' => 'PRD-6001-SKU-004', 'id_bahan_baku' => 'BAHAN-0085', 'id_pilihan_finishing' => 'FIN-013-003', 'jumlah_pakai' => 0.999, 'hpp' => 7992, 'created_at' => $now, 'updated_at' => $now],
+            ['id_sku' => 'PRD-6001-SKU-004', 'id_bahan_baku' => 'BAHAN-0084', 'id_pilihan_finishing' => 'FIN-013-003', 'jumlah_pakai' => 0.021, 'hpp' => 1785, 'created_at' => $now, 'updated_at' => $now],
+
+            // --- FINISHING: JUMLAH PLY ---
+            ['id_sku' => 'PRD-6001-SKU-004', 'id_bahan_baku' => 'BAHAN-0108', 'id_pilihan_finishing' => 'FIN-018-001', 'jumlah_pakai' => 0.033, 'hpp' => 1815, 'created_at' => $now, 'updated_at' => $now], // 3 Ply
+            ['id_sku' => 'PRD-6001-SKU-004', 'id_bahan_baku' => 'BAHAN-0108', 'id_pilihan_finishing' => 'FIN-018-002', 'jumlah_pakai' => 0.066, 'hpp' => 3630, 'created_at' => $now, 'updated_at' => $now], // 4 Ply
+            ['id_sku' => 'PRD-6001-SKU-004', 'id_bahan_baku' => 'BAHAN-0108', 'id_pilihan_finishing' => 'FIN-018-003', 'jumlah_pakai' => 0.099, 'hpp' => 5445, 'created_at' => $now, 'updated_at' => $now], // 5 Ply
+            ['id_sku' => 'PRD-6001-SKU-004', 'id_bahan_baku' => 'BAHAN-0108', 'id_pilihan_finishing' => 'FIN-018-004', 'jumlah_pakai' => 0.132, 'hpp' => 7260, 'created_at' => $now, 'updated_at' => $now], // 6 Ply
         ]);
     }
 }

@@ -2,42 +2,17 @@
 
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
+// 👇 DAFTAR JADWAL OTOMATIS (CRON JOBS) 👇
 
-use App\Models\Pesan;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Schedule;
-Schedule::call(function () {
+// 1. Auto-Selesaikan Pesanan setiap jam 01:00 dini hari
+Schedule::command('pesanan:auto-complete')->dailyAt('01:00');
 
-    $pesananDiJalan = Pesan::where('status_operasional', 'proses_pengantaran')->get();
-
-    foreach ($pesananDiJalan as $pesanan) {
-
-        $estimasiString = $pesanan->ekspedisi_estimasi ?? '1';
-        preg_match_all('/\d+/', $estimasiString, $matches);
-
-        $maxEstimasi = 1;
-        if (!empty($matches[0])) {
-            $maxEstimasi = max($matches[0]);
-        }
-
-        $totalHariTunggu = (int) $maxEstimasi + 3;
-
-        $deadline = Carbon::parse($pesanan->updated_at)->addDays($totalHariTunggu);
-
-        if (now()->greaterThanOrEqualTo($deadline)) {
-
-            $pesanan->status_operasional = 'selesai';
-            $pesanan->tanggal_selesai = now();
-            $pesanan->save();
-
-            Log::info("AUTO-COMPLETE: Pesanan {$pesanan->id_pesan} diselesaikan otomatis. Estimasi kurir: {$maxEstimasi} hari. Melewati deadline {$deadline->format('Y-m-d H:i')}.");
-        }
-    }
-
-})->dailyAt('01:00');
+// 2. Cek Staf Alpha setiap jam 23:50 malam (Senin-Sabtu)
+// Metode ->days([1,2,3,4,5,6]) memastikan tidak jalan di hari Minggu (0)
+Schedule::command('absen:check-alpha')->dailyAt('23:50')->days([1, 2, 3, 4, 5, 6]);

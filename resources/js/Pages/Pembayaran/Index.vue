@@ -118,6 +118,18 @@ watch(
 const formatRupiah = (angka) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(angka);
 };
+
+const namaStafDisplay = (item) => {
+    if (item.staf?.user?.name) {
+        return item.staf.user.name;
+    }
+
+    if (item.metode_pembayaran === 'qris' || item.payment_type_detail) {
+        return 'Sistem Otomatis';
+    }
+
+    return 'Belum ditangani';
+};
 </script>
 
 <template>
@@ -169,7 +181,7 @@ const formatRupiah = (angka) => {
 
                         <td class="px-6 py-4">
                             <span class="px-2 py-1 rounded-md bg-base-200 border border-base-300 text-[10px] font-black uppercase tracking-wider text-base-content/60">
-                                {{ item.staf?.user?.name || '-' }}
+                                {{ namaStafDisplay(item) }}
                             </span>
                         </td>
 

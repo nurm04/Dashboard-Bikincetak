@@ -20,25 +20,23 @@ watch(() => props.initialAttributes, (newAttrs) => {
     }
 }, { immediate: true, deep: true });
 
-// RUMUS ASLI LU: Cek Sisi Cetak
+// 👇 PERBAIKAN: Cek Sisi Cetak dari Nama SKU, bukan dari Finishing
 const sisiCetakMultiplier = computed(() => {
     let sisi = 1; // Default 1 Sisi
     if (!props.selectedSku) return sisi;
 
-    Object.values(props.finishings).forEach(idSkuFin => {
-        if (!idSkuFin) return;
-        const fin = props.selectedSku.opsi_finishing?.find(f => String(f.id_sku_finishing) === String(idSkuFin));
-        if (fin) {
-            const label = fin.nama_pilihan.toLowerCase();
-            if (label.includes('2 sisi') || label.includes('dua sisi') || label.includes('bolak')) {
-                sisi = 2; // Ganti jadi pengali 2
-            }
-        }
-    });
+    // Ambil string nama SKU dan ubah ke huruf kecil biar gampang dicari
+    const namaSku = (props.selectedSku.nama_sku || '').toLowerCase();
+
+    // Deteksi varian 2 sisi dari nama SKU
+    if (namaSku.includes('2 sisi') || namaSku.includes('dua sisi') || namaSku.includes('bolak balik') || namaSku.includes('bolak-balik')) {
+        sisi = 2; // Ganti jadi pengali 2
+    }
+
     return sisi;
 });
 
-// RUMUS ASLI LU: Biaya Halaman
+// Biaya Halaman
 const biayaHalamanPerBuku = computed(() => {
     let inputHal = parseInt(jumlahHalaman.value, 10);
     if (isNaN(inputHal) || inputHal < 1) inputHal = 1;
@@ -62,6 +60,12 @@ watch([jumlahHalaman, () => biayaHalamanPerBuku.value], ([newJml, newBiaya]) => 
             label="Jumlah Halaman (Termasuk Cover)"
             v-model="jumlahHalaman"
             placeholder="Contoh: 100"
+            :min="1"
         />
+
+        <!-- 👇 TAMBAHAN UI: Biar kasir/customer transparan sama harga tambahannya -->
+        <div v-if="biayaHalamanPerBuku > 0" class="mt-3 text-xs font-medium text-info">
+            * Kalkulasi: Tambahan {{ Math.max(0, jumlahHalaman - 1) }} Halaman ({{ sisiCetakMultiplier }} Sisi) = + Rp {{ biayaHalamanPerBuku.toLocaleString('id-ID') }} / pcs
+        </div>
     </div>
 </template>

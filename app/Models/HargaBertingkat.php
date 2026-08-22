@@ -9,12 +9,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class HargaBertingkat extends Model
 {
     use HasFactory;
+
     protected $table = 'harga_bertingkat';
     protected $primaryKey = 'id';
     public $incrementing = true;
 
     protected $fillable = [
         'id_sku',
+        'pengerjaan', // TAMBAHAN (Menyimpan SLA waktu selesai)
         'min',
         'max',
         'tipe',

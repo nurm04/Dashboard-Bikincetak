@@ -46,34 +46,52 @@ class RajaOngkirService
 
     public function calculateCost($originId, $destinationId, $weight, $requestedCourier = null)
     {
-        $couriers = $requestedCourier ? [$requestedCourier] : ['jne', 'sicepat', 'jnt', 'pos'];
+        // Daftar ekspedisi sesuai dokumentasi RajaOngkir by Komerce
+        $couriers = $requestedCourier ? [$requestedCourier] : [
+            'jne', 'pos', 'tiki', 'sicepat', 'jnt', 'ninja', 'anteraja',
+            'lion', 'wahana', 'rpx', 'ide', 'sap', 'ncs', 'rex', 'sentral', 'indah'
+        ];
 
         $allResults = [];
         $meta = null;
+        $lastResult = null;
 
-        foreach ($couriers as $courier) {
-            $response = Http::asForm()
-                            ->withHeaders(['key' => $this->apiKey])
-                            ->post($this->baseUrl . '/calculate/domestic-cost', [
-                                'origin'      => (string) $originId,
-                                'destination' => (string) $destinationId,
-                                'weight'      => (int) $weight,
-                                'courier'     => $courier
-                            ]);
+        // Jaga-jaga berat minimal 1000g untuk POS/TIKI biar gak ditolak server
+        $validWeight = $weight < 1000 ? 1000 : $weight;
 
-            $result = $response->json();
-
-            if (isset($result['data']) && is_array($result['data'])) {
-                $allResults = array_merge($allResults, $result['data']);
+        $responses = Http::pool(function (\Illuminate\Http\Client\Pool $pool) use ($couriers, $originId, $destinationId, $validWeight) {
+            foreach ($couriers as $courier) {
+                $pool->as($courier)
+                     ->asForm()
+                     ->withHeaders(['key' => $this->apiKey])
+                     // 👇 PAKE ENDPOINT DISTRICT SESUAI SCREENSHOT DOKUMENTASI LU 👇
+                     ->post($this->baseUrl . '/calculate/district/domestic-cost', [
+                         'origin'      => (int) $originId,
+                         'destination' => (int) $destinationId,
+                         'weight'      => (int) $validWeight,
+                         'courier'     => $courier
+                     ]);
             }
+        });
 
-            if (!$meta && isset($result['meta'])) {
-                $meta = $result['meta'];
+        foreach ($responses as $courier => $response) {
+            if ($response instanceof \Illuminate\Http\Client\Response && $response->ok()) {
+                $result = $response->json();
+                $lastResult = $result;
+
+                // Format JSON kembalian Komerce
+                if (isset($result['data']) && is_array($result['data'])) {
+                    $allResults = array_merge($allResults, $result['data']);
+                }
+
+                if (!$meta && isset($result['meta'])) {
+                    $meta = $result['meta'];
+                }
             }
         }
 
-        if (empty($allResults) && isset($result)) {
-            return $result;
+        if (empty($allResults) && $lastResult) {
+            return $lastResult;
         }
 
         return [

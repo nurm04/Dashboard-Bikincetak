@@ -122,6 +122,18 @@ const formatTanggalBayar = (id) => {
 
     return '-';
 };
+
+const namaStafDisplay = computed(() => {
+    if (props.pembayaran?.staf?.user?.name) {
+        return props.pembayaran.staf.user.name;
+    }
+
+    if (props.pembayaran?.metode_pembayaran === 'qris' || props.pembayaran?.payment_type_detail) {
+        return 'Sistem Otomatis';
+    }
+
+    return 'Belum ditangani';
+});
 </script>
 
 <template>
@@ -179,7 +191,7 @@ const formatTanggalBayar = (id) => {
                         <div class="space-y-3">
                             <div>
                                 <p class="text-xs font-semibold uppercase text-base-content/60">Nama Staf</p>
-                                <p class="font-bold">{{ pembayaran?.staf?.user?.name || 'Belum ditangani' }}</p>
+                                <p class="font-bold text-primary">{{ namaStafDisplay }}</p>
                             </div>
                             <div v-if="pembayaran?.staf">
                                 <p class="text-xs font-semibold uppercase text-base-content/60">No HP Staf</p>

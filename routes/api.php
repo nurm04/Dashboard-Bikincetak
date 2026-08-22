@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AlamatController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PesanController;
 use App\Http\Controllers\Api\ProdukController;
 use App\Http\Controllers\Api\ShippingController;
@@ -22,6 +23,10 @@ Route::get('/pesanan/status/{kode_transaksi}', [PesanController::class, 'getStat
 Route::get('/shipping/provinces', [ShippingController::class, 'getProvinces']);
 Route::get('/shipping/cities/{provinceId}', [ShippingController::class, 'getCities']);
 Route::get('/shipping/districts/{cityId}', [ShippingController::class, 'getDistricts']);
+
+Route::post('/webhook/komerce/qris', [PaymentController::class, 'webhookKomerce']);
+Route::get('/pembayaran/qris/{id_pesan}', [PaymentController::class, 'generateQris']);
+Route::get('/upload-qris-master', [PaymentController::class, 'uploadQrisKeKomerce']);
 
 Route::middleware('auth:sanctum')->group(function () {
 
@@ -52,7 +57,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/pesanan/{id_pesan}/selesai', [PesanController::class, 'pesananDiterimaPelanggan']);
 
     Route::post('/shipping/cost', [ShippingController::class, 'cekOngkir']);
-
     Route::get('/vouchers', [VoucherController::class, 'index']);
     Route::get('/vouchers/{kode}', [VoucherController::class, 'cekVoucher']);
 });

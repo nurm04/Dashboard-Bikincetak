@@ -1,13 +1,14 @@
 <script setup>
 import { ref, watch, computed } from 'vue';
 import { alertStore } from '@/Utils/alertStore';
-import { Head, useForm, router } from '@inertiajs/vue3';
+import { Head, useForm, router, usePage } from '@inertiajs/vue3';
 import StafLayout from '@/Layouts/StafLayout.vue';
 import CustomButton from '@/Components/Form/CustomButton.vue';
 import CustomSelect from '@/Components/Form/CustomSelect.vue';
 import CustomInputSearch from '@/Components/Form/CustomInputSearch.vue';
 import CustomTable from '@/Components/CustomTable.vue';
 import CustomAlertConfirm from '@/Components/CustomAlertConfirm.vue';
+import { CalendarClock } from 'lucide-vue-next'; // Tambahan icon buat absen
 
 const debounce = (fn, delay) => {
     let timeoutId;
@@ -21,6 +22,15 @@ const props = defineProps({
     stafs: Array,
     roles: Array,
     filters: Object
+});
+
+const page = usePage();
+
+// 👇 Mengecek apakah user yang login punya role Admin (Staf)
+const isAdmin = computed(() => {
+    // Kalau di table users rolenya disimpen
+    // atau di relasi staf disimpen dengan ROLE-STAF-ADMIN
+    return page.props.auth?.user?.staf?.id_role_staf === 'ROLE-STAF-ADMIN' || page.props.auth?.user?.role === 'admin';
 });
 
 const headers = ['ID Staf', 'Nama / Email', 'No. WhatsApp', 'Role', 'Aksi'];
@@ -99,15 +109,29 @@ const doDelete = () => {
         </template>
         <div class="min-h-screen px-4 py-3 sm:px-6 lg:px-8">
             <div class="mx-auto max-w-7xl">
+
                 <div class="flex flex-col gap-4 mb-8 md:flex-row md:items-center md:justify-between">
-                    <CustomButton v-if="$can('staf', 'tambah')" type="link" :href="route('staf.create')" variant="primary" size="md" class="shrink-0 rounded-xl">
-                        <template #icon>
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
-                        </template>
-                        Registrasi Staf
-                    </CustomButton>
+                    <!-- 👇 Kumpulan Action Buttons Kiri -->
+                    <div class="flex flex-col w-full gap-3 sm:flex-row md:w-auto">
+                        <CustomButton v-if="$can('staf', 'tambah')" type="link" :href="route('staf.create')" variant="primary" size="md" class="shrink-0 rounded-xl">
+                            <template #icon>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
+                            </template>
+                            Registrasi Staf
+                        </CustomButton>
+
+                        <!-- 👇 Tombol Rekap Absensi Khusus Admin 👇 -->
+                        <!-- Sesuaikan :href nya nanti kalau lu udah bikin route untuk rekap absensi admin -->
+                        <CustomButton v-if="isAdmin" type="link" :href="route('absensi.rekap')" variant="info" size="md" class="shrink-0 rounded-xl text-info-content">
+                            <template #icon>
+                                <CalendarClock class="w-4 h-4 mr-1" />
+                            </template>
+                            Data Absensi
+                        </CustomButton>
+                    </div>
                 </div>
-                <div class="mb-3 flex flex-col w-full gap-3 sm:flex-row sm:items-center md:w-auto">
+
+                <div class="flex flex-col w-full gap-3 mb-3 sm:flex-row sm:items-center md:w-auto">
                     <CustomInputSearch
                         v-model="search"
                         class="w-full sm:w-64"

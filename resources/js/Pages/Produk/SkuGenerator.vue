@@ -38,18 +38,46 @@ const toggleSelectAll = (varian) => {
     }
 };
 
+// 👇 PERBAIKAN: Fungsi Helper membaca `jenis_varian` yang sudah di-inject
+const generateSkuName = (selectedIdsArr) => {
+    let namaUtamaArr = [];
+    let namaTambahanArr = [];
+
+    // Kelompokkan nama berdasarkan jenis varian (utama/tambahan)
+    selectedIdsArr.forEach(pId => {
+        const varianInduk = props.produk.varians.find(v => v.pilihan_varian.some(p => p.id_pilihan === pId));
+        if (varianInduk) {
+            const pilihanObj = varianInduk.pilihan_varian.find(p => p.id_pilihan === pId);
+
+            // Baca langsung dari v.jenis_varian yang disuntikkan Controller
+            const jenis = varianInduk.jenis_varian || varianInduk.pivot?.jenis_varian || 'utama';
+
+            if (jenis === 'tambahan') {
+                namaTambahanArr.push(pilihanObj.nama_pilihan);
+            } else {
+                namaUtamaArr.push(pilihanObj.nama_pilihan);
+            }
+        }
+    });
+
+    const stringUtama = namaUtamaArr.length > 0 ? namaUtamaArr.join(' ') : 'Standar';
+    const stringTambahan = namaTambahanArr.length > 0 ? `-${namaTambahanArr.join(' ')}` : '';
+
+    // Format yang dihasilkan akan konsisten: PRD-XXX-Nama-KombinasiUtama-KombinasiTambahan
+    return `${props.produk.id_produk}-${props.produk.nama_produk}-${stringUtama}${stringTambahan}`;
+};
+
 const addManualSku = () => {
     const keys = Object.keys(selectedPilihans.value).filter(k => selectedPilihans.value[k].length > 0);
-
     if (keys.length === 0) return alert('Pilih minimal satu pilihan varian!');
 
     const combinations = [];
 
-    const combine = (index, currentIds, currentNames) => {
+    const combine = (index, currentIds) => {
         if (index === keys.length) {
             combinations.push({
                 id_sku: null,
-                nama_sku: `${props.produk.id_produk}-${props.produk.nama_produk}-${currentNames.join('-')}`,
+                nama_sku: generateSkuName(currentIds),
                 minimum_pesan: 1,
                 harga: 0,
                 pilihan_ids: [...currentIds]
@@ -59,17 +87,11 @@ const addManualSku = () => {
 
         const varianId = keys[index];
         selectedPilihans.value[varianId].forEach(pId => {
-            const pObj = props.produk.varians
-                .find(v => v.id_varian === varianId)
-                .pilihan_varian.find(p => p.id_pilihan === pId);
-
-            if (pObj) {
-                combine(index + 1, [...currentIds, pId], [...currentNames, pObj.nama_pilihan]);
-            }
+            combine(index + 1, [...currentIds, pId]);
         });
     };
 
-    combine(0, [], []);
+    combine(0, []);
 
     let addedCount = 0;
     combinations.forEach(newSku => {
@@ -89,24 +111,26 @@ const generateAllCombinations = () => {
     if (keys.length === 0) return alert('Centang pilihan varian dulu!');
 
     const combinations = [];
-    const combine = (index, currentIds, currentNames) => {
+    const combine = (index, currentIds) => {
         if (index === keys.length) {
             combinations.push({
                 id_sku: null,
-                nama_sku: `${props.produk.id_produk}-${props.produk.nama_produk}-${currentNames.join('-')}`,
+                nama_sku: generateSkuName(currentIds),
                 minimum_pesan: 1,
                 harga: 0,
                 pilihan_ids: [...currentIds]
             });
             return;
         }
+
         const varianId = keys[index];
         selectedPilihans.value[varianId].forEach(pId => {
-            const pObj = props.produk.varians.find(v => v.id_varian === varianId).pilihan_varian.find(p => p.id_pilihan === pId);
-            combine(index + 1, [...currentIds, pId], [...currentNames, pObj.nama_pilihan]);
+            combine(index + 1, [...currentIds, pId]);
         });
     };
-    combine(0, [], []);
+
+    combine(0, []);
+
     combinations.forEach(newSku => {
         if (!form.skus.find(s => s.nama_sku === newSku.nama_sku)) {
             form.skus.push(newSku);
@@ -158,7 +182,6 @@ const submit = () => {
 
                 <!-- Sidebar Kiri: Opsi Varian -->
                 <div class="lg:col-span-1">
-                    <!-- REVISI UTAMA: Kotak UI (Border, Shadow, BG) dipindah ke wrapper sticky ini -->
                     <div class="sticky top-24 flex flex-col max-h-[calc(100vh-8rem)] border rounded-2xl shadow-xl bg-base-100 border-base-300 overflow-hidden">
 
                         <!-- AREA SCROLLABLE: Hanya list varian yang bisa di-scroll -->
@@ -169,7 +192,11 @@ const submit = () => {
 
                             <div v-for="v in produk.varians" :key="v.id_varian" class="p-4 mb-4 border rounded-2xl bg-base-200/50 border-base-300">
                                 <div class="flex items-center justify-between pb-2 mb-3 border-b border-base-300 shrink-0">
-                                    <label class="text-[10px] font-black uppercase tracking-tighter opacity-70">{{ v.nama_varian }}</label>
+                                    <label class="text-[10px] font-black uppercase tracking-tighter opacity-70">
+                                        {{ v.nama_varian }}
+                                        <!-- 👇 PERBAIKAN: Baca dari v.jenis_varian (Langsung dari root objeknya) -->
+                                        <span v-if="v.jenis_varian === 'tambahan' || v.pivot?.jenis_varian === 'tambahan'" class="ml-1 text-[8px] px-1 py-0.5 rounded bg-warning/20 text-warning font-black tracking-widest">Tambahan</span>
+                                    </label>
                                     <button @click="toggleSelectAll(v)" type="button" class="text-[9px] font-bold text-primary hover:underline">
                                         {{ selectedPilihans[v.id_varian]?.length === v.pilihan_varian.length ? 'Unselect All' : 'Select All' }}
                                     </button>

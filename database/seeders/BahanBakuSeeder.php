@@ -815,49 +815,412 @@ class BahanBakuSeeder extends Seeder
             //     'is_active' => true,
             //     'created_at' => $now, 'updated_at' => $now
             // ],
-            // Kebutuhan Kain
+            // // Kebutuhan Kain
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0069',
+            //     'nama_bahan_baku' => 'Kain Satin Flag/Bendera (Roll)',
+            //     'satuan' => 'Meter',
+            //     'berat_gram_persatuan' => 150.00, // Berat per meter
+            //     'harga_beli' => 15000, // HPP per meter
+            //     'stok_awal' => 500,
+            //     'stok_sekarang' => 500,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0070',
+            //     'nama_bahan_baku' => 'Kain TC (Tetoron Cotton) Bendera (Roll)',
+            //     'satuan' => 'Meter',
+            //     'berat_gram_persatuan' => 120.00,
+            //     'harga_beli' => 12000, // HPP per meter
+            //     'stok_awal' => 500,
+            //     'stok_sekarang' => 500,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+            // // Kebutuhan Finishing (Obras & Tali)
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0071',
+            //     'nama_bahan_baku' => 'Benang Obras Jahit (Cones)',
+            //     'satuan' => 'Pcs',
+            //     'berat_gram_persatuan' => 250.00,
+            //     'harga_beli' => 18000, // HPP per cones
+            //     'stok_awal' => 50,
+            //     'stok_sekarang' => 50,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0072',
+            //     'nama_bahan_baku' => 'Tali Bendera / Tali Kur',
+            //     'satuan' => 'Meter',
+            //     'berat_gram_persatuan' => 10.00,
+            //     'harga_beli' => 500, // HPP tali per meter
+            //     'stok_awal' => 1000,
+            //     'stok_sekarang' => 1000,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0073',
+            //     'nama_bahan_baku' => 'Box Kartu Nama Transparan',
+            //     'satuan' => 'Pcs',
+            //     'berat_gram_persatuan' => 15.00,
+            //     'harga_beli' => 1200,
+            //     'stok_awal' => 500,
+            //     'stok_sekarang' => 500,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+            // // Gagang Stempel
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0074', 'nama_bahan_baku' => 'Gagang Stempel Bulat 28 mm',
+            //     'satuan' => 'Pcs', 'berat_gram_persatuan' => 25.00, 'harga_beli' => 5000,
+            //     'stok_awal' => 100, 'stok_sekarang' => 100, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now
+            // ],
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0075', 'nama_bahan_baku' => 'Gagang Stempel Bulat 35 mm',
+            //     'satuan' => 'Pcs', 'berat_gram_persatuan' => 30.00, 'harga_beli' => 6000,
+            //     'stok_awal' => 100, 'stok_sekarang' => 100, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now
+            // ],
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0076', 'nama_bahan_baku' => 'Gagang Stempel Bulat 45 mm',
+            //     'satuan' => 'Pcs', 'berat_gram_persatuan' => 40.00, 'harga_beli' => 8000,
+            //     'stok_awal' => 100, 'stok_sekarang' => 100, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now
+            // ],
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0077', 'nama_bahan_baku' => 'Gagang Stempel Oval 45 mm',
+            //     'satuan' => 'Pcs', 'berat_gram_persatuan' => 35.00, 'harga_beli' => 7000,
+            //     'stok_awal' => 100, 'stok_sekarang' => 100, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now
+            // ],
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0078', 'nama_bahan_baku' => 'Gagang Stempel Oval 51 mm',
+            //     'satuan' => 'Pcs', 'berat_gram_persatuan' => 40.00, 'harga_beli' => 8000,
+            //     'stok_awal' => 100, 'stok_sekarang' => 100, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now
+            // ],
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0079', 'nama_bahan_baku' => 'Gagang Stempel Persegi 27x55 mm',
+            //     'satuan' => 'Pcs', 'berat_gram_persatuan' => 35.00, 'harga_beli' => 6000,
+            //     'stok_awal' => 100, 'stok_sekarang' => 100, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now
+            // ],
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0080', 'nama_bahan_baku' => 'Gagang Stempel Persegi 32x55 mm',
+            //     'satuan' => 'Pcs', 'berat_gram_persatuan' => 40.00, 'harga_beli' => 7000,
+            //     'stok_awal' => 100, 'stok_sekarang' => 100, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now
+            // ],
+
+            // // Karet & Tinta
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0081', 'nama_bahan_baku' => 'Karet Stempel Flash (Lembar 33x11 cm)',
+            //     'satuan' => 'Lembar', 'berat_gram_persatuan' => 100.00, 'harga_beli' => 35000,
+            //     'stok_awal' => 50, 'stok_sekarang' => 50, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now
+            // ],
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0082', 'nama_bahan_baku' => 'Tinta Stempel Flash (Botol 5 ml)',
+            //     'satuan' => 'Botol', 'berat_gram_persatuan' => 15.00, 'harga_beli' => 10000,
+            //     'stok_awal' => 50, 'stok_sekarang' => 50, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now
+            // ],
+
+            // // Bahan Baku Amplop
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0083',
+            //     'nama_bahan_baku' => 'Amplop Putih Polos 11x23 cm (Merpati/Paperline)',
+            //     'satuan' => 'Pack',
+            //     'berat_gram_persatuan' => 600.00,
+            //     'harga_beli' => 25000,
+            //     'stok_awal' => 200,
+            //     'stok_sekarang' => 200,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+
+            // // Komponen Cetak Offset / Sablon Amplop
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0084',
+            //     'nama_bahan_baku' => 'Tinta Cetak Offset/Sablon (Kaleng 1 kg)',
+            //     'satuan' => 'Kaleng',
+            //     'berat_gram_persatuan' => 1000.00,
+            //     'harga_beli' => 85000,
+            //     'stok_awal' => 10,
+            //     'stok_sekarang' => 10,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0085',
+            //     'nama_bahan_baku' => 'Master / Film Cetak Offset Amplop',
+            //     'satuan' => 'Lembar',
+            //     'berat_gram_persatuan' => 5.00,
+            //     'harga_beli' => 8000,
+            //     'stok_awal' => 500,
+            //     'stok_sekarang' => 500,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+
+            // // Bahan Baku & Aksesoris Lanyard
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0086',
+            //     'nama_bahan_baku' => 'Tali Lanyard Polyester Putih 2cm (Roll 50 Meter)',
+            //     'satuan' => 'Meter',
+            //     'berat_gram_persatuan' => 15.00,
+            //     'harga_beli' => 800,
+            //     'stok_awal' => 500,
+            //     'stok_sekarang' => 500,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0087',
+            //     'nama_bahan_baku' => 'Biaya Produksi Cetak Sublim Lanyard (Per Pcs)',
+            //     'satuan' => 'Pcs',
+            //     'berat_gram_persatuan' => 5.00,
+            //     'harga_beli' => 2500,
+            //     'stok_awal' => 1000,
+            //     'stok_sekarang' => 1000,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0088',
+            //     'nama_bahan_baku' => 'Kaitan / Hook Besi Lanyard (Kew-Kew)',
+            //     'satuan' => 'Pcs',
+            //     'berat_gram_persatuan' => 8.00,
+            //     'harga_beli' => 600,
+            //     'stok_awal' => 1000,
+            //     'stok_sekarang' => 1000,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0089',
+            //     'nama_bahan_baku' => 'Stopper Tali Lanyard (Plastik / Cetet)',
+            //     'satuan' => 'Pcs',
+            //     'berat_gram_persatuan' => 5.00,
+            //     'harga_beli' => 800,
+            //     'stok_awal' => 1000,
+            //     'stok_sekarang' => 1000,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0090',
+            //     'nama_bahan_baku' => 'Yoyo ID Card Putar',
+            //     'satuan' => 'Pcs',
+            //     'berat_gram_persatuan' => 15.00,
+            //     'harga_beli' => 1500,
+            //     'stok_awal' => 500,
+            //     'stok_sekarang' => 500,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0091',
+            //     'nama_bahan_baku' => 'Holder ID Card / Casing Plastik',
+            //     'satuan' => 'Pcs',
+            //     'berat_gram_persatuan' => 12.00,
+            //     'harga_beli' => 1200,
+            //     'stok_awal' => 500,
+            //     'stok_sekarang' => 500,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0092',
+            //     'nama_bahan_baku' => 'Stiker Logo Resin Yoyo (Cetak Bulat)',
+            //     'satuan' => 'Pcs',
+            //     'berat_gram_persatuan' => 2.00,
+            //     'harga_beli' => 500,
+            //     'stok_awal' => 500,
+            //     'stok_sekarang' => 500,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+            // // Bahan Baku Tinta & Operasional Mesin
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0093',
+            //     'nama_bahan_baku' => 'Tinta Botol Mesin Inkjet (Set CMYK)',
+            //     'satuan' => 'Set',
+            //     'berat_gram_persatuan' => 400.00,
+            //     'harga_beli' => 300000,
+            //     'stok_awal' => 20,
+            //     'stok_sekarang' => 20,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0094',
+            //     'nama_bahan_baku' => 'Click Charge Toner Laser FC (Per A3+)',
+            //     'satuan' => 'Klik',
+            //     'berat_gram_persatuan' => 0.00,
+            //     'harga_beli' => 1500,
+            //     'stok_awal' => 100000,
+            //     'stok_sekarang' => 100000,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+
+            // // Packaging / Kemasan
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0095',
+            //     'nama_bahan_baku' => 'Box Kardus Kertas A4 (Kapasitas 1 Rim)',
+            //     'satuan' => 'Pcs',
+            //     'berat_gram_persatuan' => 50.00,
+            //     'harga_beli' => 2500,
+            //     'stok_awal' => 500,
+            //     'stok_sekarang' => 500,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+            // // Bahan Baku Pulpen & Kertas Insert
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0096',
+            //     'nama_bahan_baku' => 'Pulpen Plastik Model Insert (Pack isi 50 Pcs)',
+            //     'satuan' => 'Pack',
+            //     'berat_gram_persatuan' => 600.00,
+            //     'harga_beli' => 60000,
+            //     'stok_awal' => 100,
+            //     'stok_sekarang' => 100,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0097',
+            //     'nama_bahan_baku' => 'Kertas Art Paper 150 Gsm (A3+)',
+            //     'satuan' => 'Lembar A3+',
+            //     'berat_gram_persatuan' => 23.40,
+            //     'harga_beli' => 600,
+            //     'stok_awal' => 1000,
+            //     'stok_sekarang' => 1000,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+
+            // // Bahan Baku Pulpen UV
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0098',
+            //     'nama_bahan_baku' => 'Pulpen Plastik Flat/Cabe (Pack isi 50 Pcs)',
+            //     'satuan' => 'Pack',
+            //     'berat_gram_persatuan' => 500.00,
+            //     'harga_beli' => 50000,
+            //     'stok_awal' => 100,
+            //     'stok_sekarang' => 100,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0099',
+            //     'nama_bahan_baku' => 'Biaya Tinta & Operasional Print UV (Per Pack 50 Pcs)',
+            //     'satuan' => 'Pack',
+            //     'berat_gram_persatuan' => 0.00,
+            //     'harga_beli' => 20000,
+            //     'stok_awal' => 10000,
+            //     'stok_sekarang' => 10000,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+
+            // // Bahan Baku Name Tag Gravoply Murni Fisik
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0100',
+            //     'nama_bahan_baku' => 'Lembaran Gravoply 1.5mm (60 x 120 cm)',
+            //     'satuan' => 'Lembar',
+            //     'berat_gram_persatuan' => 1200.00,
+            //     'harga_beli' => 200000,
+            //     'stok_awal' => 10,
+            //     'stok_sekarang' => 10,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0101',
+            //     'nama_bahan_baku' => 'Peniti / Cemiti Name Tag (+ Double Tape Foam)',
+            //     'satuan' => 'Pcs',
+            //     'berat_gram_persatuan' => 5.00,
+            //     'harga_beli' => 800,
+            //     'stok_awal' => 1000,
+            //     'stok_sekarang' => 1000,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+
+            // // Bahan Baku Flashdisk Kosongan (Blank)
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0102',
+            //     'nama_bahan_baku' => 'Flashdisk Promosi Swivel/Metal Polos 4GB',
+            //     'satuan' => 'Pcs',
+            //     'berat_gram_persatuan' => 20.00,
+            //     'harga_beli' => 25000,
+            //     'stok_awal' => 100,
+            //     'stok_sekarang' => 100,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0103',
+            //     'nama_bahan_baku' => 'Flashdisk Kartu Polos 8GB',
+            //     'satuan' => 'Pcs',
+            //     'berat_gram_persatuan' => 15.00,
+            //     'harga_beli' => 35000,
+            //     'stok_awal' => 100,
+            //     'stok_sekarang' => 100,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0104',
+            //     'nama_bahan_baku' => 'Flashdisk Kartu Polos 16GB',
+            //     'satuan' => 'Pcs',
+            //     'berat_gram_persatuan' => 15.00,
+            //     'harga_beli' => 40000,
+            //     'stok_awal' => 100,
+            //     'stok_sekarang' => 100,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
+
+            // // Bahan Baku Tinta Fisik
+            // [
+            //     'id_bahan_baku' => 'BAHAN-0105',
+            //     'nama_bahan_baku' => 'Tinta Print UV Flatbed (Set Botol CMYK+W)',
+            //     'satuan' => 'Set',
+            //     'berat_gram_persatuan' => 500.00,
+            //     'harga_beli' => 450000,
+            //     'stok_awal' => 10,
+            //     'stok_sekarang' => 10,
+            //     'is_active' => true,
+            //     'created_at' => $now, 'updated_at' => $now
+            // ],
             [
-                'id_bahan_baku' => 'BAHAN-0069',
-                'nama_bahan_baku' => 'Kain Satin Flag/Bendera (Roll)',
-                'satuan' => 'Meter',
-                'berat_gram_persatuan' => 150.00, // Berat per meter
-                'harga_beli' => 15000, // HPP per meter
-                'stok_awal' => 500,
-                'stok_sekarang' => 500,
-                'is_active' => true,
-                'created_at' => $now, 'updated_at' => $now
-            ],
-            [
-                'id_bahan_baku' => 'BAHAN-0070',
-                'nama_bahan_baku' => 'Kain TC (Tetoron Cotton) Bendera (Roll)',
-                'satuan' => 'Meter',
-                'berat_gram_persatuan' => 120.00,
-                'harga_beli' => 12000, // HPP per meter
-                'stok_awal' => 500,
-                'stok_sekarang' => 500,
-                'is_active' => true,
-                'created_at' => $now, 'updated_at' => $now
-            ],
-            // Kebutuhan Finishing (Obras & Tali)
-            [
-                'id_bahan_baku' => 'BAHAN-0071',
-                'nama_bahan_baku' => 'Benang Obras Jahit (Cones)',
-                'satuan' => 'Pcs',
-                'berat_gram_persatuan' => 250.00,
-                'harga_beli' => 18000, // HPP per cones
+                'id_bahan_baku' => 'BAHAN-0106',
+                'nama_bahan_baku' => 'Kertas NCR Top / Atas Putih (Rim F4)',
+                'satuan' => 'Rim', // 1 Rim = 500 Lembar
+                'berat_gram_persatuan' => 1500.00, // Estimasi berat 1 Rim F4 NCR
+                'harga_beli' => 50000,
                 'stok_awal' => 50,
                 'stok_sekarang' => 50,
                 'is_active' => true,
                 'created_at' => $now, 'updated_at' => $now
             ],
             [
-                'id_bahan_baku' => 'BAHAN-0072',
-                'nama_bahan_baku' => 'Tali Bendera / Tali Kur',
-                'satuan' => 'Meter',
-                'berat_gram_persatuan' => 10.00,
-                'harga_beli' => 500, // HPP tali per meter
-                'stok_awal' => 1000,
-                'stok_sekarang' => 1000,
+                'id_bahan_baku' => 'BAHAN-0107',
+                'nama_bahan_baku' => 'Kertas NCR Bottom / Bawah Merah (Rim F4)',
+                'satuan' => 'Rim',
+                'berat_gram_persatuan' => 1500.00,
+                'harga_beli' => 50000,
+                'stok_awal' => 50,
+                'stok_sekarang' => 50,
+                'is_active' => true,
+                'created_at' => $now, 'updated_at' => $now
+            ],
+            [
+                'id_bahan_baku' => 'BAHAN-0108',
+                'nama_bahan_baku' => 'Kertas NCR Middle / Tengah Kuning (Rim F4)',
+                'satuan' => 'Rim',
+                'berat_gram_persatuan' => 1500.00,
+                'harga_beli' => 55000, // Biasanya kertas middle sedikit lebih mahal
+                'stok_awal' => 50,
+                'stok_sekarang' => 50,
                 'is_active' => true,
                 'created_at' => $now, 'updated_at' => $now
             ],

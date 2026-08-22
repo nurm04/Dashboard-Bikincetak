@@ -16,6 +16,7 @@ class ProdukVarian extends Model
     protected $fillable = [
         'id_produk',
         'id_varian',
+        'jenis_varian'
     ];
 
     public function produk(): BelongsTo

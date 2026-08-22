@@ -77,7 +77,7 @@ class PembayaranController extends Controller
         $pembayaran = Pembayaran::with([
             'pesan.customer.user',
             'staf.user',
-            'pesan.pesanan_item.pesanan_item_finishing'
+            'pesan.pesananItem.pesananItemFinishing'
         ])
             ->where('id_pembayaran', $id)
             ->firstOrFail();

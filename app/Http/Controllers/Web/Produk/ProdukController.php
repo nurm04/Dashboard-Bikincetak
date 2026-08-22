@@ -148,6 +148,24 @@ class ProdukController extends Controller
             'produkSku.skuDetailPilihan'
         ])->findOrFail($id);
 
+        // 👇 PERBAIKAN: Inject jenis_varian secara paksa biar Vue bisa baca
+        $produk->setRelation('varians', $produk->varians->map(function ($varian) use ($id) {
+            $jenis = $varian->pivot->jenis_varian ?? null;
+
+            // Fallback cari manual kalau pivot kosong
+            if (!$jenis) {
+                $pivot = DB::table('produk_varian')
+                    ->where('id_produk', $id)
+                    ->where('id_varian', $varian->id_varian)
+                    ->first();
+                $jenis = $pivot ? $pivot->jenis_varian : 'utama';
+            }
+
+            // Set property baru agar bisa langsung dipanggil v.jenis_varian di Vue
+            $varian->jenis_varian = $jenis;
+            return $varian;
+        }));
+
         return Inertia::render('Produk/SkuGenerator', [
             'produk' => $produk,
         ]);
@@ -158,7 +176,6 @@ class ProdukController extends Controller
         $produk = Produk::with([
             'produkSku.skuFinishing',
             'produkSku.hargaBertingkat',
-            'produkSku.hargaPengerjaan',
             'produkSku.diskonCustomer',
             'produkSku.skuDetailPilihan.pilihanVarian'
         ])->findOrFail($id);

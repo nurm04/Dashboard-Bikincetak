@@ -369,6 +369,7 @@ class PesanController extends Controller
                 'kode_transaksi' => PesanService::generateKodeTransaksi(),
                 'id_customer' => $customerId,
                 'id_alamat' => $request->id_alamat,
+                'sumber_pesanan' => 'bikincetak.co.id',
                 'status_operasional' => 'menunggu_diproses',
                 'status_pembayaran' => 'belum_lunas',
                 'ekspedisi_nama' => $request->ekspedisi_nama,
@@ -474,7 +475,7 @@ class PesanController extends Controller
                     $newPesan,
                     $rincian['subtotal'],
                     $rincian['kode_unik'],
-                    $rekening
+                    $rekening,
                 );
 
                 event(new PesananBaruEvent($newPesan));

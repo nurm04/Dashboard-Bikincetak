@@ -34,7 +34,7 @@ class CheckoutSuccessMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Pesanan Berhasil Dibuat - ' . $this->pesan->id_pesan,
+            subject: 'Pesanan Berhasil Dibuat - ' . $this->pesan->kode_transaksi,
         );
     }
 

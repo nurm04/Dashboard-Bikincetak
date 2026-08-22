@@ -83,36 +83,18 @@ const kalkulasi = () => {
     }
 
     // ==============================================================
-    // 3. LOGIC GROSIR BY AREA (Bukan by Qty Pcs)
+    // 3. LOGIC SINKRONISASI BIAYA TAMBAHAN DENGAN SLA MATRIKS
     // ==============================================================
-    const hargaDasar = Number(props.selectedSku?.harga_dasar) || 0;
-    let diskonGrosir = 0;
-
-    // Pakai luasDihargai (minimal 1) buat ngitung tier grosir
-    const totalLuasSemuaOrder = luasDihargai * props.qty;
-
-    if (props.selectedSku?.harga_bertingkat && props.selectedSku.harga_bertingkat.length > 0) {
-        const validTiers = props.selectedSku.harga_bertingkat.filter(t => totalLuasSemuaOrder >= Number(t.min));
-
-        if (validTiers.length > 0) {
-            const activeTier = validTiers.sort((a, b) => b.min - a.min)[0];
-            diskonGrosir = activeTier.tipe === 'persen'
-                ? hargaDasar * (Number(activeTier.nilai) / 100)
-                : Number(activeTier.nilai);
-        }
-    }
-
-    const hargaPerM2Final = hargaDasar - diskonGrosir;
-
-    // Total harga dikalikan luasDihargai (minimal 1)
-    const hargaSatuPcsFull = luasDihargai * hargaPerM2Final;
-    const selisihUntukParent = hargaSatuPcsFull - props.hargaSatuanSnapshot;
+    // hargaSatuanSnapshot dari parent sudah memuat harga per 1 m2 (Termasuk Diskon SLA & Member)
+    // Kita tinggal nambahin sisa luasnya aja.
+    const selisihUntukParent = (luasDihargai - 1) * props.hargaSatuanSnapshot;
 
     emit('updateBiayaTambahan', selisihUntukParent);
 };
 
+// Pantau perubahan termasuk jika harga dari Parent (SLA/Diskon) berubah
 watch(
-    [panjang, lebar, () => props.selectedSku, () => props.hargaSatuanSnapshot, () => props.qty],
+    [panjang, lebar, () => props.hargaSatuanSnapshot],
     () => { kalkulasi(); },
     { deep: true }
 );
@@ -138,7 +120,7 @@ watch(
                 <!-- Pilihan Roll Bahan -->
                 <div>
                     <span class="text-[10px] font-bold text-base-content/50 uppercase tracking-wider mb-2 block">
-                        Lebar Bahan Terpilih
+                        Lebar Bahan Terpilih (Sesuai Ketersediaan Roll)
                     </span>
                     <div class="flex flex-wrap gap-1.5">
                         <span
@@ -151,7 +133,7 @@ watch(
                                     : 'bg-base-100 text-base-content/50 border-base-200'
                             ]"
                         >
-                            {{ roll }}
+                            {{ roll }}m
                         </span>
 
                         <!-- Kalau ukurannya di atas 2 meter, tampilkan badge khusus -->
@@ -159,7 +141,7 @@ watch(
                             v-if="!rollSizes.includes(detailKalkulasi.lebarEfektif) && detailKalkulasi.lebarEfektif > 0"
                             class="px-2.5 py-1 text-[11px] font-bold rounded-md border bg-primary text-primary-content border-primary shadow-sm"
                         >
-                            {{ detailKalkulasi.lebarEfektif }}
+                            {{ detailKalkulasi.lebarEfektif }}m (Sambung)
                         </span>
                     </div>
                 </div>
@@ -167,14 +149,14 @@ watch(
                 <!-- Rumus Perhitungan -->
                 <div class="px-3 py-2 text-[11px] font-medium border rounded-lg bg-base-100/50 border-base-200 text-base-content/70">
                     <div class="flex items-center gap-1">
-                        Perhitungan:
+                        Luas Kalkulasi:
                         {{ props.qty }} x {{ detailKalkulasi.lebarEfektif }} x {{ detailKalkulasi.sisiTerbesar }} =
                         <span class="font-bold text-primary">{{ detailKalkulasi.luasHitung.toLocaleString('id-ID', { maximumFractionDigits: 2 }) }} m&sup2;</span>
                     </div>
 
                     <!-- Peringatan kalau di bawah 1 m2 -->
                     <div v-if="detailKalkulasi.luasHitung > 0 && detailKalkulasi.luasHitung < 1" class="mt-1 text-[10px] italic font-bold text-error">
-                        *Dihitung minimal 1 m&sup2;
+                        *Minimal charge dihitung 1 m&sup2;
                     </div>
                 </div>
             </div>

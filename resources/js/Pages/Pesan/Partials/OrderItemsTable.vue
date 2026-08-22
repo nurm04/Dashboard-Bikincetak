@@ -46,7 +46,6 @@ const getCustomAttributes = (item) => {
         }
     }
 
-    // Filter nilai yang "", null, atau undefined
     if (typeof attr === 'object' && attr !== null) {
         const validAttrs = {};
         let hasValidData = false;
@@ -64,76 +63,99 @@ const getCustomAttributes = (item) => {
     return null;
 };
 
-const getSisiFromFinishing = (item) => {
-    const finishings = item.pesanan_item_finishing || item.finishing || [];
+// 👇 PERBAIKAN: Cari deteksi sisi dari Nama Produk/SKU, bukan dari array finishing
+const getSisiFromSkuName = (item) => {
     let sisi = 1;
-    finishings.forEach(f => {
-        const namaFin = (f.nama_finishing_snapshot || '').toLowerCase();
-        if (namaFin.includes('dua sisi') || namaFin.includes('2 sisi') || namaFin.includes('bolak')) {
-            sisi = 2;
-        }
-    });
+    const namaSkuLengkap = (item.nama_produk_snapshot || '').toLowerCase();
+
+    if (namaSkuLengkap.includes('2 sisi') || namaSkuLengkap.includes('dua sisi') || namaSkuLengkap.includes('bolak')) {
+        sisi = 2;
+    }
+
     return sisi;
 };
 
-const isKaliJumlahPesan = (fin) => Boolean(fin.sku_finishing?.kali_jumlah_pesan);
+// Pastikan membaca dari object langsung (payload API) atau relasi tabel (DB)
+const isKaliJumlahPesan = (fin) => {
+    if (fin.kali_jumlah_pesan !== undefined) return Boolean(fin.kali_jumlah_pesan);
+    if (fin.sku_finishing?.kali_jumlah_pesan !== undefined) return Boolean(fin.sku_finishing?.kali_jumlah_pesan);
+    return true; // Default safety
+};
 
-const getDisplayHargaSatuan = (item) => {
-    let hargaAwal = Number(item.harga_satuan_snapshot) || 0;
+// ==========================================
+// 2. Helper Perhitungan Terpusat
+// ==========================================
+const calculateItemPrices = (item) => {
+    let baseNet = Number(item.harga_satuan_snapshot) || 0;
+    let baseCoret = Number(item.harga_dasar_awal_snapshot) || 0;
+    let qty = Number(item.jumlah) || 1;
+
     const attr = getCustomAttributes(item);
     const finishings = item.pesanan_item_finishing || item.finishing || [];
-    const sisi = getSisiFromFinishing(item);
 
+    // 👇 PERBAIKAN PANGGIL FUNGSI
+    const sisi = getSisiFromSkuName(item);
+
+    // Kalkulasi Cetak Buku (Tambahan Halaman)
     if (attr && attr['Jumlah Halaman'] !== undefined) {
         let hal = parseInt(attr['Jumlah Halaman'], 10);
         if (isNaN(hal) || hal < 1) hal = 1;
-        hargaAwal += (Math.max(0, hal - 1) * sisi * 1500);
+        const extraHalaman = Math.max(0, hal - 1) * sisi * 1500;
+        baseNet += extraHalaman;
+        baseCoret += extraHalaman;
     }
+
+    // Kalkulasi Cetak Meteran (Luas Area)
+    if (attr && attr['Luas Dihargai (m2)'] !== undefined) {
+        let luas = parseFloat(attr['Luas Dihargai (m2)']);
+        if (isNaN(luas) || luas < 1) luas = 1;
+        baseNet = baseNet * luas;
+        baseCoret = baseCoret * luas;
+    }
+
+    // Kunci nilai dasar murni fisik sebelum ditambah finishing
+    // agar finishing tipe persen tidak memotong harga secara double beruntun (compounding)
+    const fisikUtamaNet = baseNet;
+    const fisikUtamaCoret = baseCoret;
+
+    let totalFinishingSatuanNet = 0;
+    let totalFinishingSatuanCoret = 0;
+    let totalFinishingGlobal = 0; // Finishing yang biayanya borongan (tidak dikali Qty)
 
     finishings.forEach(f => {
         const isKaliQty = isKaliJumlahPesan(f);
+        const isPersen = f.tipe === 'persen';
+
+        let valNet = isPersen ? (fisikUtamaNet * (Number(f.harga_finishing_snapshot) / 100)) : (Number(f.harga_finishing_snapshot) || 0);
+        let valCoret = isPersen ? (fisikUtamaCoret * (Number(f.harga_finishing_snapshot) / 100)) : (Number(f.harga_finishing_snapshot) || 0);
 
         if (isKaliQty) {
-            let val = f.tipe === 'persen'
-                ? (hargaAwal * (Number(f.harga_finishing_snapshot) / 100))
-                : (Number(f.harga_finishing_snapshot) || 0);
-            hargaAwal += val;
+            totalFinishingSatuanNet += valNet;
+            totalFinishingSatuanCoret += valCoret;
+        } else {
+            totalFinishingGlobal += valNet;
         }
     });
 
-    return hargaAwal;
+    const finalSatuanNet = baseNet + totalFinishingSatuanNet;
+    const finalSatuanCoret = baseCoret + totalFinishingSatuanCoret;
+    const computedSubtotal = (finalSatuanNet * qty) + totalFinishingGlobal;
+
+    return {
+        satuanNet: finalSatuanNet,
+        satuanCoret: finalSatuanCoret,
+        subtotal: item.subtotal !== undefined ? Number(item.subtotal) : computedSubtotal
+    };
 };
 
-// 3. Kalkulasi UI: Subtotal (Murni Produk + Finishing, TANPA SLA)
-const getDisplaySubtotal = (item) => {
-    if (item.subtotal !== undefined) return Number(item.subtotal);
+const getDisplayHargaSatuan = (item) => calculateItemPrices(item).satuanNet;
+const getDisplayHargaCoret = (item) => calculateItemPrices(item).satuanCoret;
+const getDisplaySubtotal = (item) => calculateItemPrices(item).subtotal;
 
-    let hargaAwal = Number(item.harga_satuan_snapshot) || 0;
-    const attr = getCustomAttributes(item);
-    const finishings = item.pesanan_item_finishing || item.finishing || [];
-    const sisi = getSisiFromFinishing(item);
 
-    if (attr && attr['Jumlah Halaman'] !== undefined) {
-        let hal = parseInt(attr['Jumlah Halaman'], 10);
-        if (isNaN(hal) || hal < 1) hal = 1;
-        hargaAwal += (Math.max(0, hal - 1) * sisi * 1500);
-    }
-
-    let total = hargaAwal * item.jumlah;
-
-    finishings.forEach(f => {
-        const isKaliQty = isKaliJumlahPesan(f);
-
-        let val = f.tipe === 'persen'
-            ? (hargaAwal * (Number(f.harga_finishing_snapshot) / 100))
-            : (Number(f.harga_finishing_snapshot) || 0);
-
-        total += (isKaliQty ? val * item.jumlah : val);
-    });
-
-    return total;
-};
-
+// ==========================================
+// 3. UI Helpers
+// ==========================================
 const getFileDisplay = (item) => {
     if (item.file_desain) {
         let fileData = item.file_desain;
@@ -257,7 +279,7 @@ const confirmDelete = () => {
                     <td class="pt-3 text-right align-top">
                         <div class="flex flex-col items-end gap-1">
                             <div v-if="item.total_diskon_snapshot > 0" class="text-[9px] line-through text-error opacity-60 mb-0.5">
-                                {{ formatRupiah(item.harga_dasar_awal_snapshot) }}
+                                {{ formatRupiah(getDisplayHargaCoret(item)) }}
                             </div>
                             <div class="font-mono text-xs font-bold text-base-content">
                                 {{ formatRupiah(getDisplayHargaSatuan(item)) }}

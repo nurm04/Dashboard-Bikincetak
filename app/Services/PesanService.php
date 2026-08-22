@@ -475,105 +475,123 @@ Terima kasih.",
 
     public static function buildCheckoutMessage(Pesan $pesan, int $totalPesanan, int $kodeUnik, array $rekening): string
     {
+        $nama = $pesan->customer->user->name ?? 'Pelanggan';
         $totalTransfer = $totalPesanan + $kodeUnik;
 
-        return
-"🛒 PESANAN BERHASIL DIBUAT
+        $rincianItems = "";
+        foreach ($pesan->pesananItem as $item) {
+            // --- TRANSLASI ENGINE VUE KE PHP ---
+            $hargaDasar = (float) ($item->harga_satuan_snapshot ?? 0);
+            $attr = is_string($item->atribut_custom_snapshot)
+                ? json_decode($item->atribut_custom_snapshot, true)
+                : ($item->atribut_custom_snapshot ?? []);
 
-Kode Transaksi:
-{$pesan->kode_transaksi}
+            $sisi = 1;
+            foreach ($item->pesananItemFinishing as $f) {
+                $namaFin = strtolower($f->nama_finishing_snapshot ?? '');
+                if (str_contains($namaFin, 'dua sisi') || str_contains($namaFin, '2 sisi') || str_contains($namaFin, 'bolak')) {
+                    $sisi = 2; break;
+                }
+            }
 
-Total Pesanan:
-Rp " . number_format($totalPesanan,0,',','.') . "
+            // A. LOGIC BUKU & METERAN
+            if (isset($attr['Jumlah Halaman'])) {
+                $hal = max(1, (int) $attr['Jumlah Halaman']);
+                $hargaDasar += (max(0, $hal - 1) * $sisi * 1500);
+            } elseif (isset($attr['Luas Dihargai (m2)'])) {
+                $luas = max(1, (float) $attr['Luas Dihargai (m2)']);
+                $hargaDasar = $hargaDasar * $luas;
+            }
 
-Kode Unik:
-{$kodeUnik}
+            // B. LOGIC FINISHING
+            $finishingPerItem = 0;
+            $finishingFlat = 0;
+            foreach ($item->pesananItemFinishing as $f) {
+                $isKaliQty = (bool) ($f->kali_jumlah_pesan ?? optional($f->skuFinishing)->kali_jumlah_pesan);
 
-Total Transfer:
-Rp " . number_format($totalTransfer,0,',','.') . "
+                $val = ($f->tipe ?? 'nominal') === 'persen'
+                    ? ($hargaDasar * ((float) $f->harga_finishing_snapshot / 100))
+                    : (float) $f->harga_finishing_snapshot;
 
-Transfer ke:
+                if ($isKaliQty) {
+                    $finishingPerItem += $val;
+                } else {
+                    $finishingFlat += $val;
+                }
+            }
 
-Bank {$rekening['bank']}
-No. Rek {$rekening['nomor']}
-a.n {$rekening['atas_nama']}
+            $qty = (int) ($item->jumlah ?? 1);
+            $sla = (float) ($item->harga_pengerjaan_snapshot ?? 0);
 
-Mohon transfer sesuai nominal agar pembayaran dapat diverifikasi.
+            // C. REKAP HARGA AKHIR
+            $hargaSatuan = $hargaDasar + $finishingPerItem;
+            $subtotalItem = ($hargaSatuan * $qty) + $finishingFlat + $sla;
+            // -----------------------------------
 
-Terima kasih.";
+            $rincianItems .= "▪ {$item->nama_produk_snapshot} (x{$qty}) - Rp " . number_format($subtotalItem, 0, ',', '.') . "\n";
+        }
+
+        // Base Template Message
+        $message = "🛒 *PESANAN BERHASIL DIBUAT*\n\n";
+        $message .= "Halo {$nama},\n\n";
+        $message .= "Terima kasih telah melakukan pemesanan. Berikut rincian pesanan Anda:\n\n";
+        $message .= "*Kode Transaksi:*\n{$pesan->kode_transaksi}\n\n";
+        $message .= "*Rincian Item:*\n{$rincianItems}";
+        $message .= "*Total Pesanan:* Rp " . number_format($totalPesanan, 0, ',', '.') . "\n";
+        $message .= "*Kode Unik:* {$kodeUnik}\n\n";
+        $message .= "*TOTAL PEMBAYARAN:*\n*Rp " . number_format($totalTransfer, 0, ',', '.') . "*\n\n";
+
+        // 👇 LOGIKA PEMBEDA SUMBER PESANAN 👇
+        if ($pesan->sumber_pesanan === 'pos_kasir') {
+
+            // Ganti domain ini dengan URL Next.js Live lu kalau udah production
+            $domainFrontend = env('APP_URL_NEXTJS_VPS') === "production" ? env('APP_URL_NEXTJS_VPS') : env('APP_URL_NEXTJS');
+            $linkPembayaran = rtrim($domainFrontend, '/') . "/pesan/status/{$pesan->kode_transaksi}";
+
+            $message .= "💳 *Cara Pembayaran:*\n";
+            $message .= "Silakan klik link di bawah ini untuk melihat detail tagihan Anda secara real-time dan melakukan pembayaran otomatis melalui QRIS:\n\n";
+            $message .= "👉 {$linkPembayaran}\n\n";
+            $message .= "Anda dapat memilih untuk membayar lunas atau membayar sebagian (DP) melalui link tersebut.\n\n";
+
+        } else {
+            // Tampilan lawas untuk web/ecommerce
+            $message .= "💳 *Opsi Pembayaran:*\n";
+            $message .= "1. *Transfer Bank:*\n";
+            $message .= "Bank: {$rekening['bank']}\n";
+            $message .= "No. Rek: {$rekening['nomor']}\n";
+            $message .= "a.n: {$rekening['atas_nama']}\n\n";
+            $message .= "2. *QRIS:*\n";
+            $message .= "(Scan gambar QR Code yang dilampirkan atau masuk ke akun Anda)\n\n";
+            $message .= "⚠️ *PENTING:* Mohon transfer *tepat sesuai nominal TOTAL PEMBAYARAN* (hingga 3 angka terakhir) agar terverifikasi otomatis.\n\n";
+        }
+
+        $message .= "Terima kasih 🙏";
+
+        return $message;
     }
 
     public static function kirimNotifikasiCheckout(Pesan $pesan, int $totalPesanan, int $kodeUnik, array $rekening): void
     {
-
         try {
-
             $totalTransfer = $totalPesanan + $kodeUnik;
 
+            // --- BLOK KIRIM EMAIL ---
             try {
-
-                Log::info(
-                    'Mulai kirim email checkout',
-                    [
-                        'email' => $pesan->customer->user->email,
-                        'id_pesan' => $pesan->id_pesan,
-                    ]
-                );
-
-                Mail::to(
-                    $pesan->customer->user->email
-                )->send(
-                    new CheckoutSuccessMail(
-                        $pesan,
-                        $totalTransfer,
-                        $kodeUnik,
-                        $rekening
-                    )
-                );
-
-                Log::info(
-                    'Email checkout berhasil terkirim',
-                    [
-                        'email' => $pesan->customer->user->email,
-                        'id_pesan' => $pesan->id_pesan,
-                    ]
-                );
-
+                Log::info('Mulai kirim email checkout', ['email' => $pesan->customer->user->email, 'id_pesan' => $pesan->id_pesan]);
+                Mail::to($pesan->customer->user->email)->send(new CheckoutSuccessMail($pesan, $totalTransfer, $kodeUnik, $rekening));
+                Log::info('Email checkout berhasil terkirim', ['email' => $pesan->customer->user->email, 'id_pesan' => $pesan->id_pesan]);
             } catch (\Throwable $e) {
-
-                Log::error(
-                    'Gagal kirim email checkout',
-                    [
-                        'id_pesan' => $pesan->id_pesan,
-                        'message' => $e->getMessage(),
-                        'file' => $e->getFile(),
-                        'line' => $e->getLine(),
-                    ]
-                );
+                Log::error('Gagal kirim email checkout', ['id_pesan' => $pesan->id_pesan, 'message' => $e->getMessage()]);
             }
 
-            $message =
-                self::buildCheckoutMessage(
-                    $pesan,
-                    $totalPesanan,
-                    $kodeUnik,
-                    $rekening
-                );
+            // --- BLOK KIRIM WHATSAPP ---
+            $message = self::buildCheckoutMessage($pesan, $totalPesanan, $kodeUnik, $rekening);
 
-            self::sendWhatsapp(
-                $pesan->customer->no_hp,
-                $message
-            );
+            // Karena pakai Link, kita tidak perlu parameter $file (kecuali nanti lu mau lampirin e-invoice)
+            self::sendWhatsapp($pesan->customer->no_hp, $message);
 
         } catch (\Throwable $e) {
-
-            Log::error(
-                'Gagal kirim notifikasi checkout',
-                [
-                    'id_pesan' => $pesan->id_pesan,
-                    'message' => $e->getMessage(),
-                ]
-            );
+            Log::error('Gagal kirim notifikasi checkout', ['id_pesan' => $pesan->id_pesan, 'message' => $e->getMessage()]);
         }
     }
 }

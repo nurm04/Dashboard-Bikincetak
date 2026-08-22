@@ -1,16 +1,22 @@
 <script setup>
 import { onMounted, computed } from 'vue';
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
+import { Printer, ArrowLeft } from 'lucide-vue-next'; // Tambahan ikon
 
 const props = defineProps({
     pesanan: Object,
 });
 
 onMounted(() => {
+    // Biarin agak lambat dikit buat render komponen
     setTimeout(() => {
         window.print();
     }, 500);
 });
+
+const printDocument = () => {
+    window.print();
+};
 
 const isAmbilDiToko = computed(() => {
     return !props.pesanan.ekspedisi_nama || props.pesanan.ekspedisi_nama === 'Ambil di Toko';
@@ -45,7 +51,23 @@ const totalBerat = computed(() => {
 <template>
     <Head :title="`Label Pengiriman - ${pesanan.kode_transaksi}`" />
 
-    <div class="flex justify-center min-h-screen p-4 font-sans text-black bg-gray-100 print:p-0 print:bg-white">
+    <!-- 👇 NAVBAR BARU (MIRIP CETAK DOKUMEN & NOTA) 👇 -->
+    <div class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-3 bg-white border-b shadow-sm print:hidden border-base-300">
+        <div class="flex items-center gap-4">
+            <Link :href="route('pesan.detail', pesanan.id_pesan)" class="flex items-center justify-center transition-colors btn btn-sm btn-circle btn-ghost ring-1 ring-base-300 hover:bg-base-200 text-base-content">
+                <ArrowLeft class="w-4 h-4" />
+            </Link>
+            <div class="text-sm font-bold text-base-content">Kembali ke Detail</div>
+        </div>
+        <button @click="printDocument" class="flex items-center gap-2 px-4 font-bold text-white transition-colors shadow-sm btn btn-primary btn-sm rounded-xl hover:bg-primary-focus">
+            <Printer class="w-4 h-4" />
+            <span>Cetak Sekarang (Ctrl+P)</span>
+        </button>
+    </div>
+    <!-- 👆 END NAVBAR 👆 -->
+
+    <!-- BACKGROUND WRAPPER BIAR DI BROWSER TERLIHAT RAPI SEPERTI KERTAS -->
+    <div class="flex justify-center min-h-screen p-4 pt-20 font-sans text-black bg-gray-100 print:p-0 print:pt-0 print:bg-white">
 
         <!-- Standar ukuran resi logistik biasanya A6 (sekitar 105mm x 148mm) -->
         <div class="w-full max-w-[105mm] bg-white print:w-full print:max-w-none mx-auto shadow-lg print:shadow-none print:m-0 overflow-hidden border-2 border-black print:border-none">
@@ -55,7 +77,7 @@ const totalBerat = computed(() => {
                 <!-- HEADER LOGO & JENIS NOTA -->
                 <div class="flex items-center justify-between pb-3 mb-3 border-b-4 border-black">
                     <div>
-                        <h1 class="text-2xl font-black tracking-tighter uppercase leading-none">BIKIN CETAK</h1>
+                        <h1 class="text-2xl font-black leading-none tracking-tighter uppercase">BIKIN CETAK</h1>
                         <p class="text-[8px] font-black tracking-widest uppercase mt-0.5">Platform Cetak Digital</p>
                     </div>
                     <div class="text-right">
@@ -71,7 +93,7 @@ const totalBerat = computed(() => {
                     <p class="text-[10px] font-black uppercase tracking-widest mb-0.5">
                         {{ pesanan.nomor_resi ? 'NOMOR RESI EKPEDISI' : 'KODE TRANSAKSI' }}
                     </p>
-                    <p class="text-3xl font-black uppercase tracking-widest leading-none">
+                    <p class="text-3xl font-black leading-none tracking-widest uppercase">
                         {{ pesanan.nomor_resi || pesanan.kode_transaksi }}
                     </p>
                     <!-- Jika ada resi, kode transaksi jadi referensi kecil di bawahnya -->
@@ -81,12 +103,12 @@ const totalBerat = computed(() => {
                 </div>
 
                 <!-- KURIR & BERAT (Dibuat mencolok) -->
-                <div v-if="!isAmbilDiToko" class="flex border-y-4 border-black">
+                <div v-if="!isAmbilDiToko" class="flex border-black border-y-4">
                     <div class="flex flex-col justify-center w-3/4 p-2 border-r-4 border-black">
                         <p class="text-[9px] font-black uppercase tracking-widest mb-0.5">Kurir & Layanan:</p>
-                        <p class="text-xl font-black uppercase leading-tight">{{ pesanan.ekspedisi_nama }} - {{ pesanan.ekspedisi_layanan }}</p>
+                        <p class="text-xl font-black leading-tight uppercase">{{ pesanan.ekspedisi_nama }} - {{ pesanan.ekspedisi_layanan }}</p>
                     </div>
-                    <div class="flex flex-col items-center justify-center w-1/4 p-2 text-center bg-black text-white">
+                    <div class="flex flex-col items-center justify-center w-1/4 p-2 text-center text-white bg-black">
                         <p class="text-[9px] font-bold uppercase tracking-widest mb-0.5">Berat</p>
                         <p class="text-lg font-black leading-none">{{ totalBerat }}</p>
                         <p class="text-[9px] font-bold mt-0.5 uppercase">Gram</p>
@@ -117,7 +139,7 @@ const totalBerat = computed(() => {
                     </p>
                     <ul class="space-y-2">
                         <li v-for="(item, index) in pesanan.pesanan_item" :key="item.id" class="text-xs">
-                            <div class="flex items-start justify-between font-black uppercase leading-tight">
+                            <div class="flex items-start justify-between font-black leading-tight uppercase">
                                 <span class="w-[85%]">{{ index + 1 }}. {{ cleanProductName(item.nama_produk_snapshot) }}</span>
                                 <span class="w-[15%] text-right whitespace-nowrap">{{ item.jumlah }} PCS</span>
                             </div>

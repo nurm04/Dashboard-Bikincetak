@@ -25,6 +25,10 @@ class SkuFinishing extends Model
 
     protected $touches = ['produkSku'];
 
+    public function hargaBertingkat()
+    {
+        return $this->hasMany(SkuFinishingHargaBertingkat::class, 'sku_finishing_id', 'id');
+    }
     public function pesananItemFinishing(): HasMany
     {
         return $this->hasMany(PesananItemFinishing::class, 'id_sku_finishing', 'id');

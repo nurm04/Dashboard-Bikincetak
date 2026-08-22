@@ -22,6 +22,10 @@ class Staf extends Model
         'id_role_staf',
     ];
 
+    public function absensi(): HasMany
+    {
+        return $this->hasMany(Absensi::class, 'id_staf', 'id_staf');
+    }
     public function pembelianBahan(): HasMany
     {
         return $this->hasMany(PembelianBahan::class, 'id_staf', 'id_staf');
