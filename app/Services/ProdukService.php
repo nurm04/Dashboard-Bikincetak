@@ -3,19 +3,25 @@
 namespace App\Services;
 
 use App\Models\Produk;
-use App\Models\Kategori;
 
 class ProdukService
 {
     public static function generateId($id_kategori)
     {
-        $allKategori = Kategori::orderBy('created_at', 'asc')->pluck('id_kategori')->toArray();
-        $kategoriOrder = array_search($id_kategori, $allKategori) + 1;
+        $kategoriNum = (int) preg_replace('/\D/', '', $id_kategori);
+        $prefix = "PRD-{$kategoriNum}";
+        $latestProduct = Produk::where('id_produk', 'like', $prefix . '%')
+            ->orderBy('id_produk', 'desc')
+            ->first();
+        if ($latestProduct) {
+            $lastNumber = (int) substr($latestProduct->id_produk, strlen($prefix));
+            $nextNumber = $lastNumber + 1;
+        } else {
+            $nextNumber = 1;
+        }
+        $productOrder = str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
 
-        $productCount = Produk::where('id_kategori', $id_kategori)->count() + 1;
-        $productOrder = str_pad($productCount, 3, '0', STR_PAD_LEFT);
-
-        return "PRD-{$kategoriOrder}{$productOrder}";
+        return "{$prefix}{$productOrder}";
     }
 
     public static function generateSkuId($productId, $index)

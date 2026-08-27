@@ -92,26 +92,25 @@ const submit = () => {
 
     <StafLayout>
         <template #header>
-            <div class="flex items-center gap-4 w-full">
-                <!-- Tombol back kembali ke halaman Detail Sku Induk -->
-                <button @click="() => window.history.back()" class="btn btn-sm btn-circle btn-ghost ring-1 ring-base-300 transition-colors hover:bg-base-200">
+            <div class="flex items-center w-full gap-4">
+                <Link :href="route('produk.detailSku', sku.id_produk)" class="btn btn-sm btn-circle btn-ghost ring-1 ring-base-300">
                     <ArrowLeft class="w-4 h-4" />
-                </button>
-                <h2 class="text-xl font-semibold leading-tight text-base-content uppercase">
+                </Link>
+                <h2 class="text-xl font-semibold leading-tight uppercase text-base-content">
                     Edit SKU: {{ sku.id_sku }}
                 </h2>
             </div>
         </template>
 
-        <div class="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-            <div class="bg-base-100 rounded-2xl shadow-xl border border-base-300 p-6 md:p-10 space-y-6">
+        <div class="max-w-4xl px-4 py-8 mx-auto sm:px-6 lg:px-8">
+            <div class="p-6 space-y-6 border shadow-xl bg-base-100 rounded-2xl border-base-300 md:p-10">
 
                 <div class="mb-4">
-                    <h3 class="font-black text-xl tracking-tight uppercase">Detail Varian</h3>
+                    <h3 class="text-xl font-black tracking-tight uppercase">Detail Varian</h3>
                     <p class="text-sm opacity-50">Ubah detail spesifikasi dasar untuk SKU ini.</p>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <div class="md:col-span-2">
                         <CustomInput v-model="form.nama_sku" label="Nama SKU Lengkap" :error="form.errors.nama_sku" readonly />
                     </div>
@@ -145,7 +144,7 @@ const submit = () => {
                     <!-- ============================================================================== -->
                     <!-- 🌟 AREA UPLOAD MULTIPLE GAMBAR 🌟 -->
                     <!-- ============================================================================== -->
-                    <div class="md:col-span-2 w-full form-control pt-4 border-t border-base-300">
+                    <div class="w-full pt-4 border-t md:col-span-2 form-control border-base-300">
                         <label class="ml-1 label">
                             <span class="label-text font-black uppercase text-[10px] tracking-widest text-base-content/70">
                                 Gambar Spesifik SKU (Bisa Pilih Banyak)
@@ -183,7 +182,7 @@ const submit = () => {
                     </div>
 
                     <!-- PREVIEW GAMBAR BARU -->
-                    <div v-if="imagePreviews.length > 0" class="md:col-span-2 p-4 border border-primary/20 bg-primary/5 rounded-2xl">
+                    <div v-if="imagePreviews.length > 0" class="p-4 border md:col-span-2 border-primary/20 bg-primary/5 rounded-2xl">
                         <p class="text-[10px] font-black uppercase tracking-widest text-primary mb-3">Gambar Siap Diunggah:</p>
                         <div class="flex flex-wrap gap-3">
                             <div v-for="(url, idx) in imagePreviews" :key="idx" class="relative w-20 h-20 overflow-hidden border shadow-sm rounded-xl border-primary/30 group">
@@ -192,7 +191,7 @@ const submit = () => {
                                 <button
                                     type="button"
                                     @click.prevent="removeImage(idx)"
-                                    class="absolute z-50 flex items-center justify-center w-6 h-6 text-white transition-all duration-200 scale-75 rounded-full opacity-0 bg-error top-1 right-1 group-hover:opacity-100 group-hover:scale-100 hover:bg-red-600 shadow-md"
+                                    class="absolute z-50 flex items-center justify-center w-6 h-6 text-white transition-all duration-200 scale-75 rounded-full shadow-md opacity-0 bg-error top-1 right-1 group-hover:opacity-100 group-hover:scale-100 hover:bg-red-600"
                                     title="Hapus gambar ini"
                                 >
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -202,7 +201,7 @@ const submit = () => {
                     </div>
 
                     <!-- PREVIEW GAMBAR LAMA DI DATABASE (Jika tidak ada upload baru) -->
-                    <div v-else-if="props.sku?.gambar && props.sku?.gambar?.length" class="md:col-span-2 p-4 border rounded-2xl bg-base-200/50 border-base-300">
+                    <div v-else-if="props.sku?.gambar && props.sku?.gambar?.length" class="p-4 border md:col-span-2 rounded-2xl bg-base-200/50 border-base-300">
                         <p class="text-[10px] font-black uppercase tracking-widest text-base-content/50 mb-3">Gambar Tersimpan Saat Ini:</p>
                         <div class="flex flex-wrap gap-3">
                             <!-- Handling Array Aman -->
@@ -227,11 +226,11 @@ const submit = () => {
 
                 </div>
 
-                <div class="pt-8 mt-4 border-t border-base-300 flex flex-col sm:flex-row gap-4">
-                    <CustomButton variant="primary" class="w-full sm:w-auto px-10 py-4 font-black uppercase tracking-widest rounded-xl" @click="submit" :disabled="form.processing">
+                <div class="flex flex-col gap-4 pt-8 mt-4 border-t border-base-300 sm:flex-row">
+                    <CustomButton variant="primary" class="w-full px-10 py-4 font-black tracking-widest uppercase sm:w-auto rounded-xl" @click="submit" :disabled="form.processing">
                         Simpan Perubahan
                     </CustomButton>
-                    <CustomButton variant="secondary" type="button" class="w-full sm:w-auto px-10 py-4 font-bold uppercase tracking-widest rounded-xl" @click="() => window.history.back()">
+                    <CustomButton variant="secondary" type="button" class="w-full px-10 py-4 font-bold tracking-widest uppercase sm:w-auto rounded-xl" @click="() => window.history.back()">
                         Batal
                     </CustomButton>
                 </div>
