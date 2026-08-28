@@ -25,7 +25,6 @@ const formKalkulatorMap = {
     'cetak_meteran': FormCetakMeteran,
 };
 
-const activeFormKalkulator = computed(() => formKalkulatorMap[tipeKalkulasi.value] || null);
 const biayaTambahanCustom = ref(0);
 // =====================================
 
@@ -146,29 +145,44 @@ watch(() => props.editData, async (newVal) => {
 const skuOptions = computed(() => (detailProduk.value?.skus || []).map(s => ({ value: s.id_sku, label: s.nama_sku })));
 const selectedSku = computed(() => (detailProduk.value?.skus || []).find(s => s.id_sku === form.value.id_sku) || null);
 const tipeKalkulasi = computed(() => selectedSku.value?.tipe_kalkulasi || 'standard');
+const activeFormKalkulator = computed(() => formKalkulatorMap[tipeKalkulasi.value] || null);
 
 watch(tipeKalkulasi, () => {
     biayaTambahanCustom.value = 0;
 });
 
 // ==============================================================================
-// 🌟 HELPER: Mengambil Data Harga Berdasarkan Qty (Dukungan Tier Bertingkat)
+// 🌟 HELPER: Mengambil Data Harga Berdasarkan Qty (STEP LOGIC MURNI - TANPA MAX)
 // ==============================================================================
-const getActiveTier = (tiersArray, qtyPesan) => {
-    if (!tiersArray || tiersArray.length === 0) return null;
-    return [...tiersArray]
-        .sort((a, b) => b.min - a.min)
-        .find(t => qtyPesan >= t.min && (t.max === 0 || t.max === null || qtyPesan <= t.max));
-};
+
+// 👇 EFEKTIF QTY: Khusus meteran, cek tier dari Total Luasnya
+const effectiveQtyForTier = computed(() => {
+    let baseQty = Number(form.value.jumlah) || 1;
+    if (tipeKalkulasi.value === 'cetak_meteran') {
+        const luas = parseFloat(form.value.custom_attributes?.['Luas Dihargai (m2)']);
+        if (!isNaN(luas) && luas > 0) {
+            baseQty = baseQty * luas;
+        }
+    }
+    return baseQty;
+});
 
 const getActiveFinishingPrice = (finishingObj, qtyPesan) => {
     let activeHarga = Number(finishingObj.harga_tambahan) || 0;
     let activeTipe = finishingObj.tipe || 'nominal';
 
-    const activeTier = getActiveTier(finishingObj.harga_bertingkat, qtyPesan);
-    if (activeTier) {
-        activeHarga = Number(activeTier.nilai);
-        activeTipe = activeTier.tipe;
+    if (finishingObj.harga_bertingkat && finishingObj.harga_bertingkat.length > 0) {
+        const sortedTiers = [...finishingObj.harga_bertingkat].sort((a, b) => Number(a.min) - Number(b.min));
+        let activeTier = null;
+        for (let i = 0; i < sortedTiers.length; i++) {
+            if (qtyPesan >= Number(sortedTiers[i].min)) {
+                activeTier = sortedTiers[i];
+            }
+        }
+        if (activeTier) {
+            activeHarga = Number(activeTier.nilai);
+            activeTipe = activeTier.tipe;
+        }
     }
 
     return { harga: activeHarga, tipe: activeTipe };
@@ -177,24 +191,6 @@ const getActiveFinishingPrice = (finishingObj, qtyPesan) => {
 // ==============================================================================
 // 🌟 INTEGRASI MATRIKS SLA: Mengambil Harga Pokok Produk
 // ==============================================================================
-const pengerjaanOptions = computed(() => {
-    if (isCustomProduct.value || isJasaDesain.value) return [];
-
-    // Tarik daftar SLA unik dari matriks harga_bertingkat
-    const hbs = selectedSku.value?.harga_bertingkat || [];
-    const uniqueSlas = [...new Set(hbs.map(h => h.pengerjaan))].filter(Boolean);
-
-    const list = uniqueSlas.map(sla => {
-        // Kita tidak nampilin biaya tambahan (+) di dropdown lagi,
-        // karena harga SLA sudah otomatis jadi Harga Dasar Produk.
-        return { value: sla, label: sla };
-    });
-
-    if (isCustomSla.value) {
-        list.push({ value: form.value.estimasi_pengerjaan, label: `${form.value.estimasi_pengerjaan} (Custom)` });
-    }
-    return list;
-});
 
 const isCustomSla = computed(() => {
     if (isCustomProduct.value || isJasaDesain.value) return false;
@@ -204,41 +200,95 @@ const isCustomSla = computed(() => {
     return !exists;
 });
 
-// Menemukan blok matriks untuk Qty dan SLA yang dipilih
+const pengerjaanOptions = computed(() => {
+    if (isCustomProduct.value || isJasaDesain.value) return [];
+
+    const hbs = selectedSku.value?.harga_bertingkat || [];
+    const qtyTier = effectiveQtyForTier.value; // Pake Effective Qty biar akurat!
+
+    const originalSlaOrder = Array.from(new Set(hbs.map(t => t.pengerjaan)));
+    const uniqueMins = Array.from(new Set(hbs.map(t => Number(t.min)))).sort((a, b) => a - b);
+    let activeMinRow = uniqueMins[0] || 1;
+
+    for (let i = 0; i < uniqueMins.length; i++) {
+        if (qtyTier >= uniqueMins[i]) {
+            activeMinRow = uniqueMins[i];
+        }
+    }
+
+    const validSlasInActiveRow = hbs
+        .filter(t => Number(t.min) === activeMinRow && Number(t.nilai) > 0)
+        .map(t => t.pengerjaan);
+
+    const validSlas = originalSlaOrder.filter(sla => validSlasInActiveRow.includes(sla));
+    const list = validSlas.map(sla => ({ value: sla, label: sla }));
+
+    if (isCustomSla.value) {
+        list.push({ value: form.value.estimasi_pengerjaan, label: `${form.value.estimasi_pengerjaan} (Custom)` });
+    }
+    return list;
+});
+
+watch(() => pengerjaanOptions.value, (newOptions) => {
+    if (isCustomProduct.value || isJasaDesain.value || isCustomSla.value) return;
+
+    const currentSla = form.value.estimasi_pengerjaan;
+    const isValid = newOptions.some(opt => opt.value === currentSla);
+
+    if (!isValid && newOptions.length > 0) {
+        form.value.estimasi_pengerjaan = newOptions[0].value;
+    }
+}, { deep: true, immediate: true });
+
+// Tentukan Tier Aktif Berdasarkan SLA yang dipilih dan Effective Qty
 const activeHargaBertingkat = computed(() => {
     if (isCustomProduct.value || !selectedSku.value) return null;
     const hbs = selectedSku.value.harga_bertingkat || [];
-    let sla = form.value.estimasi_pengerjaan;
+    const sla = form.value.estimasi_pengerjaan;
+    const qtyTier = effectiveQtyForTier.value;
 
-    let tiers = hbs.filter(h => h.pengerjaan === sla);
-    if (tiers.length === 0) {
-        tiers = hbs.filter(h => h.pengerjaan === hbs[0]?.pengerjaan); // Fallback ke SLA pertama
+    const tiersForSla = hbs
+        .filter(t => t.pengerjaan === sla)
+        .sort((a, b) => Number(a.min) - Number(b.min));
+
+    let active = null;
+    for (let i = 0; i < tiersForSla.length; i++) {
+        if (qtyTier >= Number(tiersForSla[i].min)) {
+            active = tiersForSla[i];
+        }
     }
 
-    const qty = Number(form.value.jumlah) || 1;
-    return getActiveTier(tiers, qty) || tiers[0] || null;
+    if (active && Number(active.nilai) > 0) return active;
+    return null;
 });
 
-// Harga dasar awal adalah harga di "Qty 1" untuk SLA yang dipilih
 const hargaSatuanDasarSla = computed(() => {
     if (isCustomProduct.value) return Number(form.value.custom_harga_satuan) || 0;
-
     const hbs = selectedSku.value?.harga_bertingkat || [];
     const sla = activeHargaBertingkat.value?.pengerjaan || form.value.estimasi_pengerjaan;
 
-    const tier1 = hbs.find(h => h.pengerjaan === sla && h.min === 1);
+    const tiersForSla = hbs.filter(h => h.pengerjaan === sla && Number(h.nilai) > 0);
+
+    const tier1 = tiersForSla.find(h => Number(h.min) === 1);
     if (tier1) return Number(tier1.nilai);
 
-    if (activeHargaBertingkat.value) return Number(activeHargaBertingkat.value.nilai);
+    const smallestTier = tiersForSla.sort((a, b) => Number(a.min) - Number(b.min))[0];
+    if (smallestTier) return Number(smallestTier.nilai);
+
     return Number(selectedSku.value?.harga_dasar) || 0;
 });
 
-// Diskon Grosir = Harga Qty 1 - Harga Qty Saat ini (Untuk SLA yang sama)
+// 👇 PERBAIKAN MATEMATIKA TOTAL: Langsung ambil harga Tier murni (Biar gak minus)
+const currentTierPrice = computed(() => {
+    if (activeHargaBertingkat.value) return Number(activeHargaBertingkat.value.nilai);
+    return hargaSatuanDasarSla.value;
+});
+
 const diskonGrosir = computed(() => {
     if (isCustomProduct.value || !activeHargaBertingkat.value) return 0;
-    const currentPrice = Number(activeHargaBertingkat.value.nilai);
-    return Math.max(0, hargaSatuanDasarSla.value - currentPrice);
+    return Math.max(0, hargaSatuanDasarSla.value - currentTierPrice.value);
 });
+
 // ==============================================================================
 
 const diskonMember = computed(() => {
@@ -249,12 +299,12 @@ const diskonMember = computed(() => {
 
     if (!d) return 0;
 
-    const hargaSetelahGrosir = Math.max(0, hargaSatuanDasarSla.value - diskonGrosir.value);
-    return d.tipe === 'persen' ? hargaSetelahGrosir * (Number(d.nilai) / 100) : Number(d.nilai);
+    // Diskon member dipotong dari harga tier murni yang aktif
+    return d.tipe === 'persen' ? currentTierPrice.value * (Number(d.nilai) / 100) : Number(d.nilai);
 });
 
 const totalDiskonSatuan = computed(() => diskonGrosir.value + diskonMember.value);
-const hargaSatuanSnapshot = computed(() => Math.max(0, hargaSatuanDasarSla.value - totalDiskonSatuan.value));
+const hargaSatuanSnapshot = computed(() => Math.max(0, currentTierPrice.value - diskonMember.value));
 
 const hargaSatuProdukFull = computed(() => {
     return hargaSatuanSnapshot.value + biayaTambahanCustom.value;
@@ -263,18 +313,20 @@ const hargaSatuProdukFull = computed(() => {
 const totalFinishing = computed(() => {
     if (isCustomProduct.value || isJasaDesain.value) return 0;
     let total = 0;
-    const qty = Number(form.value.jumlah) || 1;
+    const qtyRaw = Number(form.value.jumlah) || 1; // Base Qty
+    const qtyTier = effectiveQtyForTier.value; // Qty Patokan Tier (Luas)
 
     Object.values(form.value.finishings).forEach(idSkuFin => {
         if (!idSkuFin) return;
         const fin = selectedSku.value?.opsi_finishing?.find(f => String(f.id_sku_finishing) === String(idSkuFin));
         if (!fin) return;
 
-        const { harga, tipe } = getActiveFinishingPrice(fin, qty);
+        // Ambil harga dari tier-nya pakai Effective Qty (luas)
+        const { harga, tipe } = getActiveFinishingPrice(fin, qtyTier);
         let biaya = tipe === 'persen' ? hargaSatuProdukFull.value * (harga / 100) : (harga || 0);
 
         if (fin.kali_jumlah_pesan) {
-            biaya = biaya * qty;
+            biaya = biaya * qtyRaw; // Perbanyakan total tetap pakai Qty awal
         }
 
         total += biaya;
@@ -285,8 +337,6 @@ const totalFinishing = computed(() => {
 const totalHargaProdukUtama = computed(() => hargaSatuProdukFull.value * form.value.jumlah);
 const totalProduk = computed(() => totalHargaProdukUtama.value + totalFinishing.value);
 
-// Total SLA sekarang hanya digunakan kalau Custom SLA diinput manual oleh Admin.
-// Harga SLA dari matriks CSV sudah melebur ke `hargaSatuanDasarSla`
 const totalSla = computed(() => {
     if (isJasaDesain.value) return 0;
     if (isCustomProduct.value || isCustomSla.value) return Number(form.value.custom_sla_price) || 0;
@@ -298,14 +348,14 @@ const subtotalItem = computed(() => totalProduk.value + totalSla.value);
 const finishingGroups = computed(() => {
     if (isCustomProduct.value || isJasaDesain.value) return {};
     const groups = {};
-    const qty = Number(form.value.jumlah) || 1;
+    const qtyTier = effectiveQtyForTier.value;
 
     selectedSku.value?.opsi_finishing?.forEach(fin => {
         if (!groups[fin.kategori_finishing]) {
             groups[fin.kategori_finishing] = { options: [] };
         }
 
-        const { harga, tipe } = getActiveFinishingPrice(fin, qty);
+        const { harga, tipe } = getActiveFinishingPrice(fin, qtyTier);
         const labelBiaya = tipe === 'persen' ? `${harga}%` : `Rp ${harga.toLocaleString('id-ID')}`;
 
         groups[fin.kategori_finishing].options.push({
@@ -369,7 +419,6 @@ watch(() => form.value.id_sku, (newVal, oldVal) => {
 
     form.value.jumlah = selectedSku.value.minimum_pesan || 1;
 
-    // Default SLA dipilih otomatis dari baris matriks pertama
     const hbs = selectedSku.value.harga_bertingkat || [];
     const uniqueSlas = [...new Set(hbs.map(h => h.pengerjaan))].filter(Boolean);
     form.value.estimasi_pengerjaan = uniqueSlas.length > 0 ? uniqueSlas[0] : 'Reguler';
@@ -409,7 +458,7 @@ const finishingPayload = computed(() => {
     if (isCustomProduct.value || isJasaDesain.value) return [];
 
     const data = [];
-    const qty = Number(form.value.jumlah) || 1;
+    const qtyTier = effectiveQtyForTier.value;
 
     Object.values(form.value.finishings).forEach(idSkuFin => {
         if (!idSkuFin) return;
@@ -418,7 +467,7 @@ const finishingPayload = computed(() => {
         if (!fin) return;
 
         const isKaliQty = fin.kali_jumlah_pesan === true || fin.kali_jumlah_pesan === 1 || fin.kali_jumlah_pesan === '1';
-        const { harga, tipe } = getActiveFinishingPrice(fin, qty);
+        const { harga, tipe } = getActiveFinishingPrice(fin, qtyTier);
 
         data.push({
             id_sku_finishing: fin.id_sku_finishing,
