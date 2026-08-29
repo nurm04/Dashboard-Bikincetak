@@ -152,10 +152,9 @@ watch(tipeKalkulasi, () => {
 });
 
 // ==============================================================================
-// 🌟 HELPER: Mengambil Data Harga Berdasarkan Qty (STEP LOGIC MURNI - TANPA MAX)
+// 🌟 HELPER QTY: EFEKTIF METERAN, MINIMUM, DAN KELIPATAN
 // ==============================================================================
 
-// 👇 EFEKTIF QTY: Khusus meteran, cek tier dari Total Luasnya
 const effectiveQtyForTier = computed(() => {
     let baseQty = Number(form.value.jumlah) || 1;
     if (tipeKalkulasi.value === 'cetak_meteran') {
@@ -167,6 +166,30 @@ const effectiveQtyForTier = computed(() => {
     return baseQty;
 });
 
+const currentMinimumOrder = computed(() => {
+    if (isCustomProduct.value || isJasaDesain.value) return 1;
+    let minOrder = selectedSku.value?.minimum_pesan || 1;
+    Object.values(form.value.finishings).forEach(idSkuFin => {
+        if (!idSkuFin) return;
+        const fin = selectedSku.value?.opsi_finishing?.find(f => String(f.id_sku_finishing) === String(idSkuFin));
+        if (fin && fin.minimum_pesan > minOrder) minOrder = fin.minimum_pesan;
+    });
+    return minOrder;
+});
+
+const currentKelipatanOrder = computed(() => {
+    if (isCustomProduct.value || isJasaDesain.value) return 1;
+    return Number(selectedSku.value?.kelipatan_pesan) || 1;
+});
+
+watch(currentMinimumOrder, (newMin) => {
+    if (form.value.jumlah < newMin) {
+        form.value.jumlah = newMin;
+        alertStore.show(`Jumlah disesuaikan ke batas minimum order: ${newMin} pcs`, 'info');
+    }
+});
+
+// 👇 PERBAIKAN: Jika tier.nilai 0, JANGAN ditimpa! Tetap pakai base_harga_tambahan
 const getActiveFinishingPrice = (finishingObj, qtyPesan) => {
     let activeHarga = Number(finishingObj.harga_tambahan) || 0;
     let activeTipe = finishingObj.tipe || 'nominal';
@@ -179,7 +202,8 @@ const getActiveFinishingPrice = (finishingObj, qtyPesan) => {
                 activeTier = sortedTiers[i];
             }
         }
-        if (activeTier) {
+
+        if (activeTier && Number(activeTier.nilai) > 0) {
             activeHarga = Number(activeTier.nilai);
             activeTipe = activeTier.tipe;
         }
@@ -189,7 +213,7 @@ const getActiveFinishingPrice = (finishingObj, qtyPesan) => {
 };
 
 // ==============================================================================
-// 🌟 INTEGRASI MATRIKS SLA: Mengambil Harga Pokok Produk
+// 🌟 INTEGRASI MATRIKS SLA
 // ==============================================================================
 
 const isCustomSla = computed(() => {
@@ -204,7 +228,7 @@ const pengerjaanOptions = computed(() => {
     if (isCustomProduct.value || isJasaDesain.value) return [];
 
     const hbs = selectedSku.value?.harga_bertingkat || [];
-    const qtyTier = effectiveQtyForTier.value; // Pake Effective Qty biar akurat!
+    const qtyTier = effectiveQtyForTier.value;
 
     const originalSlaOrder = Array.from(new Set(hbs.map(t => t.pengerjaan)));
     const uniqueMins = Array.from(new Set(hbs.map(t => Number(t.min)))).sort((a, b) => a - b);
@@ -240,7 +264,6 @@ watch(() => pengerjaanOptions.value, (newOptions) => {
     }
 }, { deep: true, immediate: true });
 
-// Tentukan Tier Aktif Berdasarkan SLA yang dipilih dan Effective Qty
 const activeHargaBertingkat = computed(() => {
     if (isCustomProduct.value || !selectedSku.value) return null;
     const hbs = selectedSku.value.harga_bertingkat || [];
@@ -264,6 +287,7 @@ const activeHargaBertingkat = computed(() => {
 
 const hargaSatuanDasarSla = computed(() => {
     if (isCustomProduct.value) return Number(form.value.custom_harga_satuan) || 0;
+
     const hbs = selectedSku.value?.harga_bertingkat || [];
     const sla = activeHargaBertingkat.value?.pengerjaan || form.value.estimasi_pengerjaan;
 
@@ -278,7 +302,6 @@ const hargaSatuanDasarSla = computed(() => {
     return Number(selectedSku.value?.harga_dasar) || 0;
 });
 
-// 👇 PERBAIKAN MATEMATIKA TOTAL: Langsung ambil harga Tier murni (Biar gak minus)
 const currentTierPrice = computed(() => {
     if (activeHargaBertingkat.value) return Number(activeHargaBertingkat.value.nilai);
     return hargaSatuanDasarSla.value;
@@ -299,7 +322,6 @@ const diskonMember = computed(() => {
 
     if (!d) return 0;
 
-    // Diskon member dipotong dari harga tier murni yang aktif
     return d.tipe === 'persen' ? currentTierPrice.value * (Number(d.nilai) / 100) : Number(d.nilai);
 });
 
@@ -313,20 +335,19 @@ const hargaSatuProdukFull = computed(() => {
 const totalFinishing = computed(() => {
     if (isCustomProduct.value || isJasaDesain.value) return 0;
     let total = 0;
-    const qtyRaw = Number(form.value.jumlah) || 1; // Base Qty
-    const qtyTier = effectiveQtyForTier.value; // Qty Patokan Tier (Luas)
+    const qtyRaw = Number(form.value.jumlah) || 1;
+    const qtyTier = effectiveQtyForTier.value;
 
     Object.values(form.value.finishings).forEach(idSkuFin => {
         if (!idSkuFin) return;
         const fin = selectedSku.value?.opsi_finishing?.find(f => String(f.id_sku_finishing) === String(idSkuFin));
         if (!fin) return;
 
-        // Ambil harga dari tier-nya pakai Effective Qty (luas)
         const { harga, tipe } = getActiveFinishingPrice(fin, qtyTier);
         let biaya = tipe === 'persen' ? hargaSatuProdukFull.value * (harga / 100) : (harga || 0);
 
         if (fin.kali_jumlah_pesan) {
-            biaya = biaya * qtyRaw; // Perbanyakan total tetap pakai Qty awal
+            biaya = biaya * qtyRaw;
         }
 
         total += biaya;
@@ -374,24 +395,6 @@ const finishingGroups = computed(() => {
     return groups;
 });
 
-const currentMinimumOrder = computed(() => {
-    if (isCustomProduct.value || isJasaDesain.value) return 1;
-    let minOrder = selectedSku.value?.minimum_pesan || 1;
-    Object.values(form.value.finishings).forEach(idSkuFin => {
-        if (!idSkuFin) return;
-        const fin = selectedSku.value?.opsi_finishing?.find(f => String(f.id_sku_finishing) === String(idSkuFin));
-        if (fin && fin.minimum_pesan > minOrder) minOrder = fin.minimum_pesan;
-    });
-    return minOrder;
-});
-
-watch(currentMinimumOrder, (newMin) => {
-    if (form.value.jumlah < newMin) {
-        form.value.jumlah = newMin;
-        alertStore.show(`Jumlah disesuaikan ke batas minimum order: ${newMin} pcs`, 'info');
-    }
-});
-
 const isEditMode = computed(() => !!props.editData);
 
 watch(() => form.value.id_sku, (newVal, oldVal) => {
@@ -417,7 +420,12 @@ watch(() => form.value.id_sku, (newVal, oldVal) => {
         }
     }
 
-    form.value.jumlah = selectedSku.value.minimum_pesan || 1;
+    let startQty = selectedSku.value.minimum_pesan || 1;
+    const kelipatan = selectedSku.value.kelipatan_pesan || 1;
+    if (startQty % kelipatan !== 0) {
+        startQty = Math.ceil(startQty / kelipatan) * kelipatan;
+    }
+    form.value.jumlah = startQty;
 
     const hbs = selectedSku.value.harga_bertingkat || [];
     const uniqueSlas = [...new Set(hbs.map(h => h.pengerjaan))].filter(Boolean);
@@ -490,6 +498,28 @@ const handleFormSubmit = () => {
         return;
     }
 
+    // 👇 VALIDASI FINAL MINIMUM & KELIPATAN
+    const qtyInput = Number(form.value.jumlah) || 1;
+    const minOrder = currentMinimumOrder.value;
+    const kelipatan = currentKelipatanOrder.value;
+
+    let isCorrected = false;
+    let correctedQty = qtyInput;
+
+    if (qtyInput < minOrder) {
+        correctedQty = minOrder;
+        isCorrected = true;
+    } else if (kelipatan > 1 && qtyInput % kelipatan !== 0) {
+        correctedQty = Math.ceil(qtyInput / kelipatan) * kelipatan;
+        isCorrected = true;
+    }
+
+    if (isCorrected) {
+        form.value.jumlah = correctedQty;
+        alertStore.show(`Pesanan disesuaikan ke ${correctedQty} (Syarat Min: ${minOrder}, Kelipatan: ${kelipatan}). Silakan klik simpan lagi.`, 'warning');
+        return;
+    }
+
     const rincianDiskon = [];
 
     if (diskonGrosir.value > 0) {
@@ -540,7 +570,7 @@ const handleFormSubmit = () => {
         ...(props.isPosMode && {
             master_diskon_customer: isCustomProduct.value ? [] : selectedSku.value?.diskon_customer || [],
             master_harga_bertingkat: isCustomProduct.value ? [] : selectedSku.value?.harga_bertingkat || [],
-            master_harga_pengerjaan: [], // Sudah dilebur ke matriks
+            master_harga_pengerjaan: [],
         })
     };
 
@@ -627,11 +657,23 @@ const handleFormSubmit = () => {
                             @updateBiayaTambahan="(val) => biayaTambahanCustom = val"
                         />
 
+                        <!-- 👇 FORM INPUT QTY DENGAN BANTUAN UI KELIPATAN -->
                         <div class="form-control">
-                            <CustomInputNumber label="Jumlah Pesanan (Qty)" v-model="form.jumlah" :min="currentMinimumOrder" />
+                            <CustomInputNumber
+                                label="Jumlah Pesanan (Qty)"
+                                v-model="form.jumlah"
+                                :min="currentMinimumOrder"
+                                :step="currentKelipatanOrder"
+                            />
+
                             <div v-if="form.jumlah < currentMinimumOrder" class="flex items-center gap-1.5 mt-2 text-[10px] font-bold text-error">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" /></svg>
                                 Minimal pemesanan untuk spesifikasi ini: {{ currentMinimumOrder }} pcs
+                            </div>
+
+                            <div v-else-if="currentKelipatanOrder > 1 && form.jumlah % currentKelipatanOrder !== 0" class="flex items-center gap-1.5 mt-2 text-[10px] font-bold text-warning">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5"><path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" /></svg>
+                                Pesanan harus dalam kelipatan {{ currentKelipatanOrder }} pcs
                             </div>
                         </div>
 

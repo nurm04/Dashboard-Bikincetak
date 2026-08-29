@@ -12,13 +12,19 @@ const props = defineProps({
 
 const isEdit = !!props.finishing;
 
+// PERBAIKAN: Mapping bentuk Object { id, nama } bukan cuma string
 const form = useForm({
     nama_finishing: props.finishing?.nama_finishing ?? '',
-    pilihans: props.finishing?.pilihan_finishing?.map(p => p.nama_pilihan) ?? [''],
+    pilihans: props.finishing?.pilihan_finishing?.length
+        ? props.finishing.pilihan_finishing.map(p => ({
+            id_pilihan_finishing: p.id_pilihan_finishing,
+            nama_pilihan: p.nama_pilihan
+        }))
+        : [{ id_pilihan_finishing: null, nama_pilihan: '' }],
 });
 
 const addRow = () => {
-    form.pilihans.push('');
+    form.pilihans.push({ id_pilihan_finishing: null, nama_pilihan: '' });
 };
 
 const submit = () => {
@@ -68,18 +74,20 @@ const submit = () => {
                         >
                             <template #row="{ row, index }">
                                 <td class="px-4 py-2">
+                                    <!-- PERBAIKAN: Panggil .nama_pilihan karena sekarang dia object -->
                                     <input
-                                        v-model="form.pilihans[index]"
+                                        v-model="form.pilihans[index].nama_pilihan"
                                         type="text"
                                         placeholder="Ketik pilihan..."
                                         class="w-full p-0 text-sm font-bold bg-transparent border-none focus:ring-0 text-base-content"
+                                        required
                                     />
                                 </td>
                             </template>
                         </CustomTableForm>
 
                         <p v-if="form.errors.pilihans" class="text-error text-[10px] font-bold ml-1">
-                            {{ form.errors.pilihans }}
+                            Pastikan semua baris pilihan sudah terisi.
                         </p>
 
                         <div class="flex flex-col items-center gap-4 pt-6 sm:flex-row">

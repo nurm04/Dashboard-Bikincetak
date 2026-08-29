@@ -115,9 +115,10 @@ class ProdukSkuController extends Controller
             'tipe_kalkulasi' => 'required|in:standard,cetak_meteran,cetak_buku',
             'satuan' => 'nullable|string|max:50',
             'minimum_pesan' => 'required|numeric|min:1',
+            'kelipatan_pesan' => 'required|numeric|min:1', // 👇 WAJIB ADA INI
             'harga' => 'required|numeric|min:0',
-            'gambar' => 'nullable|array', // Validasi sebagai array
-            'gambar.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048' // Validasi tiap isinya adalah file gambar
+            'gambar' => 'nullable|array',
+            'gambar.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048'
         ]);
 
         try {
@@ -128,6 +129,7 @@ class ProdukSkuController extends Controller
                 'tipe_kalkulasi' => $request->tipe_kalkulasi,
                 'satuan' => $request->satuan,
                 'minimum_pesan' => $request->minimum_pesan,
+                'kelipatan_pesan' => $request->kelipatan_pesan, // 👇 WAJIB DIMASUKIN SINI JUGA
                 'harga' => $request->harga,
             ];
 

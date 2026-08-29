@@ -23,9 +23,10 @@ class ProdukSku extends Model
         'gambar',
         'satuan',
         'minimum_pesan',
+        'kelipatan_pesan',
         'harga',
         'deskripsi',
-        'tipe_kalkulasi',  // TAMBAHAN
+        'tipe_kalkulasi',
     ];
 
     protected $casts = [

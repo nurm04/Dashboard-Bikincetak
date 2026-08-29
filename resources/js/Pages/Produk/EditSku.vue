@@ -20,6 +20,7 @@ const form = useForm({
     tipe_kalkulasi: props.sku.tipe_kalkulasi || 'standard',
     satuan: props.sku.satuan || '',
     minimum_pesan: props.sku.minimum_pesan || 1,
+    kelipatan_pesan: props.sku.kelipatan_pesan || 1, // 👇 TAMBAHAN FIELD KELIPATAN
     harga: props.sku.harga || 0,
     gambar: null, // Akan menampung Array of Files
 });
@@ -125,8 +126,13 @@ const submit = () => {
                         />
                     </div>
 
+                    <!-- MINIMAL PESAN & KELIPATAN BERSEBELAHAN -->
                     <CustomInput v-model="form.minimum_pesan" type="number" label="Minimal Pesan" :error="form.errors.minimum_pesan" />
-                    <CustomInput v-model="form.satuan" label="Satuan (Pcs/Lbr)" :error="form.errors.satuan" />
+                    <CustomInput v-model="form.kelipatan_pesan" type="number" label="Kelipatan Pesanan" :error="form.errors.kelipatan_pesan" />
+
+                    <div class="md:col-span-2">
+                        <CustomInput v-model="form.satuan" label="Satuan (Pcs/Lbr)" :error="form.errors.satuan" />
+                    </div>
 
                     <div class="md:col-span-2">
                         <CustomInput v-model="form.harga" type="number" label="Harga Dasar Awal (Rp)" :error="form.errors.harga" />
@@ -200,17 +206,15 @@ const submit = () => {
                         </div>
                     </div>
 
-                    <!-- PREVIEW GAMBAR LAMA DI DATABASE (Jika tidak ada upload baru) -->
+                    <!-- PREVIEW GAMBAR LAMA DI DATABASE -->
                     <div v-else-if="props.sku?.gambar && props.sku?.gambar?.length" class="p-4 border md:col-span-2 rounded-2xl bg-base-200/50 border-base-300">
                         <p class="text-[10px] font-black uppercase tracking-widest text-base-content/50 mb-3">Gambar Tersimpan Saat Ini:</p>
                         <div class="flex flex-wrap gap-3">
-                            <!-- Handling Array Aman -->
                             <template v-if="Array.isArray(props.sku.gambar)">
                                 <div v-for="(img, idx) in props.sku.gambar" :key="idx" class="relative w-20 h-20 overflow-hidden border shadow-sm rounded-xl border-base-300">
                                     <img :src="`/storage/${img}`" class="block object-cover w-full h-full" alt="Gambar Tersimpan" />
                                 </div>
                             </template>
-                            <!-- Handling String Aman (Jika disetting JSON di DB tapi bacanya string) -->
                             <template v-else-if="typeof props.sku.gambar === 'string' && props.sku.gambar.startsWith('[')">
                                 <div v-for="(img, idx) in JSON.parse(props.sku.gambar)" :key="idx" class="relative w-20 h-20 overflow-hidden border shadow-sm rounded-xl border-base-300">
                                     <img :src="`/storage/${img}`" class="block object-cover w-full h-full" alt="Gambar Tersimpan" />

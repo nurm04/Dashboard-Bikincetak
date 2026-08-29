@@ -138,6 +138,7 @@ class ProdukController extends Controller
                         'deskripsi' => $sku->deskripsi,
                         'tipe_kalkulasi' => $sku->tipe_kalkulasi,
                         'minimum_pesan' => $sku->minimum_pesan,
+                        'kelipatan_pesan' => $sku->kelipatan_pesan,
                         'harga_dasar' => $sku->harga,
 
                         'kombinasi_pilihan' => $sku->skuDetailPilihan->pluck('id_pilihan'),

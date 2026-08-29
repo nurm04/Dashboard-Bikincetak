@@ -36,9 +36,11 @@ class FinishingController extends Controller
 
     public function store(Request $request)
     {
+        // Validasi array of objects
         $request->validate([
             'nama_finishing' => 'required|string',
-            'pilihans' => 'required|array|min:1'
+            'pilihans' => 'required|array|min:1',
+            'pilihans.*.nama_pilihan' => 'required|string'
         ]);
 
         try {
@@ -51,11 +53,11 @@ class FinishingController extends Controller
                 'nama_finishing' => $request->nama_finishing
             ]);
 
-            foreach ($request->pilihans as $index => $nama) {
+            foreach ($request->pilihans as $pilihan) {
                 PilihanFinishing::create([
                     'id_pilihan_finishing' => PilihanFinishingService::generateId($idV),
                     'id_finishing' => $idV,
-                    'nama_pilihan' => $nama
+                    'nama_pilihan' => $pilihan['nama_pilihan'] // Ambil dari object
                 ]);
             }
 
@@ -69,9 +71,11 @@ class FinishingController extends Controller
 
     public function update(Request $request, $id)
     {
+        // Validasi array of objects
         $request->validate([
             'nama_finishing' => 'required|string',
-            'pilihans' => 'required|array|min:1'
+            'pilihans' => 'required|array|min:1',
+            'pilihans.*.nama_pilihan' => 'required|string'
         ]);
 
         try {
@@ -79,19 +83,42 @@ class FinishingController extends Controller
 
             $finishing = Finishing::findOrFail($id);
 
+            // Update master
             $finishing->update([
                 'nama_finishing' => $request->nama_finishing
             ]);
 
-            PilihanFinishing::where('id_finishing', $id)->delete();
+            // KUMPULKAN ID YANG VALID DI REQUEST INI
+            $requestedIds = [];
 
-            foreach ($request->pilihans as $index => $nama) {
-                PilihanFinishing::create([
-                    'id_pilihan_finishing' => PilihanFinishingService::generateId($id),
-                    'id_finishing' => $id,
-                    'nama_pilihan' => $nama
-                ]);
+            foreach ($request->pilihans as $pilihan) {
+                // Jika ID sudah ada (Data Lama), LAKUKAN UPDATE!
+                if (!empty($pilihan['id_pilihan_finishing'])) {
+                    PilihanFinishing::where('id_pilihan_finishing', $pilihan['id_pilihan_finishing'])
+                        ->where('id_finishing', $id) // Keamanan tambahan
+                        ->update([
+                            'nama_pilihan' => $pilihan['nama_pilihan']
+                        ]);
+
+                    $requestedIds[] = $pilihan['id_pilihan_finishing'];
+                }
+                // Jika ID Kosong (Baris Ditambah Baru dari Vue), LAKUKAN CREATE!
+                else {
+                    $newId = PilihanFinishingService::generateId($id);
+                    PilihanFinishing::create([
+                        'id_pilihan_finishing' => $newId,
+                        'id_finishing' => $id,
+                        'nama_pilihan' => $pilihan['nama_pilihan']
+                    ]);
+
+                    $requestedIds[] = $newId;
+                }
             }
+
+            // HAPUS SISA DATA YANG ADA DI DATABASE TAPI GAK DIKIRIM DARI VUE LAGI
+            PilihanFinishing::where('id_finishing', $id)
+                ->whereNotIn('id_pilihan_finishing', $requestedIds)
+                ->delete();
 
             DB::commit();
             return redirect()->route('finishing.index')->with('success', 'Data finishing berhasil diperbarui.');
