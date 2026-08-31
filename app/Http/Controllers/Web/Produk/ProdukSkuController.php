@@ -201,7 +201,7 @@ class ProdukSkuController extends Controller
         }
 
         $currentSku = null;
-        $currentPilihanFinishing = null;
+        $currentPilihanFinishing = null; // Tambahin variabel ini di luar loop
         $finishingGroups = [];
 
         // CONTAINER MATRIKS HARGA BERTINGKAT (SLA)
@@ -231,6 +231,17 @@ class ProdukSkuController extends Controller
             }
 
             $skuFinal = $rowData[$skuKey];
+
+            // 👇 2. FILL-DOWN ID_PILIHAN_FINISHING (TAMBAHAN BARU) 👇
+            if ($request->tipe_import === 'sku_finishing') {
+                if (!empty($rowData['id_pilihan_finishing'])) {
+                    $currentPilihanFinishing = $rowData['id_pilihan_finishing'];
+                } else {
+                    $rowData['id_pilihan_finishing'] = $currentPilihanFinishing;
+                }
+            }
+            // 👆 ================================================ 👆
+
 
             if ($request->skala_import === 'produk_ini' && !in_array($skuFinal, $validSkus)) {
                 continue;
@@ -297,7 +308,7 @@ class ProdukSkuController extends Controller
 
                 if (isset($rowData['harga_tambahan']) && $rowData['harga_tambahan'] !== '') {
                     $finishingGroups[$key]['master'] = [
-                        'id_sku'               => $skuFinal,
+                        'id_sku'                => $skuFinal,
                         'id_pilihan_finishing' => $rowData['id_pilihan_finishing'],
                         'minimum_pesan'        => $rowData['minimum_pesan'] === '' ? 1 : $rowData['minimum_pesan'],
                         'harga_tambahan'       => str_replace(['.', ','], ['', '.'], $rowData['harga_tambahan']),
@@ -312,6 +323,7 @@ class ProdukSkuController extends Controller
                     $finishingGroups[$key]['tiers'][] = [
                         'min'        => $rowData['min'],
                         'max'        => (!isset($rowData['max']) || $rowData['max'] === '') ? 0 : $rowData['max'],
+                        // 👇 SESUAIKAN MENJADI 'tipe_diskon' ATAU SESUAI HEADER CSV LU
                         'tipe'       => empty($rowData['tipe_diskon']) ? 'nominal' : $rowData['tipe_diskon'],
                         'nilai'      => (!isset($rowData['nilai']) || $rowData['nilai'] === '') ? 0 : str_replace(['.', ','], ['', '.'], $rowData['nilai']),
                         'created_at' => $now,
@@ -319,28 +331,6 @@ class ProdukSkuController extends Controller
                     ];
                 }
                 continue;
-            }
-
-            if ($request->tipe_import === 'komposisi') {
-                $insertData[] = [
-                    'id_sku'               => $skuFinal,
-                    'id_bahan_baku'        => $rowData['id_bahan_baku'] ?? null,
-                    'id_pilihan_finishing' => empty($rowData['id_pilihan_finishing']) ? null : $rowData['id_pilihan_finishing'],
-                    'jumlah_pakai'         => $rowData['jumlah_pakai'] ?? 0,
-                    'hpp'                  => $rowData['hpp'] ?? 0,
-                    'created_at'           => $now,
-                    'updated_at'           => $now,
-                ];
-            }
-            if ($request->tipe_import === 'diskon_customer') {
-                $insertData[] = [
-                    'id_sku'           => $skuFinal,
-                    'id_role_customer' => $rowData['id_role_customer'] ?? '',
-                    'tipe'             => $rowData['tipe'] ?? 'nominal',
-                    'nilai'            => $rowData['nilai'] ?? 0,
-                    'created_at'       => $now,
-                    'updated_at'       => $now,
-                ];
             }
         }
 

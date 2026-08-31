@@ -102,7 +102,7 @@ const downloadTemplate = () => {
     const contohSku = props.produk?.produk_sku?.[0]?.id_sku || "PRD-001-SKU-001";
 
     if (tipe === 'sku_finishing') {
-        headerArray = ["id_sku", "id_pilihan_finishing", "minimum_pesan", "harga_tambahan", "tipe", "kali_jumlah_pesan", "min", "max", "tipe", "nilai"];
+        headerArray = ["id_sku", "id_pilihan_finishing", "minimum_pesan", "harga_tambahan", "tipe", "kali_jumlah_pesan", "min", "max", "tipe_diskon", "nilai"];
         rowContoh = [contohSku, "FIN-001", "1", "40000", "nominal", "1", "1", "50", "nominal", "40000"];
         rowContoh2 = ["", "", "", "", "", "", "51", "99", "nominal", "38000"];
     } else if (tipe === 'harga_bertingkat') {
