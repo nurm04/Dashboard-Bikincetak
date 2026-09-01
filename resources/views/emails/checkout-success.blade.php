@@ -115,6 +115,35 @@
         </div>
 
         <h3>Informasi Pembayaran</h3>
+        <h3 style="color: #0056b3; border-bottom: 2px solid #eee; padding-bottom: 8px;">💳 Informasi & Opsi Pembayaran</h3>
+        <p>Silakan lakukan pembayaran sesuai dengan <strong>Total Bayar</strong> (termasuk kode unik) melalui salah satu opsi berikut:</p>
+
+        <div style="margin-bottom: 20px;">
+            <p style="font-weight: bold; margin-bottom: 5px;">1. Transfer Bank Manual:</p>
+            <ul style="margin-top: 0; background-color: #f8f9fa; padding: 15px 15px 15px 35px; border-radius: 5px;">
+                <li><strong>Bank:</strong> {{ $rekening['bank'] ?? '-' }}</li>
+                <li><strong>No. Rekening:</strong> {{ $rekening['nomor'] ?? '-' }}</li>
+                <li><strong>a.n:</strong> {{ $rekening['atas_nama'] ?? '-' }}</li>
+            </ul>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <p style="font-weight: bold; margin-bottom: 5px;">2. Bayar via QRIS / E-Wallet:</p>
+            @php
+                $domainFrontend = env('APP_URL_NEXTJS_VPS') === "production" ? env('APP_URL_NEXTJS_VPS') : env('APP_URL_NEXTJS');
+                $linkPembayaran = rtrim($domainFrontend, '/') . '/pesan/status/' . $pesan->kode_transaksi;
+            @endphp
+            <p style="margin-top: 0;">Silakan klik tombol di bawah ini untuk melihat detail tagihan Anda secara <i>real-time</i> dan melakukan pembayaran otomatis melalui QRIS.</p>
+
+            <a href="{{ $linkPembayaran }}" style="display: inline-block; padding: 10px 20px; background-color: #28a745; color: #fff; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 10px 0;">Bayar Tagihan Sekarang</a>
+
+            <p style="font-size: 13px; color: #555; margin-top: 5px;"><em>*Anda dapat memilih untuk membayar lunas atau membayar sebagian (DP) melalui link tersebut.</em></p>
+        </div>
+
+        <p>Setelah pembayaran terverifikasi, pesanan Anda akan otomatis masuk ke antrean produksi.</p>
+
+        <p>Salam hangat,<br>
+        <strong>Tim Bikin Cetak</strong></p>
         <p>Silakan lakukan pembayaran sesuai dengan <strong>Total Bayar</strong> (termasuk kode unik) ke rekening berikut:</p>
 
         <ul>

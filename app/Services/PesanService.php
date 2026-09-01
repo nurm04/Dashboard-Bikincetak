@@ -541,30 +541,17 @@ Terima kasih.",
         $message .= "*Kode Unik:* {$kodeUnik}\n\n";
         $message .= "*TOTAL PEMBAYARAN:*\n*Rp " . number_format($totalTransfer, 0, ',', '.') . "*\n\n";
 
-        // 👇 LOGIKA PEMBEDA SUMBER PESANAN 👇
-        if ($pesan->sumber_pesanan === 'pos_kasir') {
-
-            // Ganti domain ini dengan URL Next.js Live lu kalau udah production
-            $domainFrontend = env('APP_URL_NEXTJS_VPS') === "production" ? env('APP_URL_NEXTJS_VPS') : env('APP_URL_NEXTJS');
-            $linkPembayaran = rtrim($domainFrontend, '/') . "/pesan/status/{$pesan->kode_transaksi}";
-
-            $message .= "💳 *Cara Pembayaran:*\n";
-            $message .= "Silakan klik link di bawah ini untuk melihat detail tagihan Anda secara real-time dan melakukan pembayaran otomatis melalui QRIS:\n\n";
-            $message .= "👉 {$linkPembayaran}\n\n";
-            $message .= "Anda dapat memilih untuk membayar lunas atau membayar sebagian (DP) melalui link tersebut.\n\n";
-
-        } else {
-            // Tampilan lawas untuk web/ecommerce
-            $message .= "💳 *Opsi Pembayaran:*\n";
-            $message .= "1. *Transfer Bank:*\n";
-            $message .= "Bank: {$rekening['bank']}\n";
-            $message .= "No. Rek: {$rekening['nomor']}\n";
-            $message .= "a.n: {$rekening['atas_nama']}\n\n";
-            $message .= "2. *QRIS:*\n";
-            $message .= "(Scan gambar QR Code yang dilampirkan atau masuk ke akun Anda)\n\n";
-            $message .= "⚠️ *PENTING:* Mohon transfer *tepat sesuai nominal TOTAL PEMBAYARAN* (hingga 3 angka terakhir) agar terverifikasi otomatis.\n\n";
-        }
-
+        $message .= "💳 *Opsi Pembayaran:*\n";
+        $message .= "1. *Transfer Bank:*\n";
+        $message .= "Bank: {$rekening['bank']}\n";
+        $message .= "No. Rek: {$rekening['nomor']}\n";
+        $message .= "a.n: {$rekening['atas_nama']}\n\n";
+        $message .= "2. *QRIS:*\n";
+        $domainFrontend = env('APP_URL_NEXTJS_VPS') === "production" ? env('APP_URL_NEXTJS_VPS') : env('APP_URL_NEXTJS');
+        $linkPembayaran = rtrim($domainFrontend, '/') . "/pesan/status/{$pesan->kode_transaksi}";
+        $message .= "Silakan klik link di bawah ini untuk melihat detail tagihan Anda secara real-time dan melakukan pembayaran otomatis melalui QRIS:\n\n";
+        $message .= "👉 {$linkPembayaran}\n\n";
+        $message .= "Anda dapat memilih untuk membayar lunas atau membayar sebagian (DP) melalui link tersebut.\n\n";
         $message .= "Terima kasih 🙏";
 
         return $message;
