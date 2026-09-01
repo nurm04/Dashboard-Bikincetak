@@ -110,7 +110,6 @@ const downloadTemplate = () => {
         rowContoh = [contohSku, "1 pack", "100000", "125000", "190000"];
         rowContoh2 = ["", "2 pack", "97500", "120000", "185000"];
     } else if (tipe === 'diskon_customer') {
-    } else if (tipe === 'diskon_customer') {
         headerArray = ["id_sku", "id_role_customer", "tipe", "nilai"];
         rowContoh = [contohSku, "ROLE-RESELLER", "persen", "10"];
     } else if (tipe === 'komposisi') {
@@ -142,8 +141,8 @@ const downloadTemplate = () => {
     />
 
     <dialog :class="['modal', { 'modal-open': isImportModalOpen }]">
-        <div class="modal-box bg-base-100 rounded-2xl max-w-lg">
-            <h3 class="font-black text-lg mb-4 flex items-center gap-2">
+        <div class="max-w-lg modal-box bg-base-100 rounded-2xl">
+            <h3 class="flex items-center gap-2 mb-4 text-lg font-black">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5 text-primary"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12l-3-3m0 0l-3 3m3-3v6m-1.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
                 Import Data Pendukung SKU
             </h3>
@@ -163,28 +162,28 @@ const downloadTemplate = () => {
                     valueKey="value" labelKey="label"
                 />
 
-                <div class="form-control w-full">
-                    <label class="label"><span class="label-text text-xs font-bold opacity-70">Upload File CSV</span></label>
-                    <input type="file" accept=".csv" @change="handleFileChange" class="file-input file-input-bordered file-input-primary w-full shadow-sm" />
-                    <label class="label mt-1">
-                        <span class="label-text-alt text-error font-bold" v-if="importForm.errors.file_csv">{{ importForm.errors.file_csv }}</span>
+                <div class="w-full form-control">
+                    <label class="label"><span class="text-xs font-bold label-text opacity-70">Upload File CSV</span></label>
+                    <input type="file" accept=".csv" @change="handleFileChange" class="w-full shadow-sm file-input file-input-bordered file-input-primary" />
+                    <label class="mt-1 label">
+                        <span class="font-bold label-text-alt text-error" v-if="importForm.errors.file_csv">{{ importForm.errors.file_csv }}</span>
                     </label>
                 </div>
 
-                <div class="p-3 bg-info/10 border border-info/20 rounded-xl text-xs flex justify-between items-center">
+                <div class="flex items-center justify-between p-3 text-xs border bg-info/10 border-info/20 rounded-xl">
                     <div class="flex items-center gap-2 text-info">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
                         <span class="font-medium">Bingung formatnya?</span>
                     </div>
-                    <button type="button" @click="downloadTemplate" class="text-info font-black hover:underline tracking-widest uppercase">
+                    <button type="button" @click="downloadTemplate" class="font-black tracking-widest uppercase text-info hover:underline">
                         Download Template
                     </button>
                 </div>
             </div>
 
-            <div class="modal-action mt-6 gap-2">
-                <button type="button" class="btn text-xs font-bold uppercase" @click="closeImportModal" :disabled="importForm.processing">Batal</button>
-                <CustomButton variant="primary" class="px-8 text-xs font-black uppercase tracking-widest" @click="submitImport" :disabled="importForm.processing || !importForm.file_csv">
+            <div class="gap-2 mt-6 modal-action">
+                <button type="button" class="text-xs font-bold uppercase btn" @click="closeImportModal" :disabled="importForm.processing">Batal</button>
+                <CustomButton variant="primary" class="px-8 text-xs font-black tracking-widest uppercase" @click="submitImport" :disabled="importForm.processing || !importForm.file_csv">
                     <span v-if="importForm.processing" class="loading loading-spinner loading-sm"></span>
                     <span v-else>Mulai Import</span>
                 </CustomButton>
@@ -197,7 +196,7 @@ const downloadTemplate = () => {
 
     <StafLayout>
         <template #header>
-            <div class="flex flex-col md:flex-row md:items-center justify-between w-full gap-4">
+            <div class="flex flex-col justify-between w-full gap-4 md:flex-row md:items-center">
                 <div class="flex items-center gap-4">
                     <Link :href="route('produk.index')" class="btn btn-sm btn-circle btn-ghost ring-1 ring-base-300 shrink-0">
                         <ArrowLeft class="w-4 h-4" />
@@ -207,7 +206,7 @@ const downloadTemplate = () => {
                     </h2>
                 </div>
 
-                <button @click="isImportModalOpen = true" class="w-full md:w-auto btn btn-sm btn-primary rounded-xl text-xs font-black uppercase tracking-widest shadow-md shadow-primary/20">
+                <button @click="isImportModalOpen = true" class="w-full text-xs font-black tracking-widest uppercase shadow-md md:w-auto btn btn-sm btn-primary rounded-xl shadow-primary/20">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>
                     Import CSV
                 </button>

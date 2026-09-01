@@ -201,11 +201,12 @@ class ProdukSkuController extends Controller
         }
 
         $currentSku = null;
-        $currentPilihanFinishing = null; // Tambahin variabel ini di luar loop
+        $currentPilihanFinishing = null;
         $finishingGroups = [];
 
-        // CONTAINER MATRIKS HARGA BERTINGKAT (SLA)
+        // CONTAINER MATRIKS
         $matrixHargaBertingkat = [];
+        $allSkuMins = []; // Menyimpan semua nilai Min per SKU buat backup perhitungan
 
         foreach ($rows as $row) {
             if (count($row) < count($headers)) {
@@ -219,7 +220,7 @@ class ProdukSkuController extends Controller
             $rowData = array_combine($headers, $row);
 
             // 1. FILL-DOWN ID_SKU / VARIAN
-            $skuKey = $headers[0]; // Kolom pertama (id_sku / varian)
+            $skuKey = $headers[0];
             if (!empty($rowData[$skuKey])) {
                 $currentSku = $rowData[$skuKey];
             } else {
@@ -232,7 +233,7 @@ class ProdukSkuController extends Controller
 
             $skuFinal = $rowData[$skuKey];
 
-            // 👇 2. FILL-DOWN ID_PILIHAN_FINISHING (TAMBAHAN BARU) 👇
+            // 2. FILL-DOWN ID_PILIHAN_FINISHING
             if ($request->tipe_import === 'sku_finishing') {
                 if (!empty($rowData['id_pilihan_finishing'])) {
                     $currentPilihanFinishing = $rowData['id_pilihan_finishing'];
@@ -240,8 +241,6 @@ class ProdukSkuController extends Controller
                     $rowData['id_pilihan_finishing'] = $currentPilihanFinishing;
                 }
             }
-            // 👆 ================================================ 👆
-
 
             if ($request->skala_import === 'produk_ini' && !in_array($skuFinal, $validSkus)) {
                 continue;
@@ -252,36 +251,46 @@ class ProdukSkuController extends Controller
             }
 
             // ==============================================================
-            // 2. LOGIC KHUSUS HARGA BERTINGKAT & SLA (MATRIKS FORMAT)
+            // LOGIC KHUSUS HARGA BERTINGKAT & SLA (BACA MIN - MAX EKSPLISIT)
             // ==============================================================
             if ($request->tipe_import === 'harga_bertingkat') {
-                $jumlahKey = $headers[1]; // Kolom kedua (jumlah / pack)
-                $jumlahRaw = $rowData[$jumlahKey] ?? '';
+                $jumlahKey = $headers[1];
+                $jumlahRaw = strtolower(trim($rowData[$jumlahKey] ?? ''));
 
                 if ($jumlahRaw === '') {
-                    continue; // Lewati jika kolom jumlah kosong
+                    continue;
                 }
 
-                // Ekstrak angka pertama dari text (Misal "1 pack" / "2 pack" -> 1, 2)
-                preg_match('/\d+/', $jumlahRaw, $matches);
-                $minQty = isset($matches[0]) ? (int)$matches[0] : 0;
+                // Cerdas mengekstrak angka: "1 - 499 pcs" -> dapet [1, 499]
+                preg_match_all('/\d+/', str_replace(['.', ','], '', $jumlahRaw), $matches);
+                $minQty = isset($matches[0][0]) ? (int)$matches[0][0] : 0;
 
                 if ($minQty <= 0) {
                     continue;
                 }
 
-                // Loop dinamis mulai dari kolom ke-3 (index 2) untuk membaca Header SLA (5 hari, 3 hari, dll)
+                // Kalau user nulis format "X - Y", ambil Y sebagai max.
+                // Kalau cuma "X pcs" (gak ada angka kedua), kasih nilai -1 buat flag auto-hitung.
+                $maxQty = isset($matches[0][1]) ? (int)$matches[0][1] : -1;
+
+                // Kumpulkan semua minQty dari SKU ini secara global
+                if (!isset($allSkuMins[$skuFinal])) $allSkuMins[$skuFinal] = [];
+                if (!in_array($minQty, $allSkuMins[$skuFinal])) {
+                    $allSkuMins[$skuFinal][] = $minQty;
+                }
+
+                // Loop dinamis membaca Header SLA (10 hari, 12 hari, dll)
                 foreach ($headers as $index => $headerName) {
-                    if ($index < 2) continue; // Skip kolom id_sku dan jumlah
+                    if ($index < 2) continue;
 
                     $nilaiRaw = $rowData[$headerName] ?? '';
                     if ($nilaiRaw !== '' && $nilaiRaw !== '-') {
-                        // Bersihkan titik ribuan format Excel (misal 100.000 -> 100000)
                         $nilaiBersih = (float) str_replace(['.', ','], ['', '.'], preg_replace('/[^\d.,]/', '', $nilaiRaw));
 
                         if ($nilaiBersih > 0) {
                             $matrixHargaBertingkat[$skuFinal][$headerName][] = [
                                 'min'   => $minQty,
+                                'max'   => $maxQty,
                                 'nilai' => $nilaiBersih
                             ];
                         }
@@ -291,7 +300,7 @@ class ProdukSkuController extends Controller
             }
 
             // ==============================================================
-            // 3. LOGIC FINISHING & TABEL LAINNYA
+            // LOGIC FINISHING TABEL
             // ==============================================================
             $rowData['created_at'] = $now;
             $rowData['updated_at'] = $now;
@@ -308,7 +317,7 @@ class ProdukSkuController extends Controller
 
                 if (isset($rowData['harga_tambahan']) && $rowData['harga_tambahan'] !== '') {
                     $finishingGroups[$key]['master'] = [
-                        'id_sku'                => $skuFinal,
+                        'id_sku'               => $skuFinal,
                         'id_pilihan_finishing' => $rowData['id_pilihan_finishing'],
                         'minimum_pesan'        => $rowData['minimum_pesan'] === '' ? 1 : $rowData['minimum_pesan'],
                         'harga_tambahan'       => str_replace(['.', ','], ['', '.'], $rowData['harga_tambahan']),
@@ -323,7 +332,6 @@ class ProdukSkuController extends Controller
                     $finishingGroups[$key]['tiers'][] = [
                         'min'        => $rowData['min'],
                         'max'        => (!isset($rowData['max']) || $rowData['max'] === '') ? 0 : $rowData['max'],
-                        // 👇 SESUAIKAN MENJADI 'tipe_diskon' ATAU SESUAI HEADER CSV LU
                         'tipe'       => empty($rowData['tipe_diskon']) ? 'nominal' : $rowData['tipe_diskon'],
                         'nilai'      => (!isset($rowData['nilai']) || $rowData['nilai'] === '') ? 0 : str_replace(['.', ','], ['', '.'], $rowData['nilai']),
                         'created_at' => $now,
@@ -332,49 +340,47 @@ class ProdukSkuController extends Controller
                 }
                 continue;
             }
+
+            // ==============================================================
+            // LOGIC DISKON CUSTOMER & KOMPOSISI
+            // ==============================================================
+            if (in_array($request->tipe_import, ['diskon_customer', 'komposisi'])) {
+                $dataRow = [];
+                foreach ($headers as $headerName) {
+                    $dataRow[$headerName] = $rowData[$headerName] ?? null;
+                }
+
+                $dataRow['created_at'] = $now;
+                $dataRow['updated_at'] = $now;
+
+                $insertData[] = $dataRow;
+            }
         }
 
         // ==========================================================
-        // KONVERSI MATRIKS MENJADI RECORD DATABASE (MIN & MAX OTOMATIS)
+        // KONVERSI MATRIKS MENJADI RECORD DATABASE
         // ==========================================================
         if ($request->tipe_import === 'harga_bertingkat') {
             foreach ($matrixHargaBertingkat as $sku => $slas) {
+
+                // Siapkan urutan minQty untuk SKU ini kalau-kalau perlu di-auto hitung
+                $uniqueMins = $allSkuMins[$sku] ?? [];
+                sort($uniqueMins);
+
                 foreach ($slas as $pengerjaan => $tiers) {
+                    foreach ($tiers as $tier) {
+                        $currentMin = $tier['min'];
+                        $max = $tier['max'];
 
-                    // Urutkan tier berdasarkan min qty dari kecil ke besar
-                    usort($tiers, function($a, $b) {
-                        return $a['min'] <=> $b['min'];
-                    });
-
-                    $count = count($tiers);
-                    for ($i = 0; $i < $count; $i++) {
-                        $currentMin = $tiers[$i]['min'];
-
-                        // Tentukan max: jika ada tier setelahnya, max = min_berikutnya - 1.
-                        // Jika ini adalah tier terakhir, max = 0 (artinya tak terhingga / dan seterusnya).
-                        $max = 0;
-                        if ($i < $count - 1) {
-                            $nextMin = $tiers[$i+1]['min'];
-                            // Jika jarak min-nya berurutan (misal 1, 2, 3), maka max sama dengan min (misal min:1, max:1).
-                            // Jika jaraknya melompat (misal 1, 5), maka max mengikuti rentang (misal min:1, max:4).
-                            if ($nextMin > $currentMin + 1) {
-                                $max = $nextMin - 1;
+                        // Jika max bernilai -1 (alias user cuma ngetik "1 pack"), baru kita auto hitung
+                        if ($max === -1) {
+                            $pos = array_search($currentMin, $uniqueMins);
+                            if ($pos !== false && isset($uniqueMins[$pos + 1])) {
+                                $nextMin = $uniqueMins[$pos + 1];
+                                $max = ($nextMin > $currentMin + 1) ? $nextMin - 1 : $currentMin;
                             } else {
-                                $max = $currentMin;
+                                $max = 0; // Seterusnya
                             }
-                        } else {
-                            // Untuk baris terakhir, jika jarak loncatannya 1 dari sebelumnya, buat max = currentMin.
-                            // Atau jika baris terakhir adalah baris tunggal penutup, jadikan max = 0 (tak terhingga).
-                            if ($count > 1 && $currentMin == $tiers[$i-1]['min'] + 1) {
-                                $max = $currentMin;
-                            } else {
-                                $max = 0; // Tak terhingga untuk baris terakhir
-                            }
-                        }
-
-                        // Khusus jika di spreadsheet barisnya satuan (1, 2, 3, 4, 5)
-                        if ($count >= 5 && $currentMin <= 5) {
-                            $max = ($i < $count - 1) ? $currentMin : 0;
                         }
 
                         $insertData[] = [
@@ -383,7 +389,7 @@ class ProdukSkuController extends Controller
                             'min'        => $currentMin,
                             'max'        => $max,
                             'tipe'       => 'nominal',
-                            'nilai'      => $tiers[$i]['nilai'],
+                            'nilai'      => $tier['nilai'],
                             'created_at' => $now,
                             'updated_at' => $now,
                         ];
@@ -428,7 +434,6 @@ class ProdukSkuController extends Controller
                     }
                 }
             } else {
-                // Hapus data lama hanya pada SKU yang terdampak import
                 DB::table($request->tipe_import)->whereIn('id_sku', $skusAffected)->delete();
                 foreach (array_chunk($insertData, 500) as $chunk) {
                     DB::table($request->tipe_import)->insert($chunk);

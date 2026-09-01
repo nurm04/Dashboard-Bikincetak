@@ -1097,6 +1097,35 @@ class KomposisiSeeder extends Seeder
             ['id_sku' => 'PRD-6001-SKU-004', 'id_bahan_baku' => 'BAHAN-0108', 'id_pilihan_finishing' => 'FIN-018-002', 'jumlah_pakai' => 0.066, 'hpp' => 3630, 'created_at' => $now, 'updated_at' => $now], // 4 Ply
             ['id_sku' => 'PRD-6001-SKU-004', 'id_bahan_baku' => 'BAHAN-0108', 'id_pilihan_finishing' => 'FIN-018-003', 'jumlah_pakai' => 0.099, 'hpp' => 5445, 'created_at' => $now, 'updated_at' => $now], // 5 Ply
             ['id_sku' => 'PRD-6001-SKU-004', 'id_bahan_baku' => 'BAHAN-0108', 'id_pilihan_finishing' => 'FIN-018-004', 'jumlah_pakai' => 0.132, 'hpp' => 7260, 'created_at' => $now, 'updated_at' => $now], // 6 Ply
+
+            // ==============================================================================
+            // KOMPOSISI: PRD-3010 (BROSUR FLYER) - 8 SKU
+            // Note: Dihitung per 1 Pcs Brosur (Bukan per Rim). 
+            // ==============================================================================
+
+            // --- SKU-001: Brosur Flyer-A3-1 Sisi ---
+            ['id_sku' => 'PRD-3010-SKU-001', 'id_bahan_baku' => 'BAHAN-0004', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 1, 'hpp' => 450, 'created_at' => $now, 'updated_at' => $now], // Kertas AP 120gsm (1 Lembar A3+)
+
+            // --- SKU-002: Brosur Flyer-A3-2 Sisi ---
+            ['id_sku' => 'PRD-3010-SKU-002', 'id_bahan_baku' => 'BAHAN-0004', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 1, 'hpp' => 450, 'created_at' => $now, 'updated_at' => $now],
+
+            // --- SKU-003: Brosur Flyer-A4-1 Sisi ---
+            ['id_sku' => 'PRD-3010-SKU-003', 'id_bahan_baku' => 'BAHAN-0004', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.5, 'hpp' => 225, 'created_at' => $now, 'updated_at' => $now], // Kertas AP 120gsm (Setengah A3+)
+
+            // --- SKU-004: Brosur Flyer-A4-2 Sisi ---
+            ['id_sku' => 'PRD-3010-SKU-004', 'id_bahan_baku' => 'BAHAN-0004', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.5, 'hpp' => 225, 'created_at' => $now, 'updated_at' => $now],
+
+            // --- SKU-005: Brosur Flyer-A5-1 Sisi ---
+            ['id_sku' => 'PRD-3010-SKU-005', 'id_bahan_baku' => 'BAHAN-0004', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.25, 'hpp' => 113, 'created_at' => $now, 'updated_at' => $now], // Kertas AP 120gsm (Seperempat A3+)
+
+            // --- SKU-006: Brosur Flyer-A5-2 Sisi ---
+            ['id_sku' => 'PRD-3010-SKU-006', 'id_bahan_baku' => 'BAHAN-0004', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.25, 'hpp' => 113, 'created_at' => $now, 'updated_at' => $now],
+
+            // --- SKU-007: Brosur Flyer-A6-1 Sisi ---
+            ['id_sku' => 'PRD-3010-SKU-007', 'id_bahan_baku' => 'BAHAN-0004', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.125, 'hpp' => 56, 'created_at' => $now, 'updated_at' => $now], // Kertas AP 120gsm (Seperdelapan A3+)
+
+            // --- SKU-008: Brosur Flyer-A6-2 Sisi ---
+            ['id_sku' => 'PRD-3010-SKU-008', 'id_bahan_baku' => 'BAHAN-0004', 'id_pilihan_finishing' => null, 'jumlah_pakai' => 0.125, 'hpp' => 56, 'created_at' => $now, 'updated_at' => $now],
         ]);
     }
 }
