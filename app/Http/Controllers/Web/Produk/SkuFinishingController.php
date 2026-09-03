@@ -18,6 +18,7 @@ class SkuFinishingController extends Controller
             'finishing.*.harga_tambahan' => 'required|numeric|min:0',
             'finishing.*.tipe' => 'required|in:nominal,persen',
             'finishing.*.kali_jumlah_pesan' => 'required|boolean',
+            'finishing.*.kali_dimensi' => 'required|boolean',
             'finishing.*.harga_bertingkat' => 'nullable|array',
             'finishing.*.harga_bertingkat.*.min' => 'required_with:finishing.*.harga_bertingkat|numeric|min:1',
             'finishing.*.harga_bertingkat.*.max' => 'required_with:finishing.*.harga_bertingkat|numeric|min:0',
@@ -38,6 +39,7 @@ class SkuFinishingController extends Controller
                     'harga_tambahan' => $item['harga_tambahan'],
                     'tipe' => $item['tipe'],
                     'kali_jumlah_pesan' => $item['kali_jumlah_pesan'],
+                    'kali_dimensi' => $item['kali_dimensi'],
                 ]);
 
                 if (!empty($item['harga_bertingkat']) && is_array($item['harga_bertingkat'])) {

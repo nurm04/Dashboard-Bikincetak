@@ -103,9 +103,13 @@ class PesanService
             // ==========================================
             // LOGIC BUKU & LOGIC CETAK METERAN (SPANDUK)
             // ==========================================
+            // 👇 Tarik harga dimensi dari database (Master SKU)
+            $hargaTambahanDimensi = (float) optional($item->sku)->harga_tambahan_dimensi ?? 0;
+
             if (is_array($atribut) && isset($atribut['Jumlah Halaman'])) {
                 $hal = max(1, (int) $atribut['Jumlah Halaman']);
-                $biayaHalaman = max(0, $hal - 1) * $sisi * 1500;
+                // 👇 Angka 1500 diganti jadi variabel harga dari DB
+                $biayaHalaman = max(0, $hal - 1) * $sisi * $hargaTambahanDimensi;
             } elseif (is_array($atribut) && isset($atribut['Luas Dihargai (m2)'])) {
                 $luasDihargai = (float) $atribut['Luas Dihargai (m2)'];
                 // Minimal luas yang dihitung standar percetakan adalah 1 m2
@@ -124,13 +128,28 @@ class PesanService
             $totalFinishingItem = 0;
             foreach ($item->pesananItemFinishing as $fin) {
                 $biayaFin = 0;
+
+                // Cek flag pengali dari Master Sku Finishing
+                $isKaliQty = (bool) optional($fin->skuFinishing)->kali_jumlah_pesan;
+                $isKaliDimensi = (bool) optional($fin->skuFinishing)->kali_dimensi;
+
                 if ($fin->tipe === 'persen') {
+                    // Persen otomatis ngikut dimensi karena $hargaSatuProdukFull sudah dikali meteran/halaman
                     $biayaFin = $hargaSatuProdukFull * ((float) $fin->harga_finishing_snapshot / 100);
                 } else {
                     $biayaFin = (float) $fin->harga_finishing_snapshot;
-                }
 
-                $isKaliQty = (bool) optional($fin->skuFinishing)->kali_jumlah_pesan;
+                    // 👇 LOGIC BARU: Jika Finishing wajib dikali Luas M2 / Jumlah Halaman
+                    if ($isKaliDimensi) {
+                        if (is_array($atribut) && isset($atribut['Luas Dihargai (m2)'])) {
+                            $luasDihargaiFin = max(1, (float) $atribut['Luas Dihargai (m2)']);
+                            $biayaFin *= $luasDihargaiFin;
+                        } elseif (is_array($atribut) && isset($atribut['Jumlah Halaman'])) {
+                            $halFin = max(1, (int) $atribut['Jumlah Halaman']);
+                            $biayaFin *= $halFin;
+                        }
+                    }
+                }
 
                 if ($isKaliQty) {
                     $biayaFin *= $qty;

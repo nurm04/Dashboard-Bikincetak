@@ -20,9 +20,10 @@ const form = useForm({
     tipe_kalkulasi: props.sku.tipe_kalkulasi || 'standard',
     satuan: props.sku.satuan || '',
     minimum_pesan: props.sku.minimum_pesan || 1,
-    kelipatan_pesan: props.sku.kelipatan_pesan || 1, // 👇 TAMBAHAN FIELD KELIPATAN
+    kelipatan_pesan: props.sku.kelipatan_pesan || 1,
     harga: props.sku.harga || 0,
-    gambar: null, // Akan menampung Array of Files
+    harga_tambahan_dimensi: props.sku.harga_tambahan_dimensi || 0,
+    gambar: null,
 });
 
 const tipeKalkulasiOptions = [
@@ -134,8 +135,19 @@ const submit = () => {
                         <CustomInput v-model="form.satuan" label="Satuan (Pcs/Lbr)" :error="form.errors.satuan" />
                     </div>
 
-                    <div class="md:col-span-2">
-                        <CustomInput v-model="form.harga" type="number" label="Harga Dasar Awal (Rp)" :error="form.errors.harga" />
+                    <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <CustomInput
+                            v-model="form.harga"
+                            type="number"
+                            label="Harga Dasar Awal (Rp)"
+                            :error="form.errors.harga"
+                        />
+                        <CustomInput
+                            v-model="form.harga_tambahan_dimensi"
+                            type="number"
+                            label="Harga Tambahan per M² / Halaman (Rp)"
+                            :error="form.errors.harga_tambahan_dimensi"
+                        />
                     </div>
 
                     <div class="md:col-span-2">

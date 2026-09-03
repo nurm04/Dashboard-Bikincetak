@@ -25,6 +25,7 @@ class ProdukSku extends Model
         'minimum_pesan',
         'kelipatan_pesan',
         'harga',
+        'harga_tambahan_dimensi',
         'deskripsi',
         'tipe_kalkulasi',
     ];

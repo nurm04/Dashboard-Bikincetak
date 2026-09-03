@@ -115,8 +115,9 @@ class ProdukSkuController extends Controller
             'tipe_kalkulasi' => 'required|in:standard,cetak_meteran,cetak_buku',
             'satuan' => 'nullable|string|max:50',
             'minimum_pesan' => 'required|numeric|min:1',
-            'kelipatan_pesan' => 'required|numeric|min:1', // 👇 WAJIB ADA INI
+            'kelipatan_pesan' => 'required|numeric|min:1',
             'harga' => 'required|numeric|min:0',
+            'harga_tambahan_dimensi' => 'required|numeric|min:0',
             'gambar' => 'nullable|array',
             'gambar.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048'
         ]);
@@ -129,13 +130,12 @@ class ProdukSkuController extends Controller
                 'tipe_kalkulasi' => $request->tipe_kalkulasi,
                 'satuan' => $request->satuan,
                 'minimum_pesan' => $request->minimum_pesan,
-                'kelipatan_pesan' => $request->kelipatan_pesan, // 👇 WAJIB DIMASUKIN SINI JUGA
+                'kelipatan_pesan' => $request->kelipatan_pesan,
                 'harga' => $request->harga,
+                'harga_tambahan_dimensi' => $request->harga_tambahan_dimensi,
             ];
 
-            // 👇 Proses Upload Multiple Gambar
             if ($request->hasFile('gambar')) {
-                // Hapus gambar-gambar lama jika ada
                 if ($sku->gambar) {
                     $oldImages = is_array($sku->gambar) ? $sku->gambar : json_decode($sku->gambar, true) ?? [$sku->gambar];
                     foreach ($oldImages as $oldImg) {
@@ -143,14 +143,12 @@ class ProdukSkuController extends Controller
                     }
                 }
 
-                // Looping simpan gambar baru
                 $paths = [];
                 foreach ($request->file('gambar') as $file) {
                     $filename = time() . '_' . uniqid() . '_' . $file->getClientOriginalName();
                     $paths[] = $file->storeAs('produk_sku_images', $filename, 'public');
                 }
 
-                // Masukkan array path ke database
                 $dataUpdate['gambar'] = $paths;
             }
 

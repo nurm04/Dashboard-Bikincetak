@@ -189,7 +189,6 @@ watch(currentMinimumOrder, (newMin) => {
     }
 });
 
-// 👇 PERBAIKAN: Jika tier.nilai 0, JANGAN ditimpa! Tetap pakai base_harga_tambahan
 const getActiveFinishingPrice = (finishingObj, qtyPesan) => {
     let activeHarga = Number(finishingObj.harga_tambahan) || 0;
     let activeTipe = finishingObj.tipe || 'nominal';
@@ -312,8 +311,6 @@ const diskonGrosir = computed(() => {
     return Math.max(0, hargaSatuanDasarSla.value - currentTierPrice.value);
 });
 
-// ==============================================================================
-
 const diskonMember = computed(() => {
     if (isCustomProduct.value) return 0;
     const roleId = activeCustomer.value?.id_role_customer;
@@ -332,6 +329,7 @@ const hargaSatuProdukFull = computed(() => {
     return hargaSatuanSnapshot.value + biayaTambahanCustom.value;
 });
 
+// 👇 PERBAIKAN LOGIKA FINISHING DI UI (TOTAL FINISHING) 👇
 const totalFinishing = computed(() => {
     if (isCustomProduct.value || isJasaDesain.value) return 0;
     let total = 0;
@@ -346,7 +344,22 @@ const totalFinishing = computed(() => {
         const { harga, tipe } = getActiveFinishingPrice(fin, qtyTier);
         let biaya = tipe === 'persen' ? hargaSatuProdukFull.value * (harga / 100) : (harga || 0);
 
-        if (fin.kali_jumlah_pesan) {
+        // ==== LOGIKA KALI DIMENSI (METERAN / BUKU) ====
+        const isKaliDimensi = fin.kali_dimensi === true || fin.kali_dimensi === 1 || fin.kali_dimensi === '1';
+
+        if (isKaliDimensi && tipe === 'nominal') {
+            if (tipeKalkulasi.value === 'cetak_meteran') {
+                const luas = parseFloat(form.value.custom_attributes?.['Luas Dihargai (m2)']);
+                if (!isNaN(luas) && luas > 0) biaya = biaya * luas;
+            } else if (tipeKalkulasi.value === 'cetak_buku') {
+                const hal = parseInt(form.value.custom_attributes?.['Jumlah Halaman'], 10);
+                if (!isNaN(hal) && hal > 0) biaya = biaya * hal;
+            }
+        }
+
+        // ==== LOGIKA KALI QTY ====
+        const isKaliQty = fin.kali_jumlah_pesan === true || fin.kali_jumlah_pesan === 1 || fin.kali_jumlah_pesan === '1';
+        if (isKaliQty) {
             biaya = biaya * qtyRaw;
         }
 
@@ -462,6 +475,7 @@ const handleAddCustomSla = (newSlaValue) => {
     form.value.custom_sla_price = 0;
 };
 
+// 👇 PERBAIKAN LOGIKA FINISHING DI PAYLOAD (KIRIM KE BACKEND) 👇
 const finishingPayload = computed(() => {
     if (isCustomProduct.value || isJasaDesain.value) return [];
 
@@ -475,12 +489,26 @@ const finishingPayload = computed(() => {
         if (!fin) return;
 
         const isKaliQty = fin.kali_jumlah_pesan === true || fin.kali_jumlah_pesan === 1 || fin.kali_jumlah_pesan === '1';
+        const isKaliDimensi = fin.kali_dimensi === true || fin.kali_dimensi === 1 || fin.kali_dimensi === '1';
+
         const { harga, tipe } = getActiveFinishingPrice(fin, qtyTier);
+        let finalHarga = harga;
+
+        // Terapkan harga dikali dimensi supaya nota backend sama dengan tampilan frontend
+        if (isKaliDimensi && tipe === 'nominal') {
+            if (tipeKalkulasi.value === 'cetak_meteran') {
+                const luas = parseFloat(form.value.custom_attributes?.['Luas Dihargai (m2)']);
+                if (!isNaN(luas) && luas > 0) finalHarga *= luas;
+            } else if (tipeKalkulasi.value === 'cetak_buku') {
+                const hal = parseInt(form.value.custom_attributes?.['Jumlah Halaman'], 10);
+                if (!isNaN(hal) && hal > 0) finalHarga *= hal;
+            }
+        }
 
         data.push({
             id_sku_finishing: fin.id_sku_finishing,
             nama_finishing_snapshot: `${fin.kategori_finishing}: ${fin.nama_pilihan}`,
-            harga_finishing_snapshot: harga,
+            harga_finishing_snapshot: finalHarga,
             tipe: tipe,
             kali_jumlah_pesan: isKaliQty
         });
@@ -498,7 +526,6 @@ const handleFormSubmit = () => {
         return;
     }
 
-    // 👇 VALIDASI FINAL MINIMUM & KELIPATAN
     const qtyInput = Number(form.value.jumlah) || 1;
     const minOrder = currentMinimumOrder.value;
     const kelipatan = currentKelipatanOrder.value;

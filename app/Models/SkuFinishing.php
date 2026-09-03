@@ -20,7 +20,8 @@ class SkuFinishing extends Model
         'minimum_pesan',
         'harga_tambahan',
         'tipe',
-        'kali_jumlah_pesan'
+        'kali_jumlah_pesan',
+        'kali_dimensi'
     ];
 
     protected $touches = ['produkSku'];

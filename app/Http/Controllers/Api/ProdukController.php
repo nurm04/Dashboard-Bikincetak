@@ -140,7 +140,7 @@ class ProdukController extends Controller
                         'minimum_pesan' => $sku->minimum_pesan,
                         'kelipatan_pesan' => $sku->kelipatan_pesan,
                         'harga_dasar' => $sku->harga,
-
+                        'harga_tambahan_dimensi' => $sku->harga_tambahan_dimensi,
                         'kombinasi_pilihan' => $sku->skuDetailPilihan->pluck('id_pilihan'),
                         'harga_bertingkat' => $sku->hargaBertingkat,
                         'diskon_customer' => $sku->diskonCustomer,
@@ -155,6 +155,7 @@ class ProdukController extends Controller
                                 'harga_tambahan' => $finishing->harga_tambahan,
                                 'tipe' => $finishing->tipe ?? 'nominal',
                                 'kali_jumlah_pesan' => (bool) $finishing->kali_jumlah_pesan,
+                                'kali_dimensi' => (bool) $finishing->kali_dimensi,
                                 'harga_bertingkat' => $finishing->hargaBertingkat->map(function ($tier) {
                                     return [
                                         'min' => (int) $tier->min,

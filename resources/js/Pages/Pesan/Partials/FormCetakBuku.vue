@@ -20,7 +20,7 @@ watch(() => props.initialAttributes, (newAttrs) => {
     }
 }, { immediate: true, deep: true });
 
-// 👇 PERBAIKAN: Cek Sisi Cetak dari Nama SKU, bukan dari Finishing
+// Cek Sisi Cetak dari Nama SKU
 const sisiCetakMultiplier = computed(() => {
     let sisi = 1; // Default 1 Sisi
     if (!props.selectedSku) return sisi;
@@ -36,14 +36,19 @@ const sisiCetakMultiplier = computed(() => {
     return sisi;
 });
 
+// 👇 PERBAIKAN: Ambil harga per halaman dari database (bukan 1500 lagi)
+const hargaPerHalaman = computed(() => {
+    return Number(props.selectedSku?.harga_tambahan_dimensi) || 0;
+});
+
 // Biaya Halaman
 const biayaHalamanPerBuku = computed(() => {
     let inputHal = parseInt(jumlahHalaman.value, 10);
     if (isNaN(inputHal) || inputHal < 1) inputHal = 1;
 
-    // Aturan: Halaman 1 = Rp 0, sisanya +1500 (dikali Sisi)
+    // Aturan: Halaman 1 = Rp 0, sisanya dikali harga_tambahan_dimensi (dikali Sisi)
     const tambahanHalaman = Math.max(0, inputHal - 1);
-    return tambahanHalaman * sisiCetakMultiplier.value * 1500;
+    return tambahanHalaman * sisiCetakMultiplier.value * hargaPerHalaman.value;
 });
 
 // Tiap ada perubahan, lempar nilainya ke OrderFormCard.vue
@@ -63,7 +68,6 @@ watch([jumlahHalaman, () => biayaHalamanPerBuku.value], ([newJml, newBiaya]) => 
             :min="1"
         />
 
-        <!-- 👇 TAMBAHAN UI: Biar kasir/customer transparan sama harga tambahannya -->
         <div v-if="biayaHalamanPerBuku > 0" class="mt-3 text-xs font-medium text-info">
             * Kalkulasi: Tambahan {{ Math.max(0, jumlahHalaman - 1) }} Halaman ({{ sisiCetakMultiplier }} Sisi) = + Rp {{ biayaHalamanPerBuku.toLocaleString('id-ID') }} / pcs
         </div>

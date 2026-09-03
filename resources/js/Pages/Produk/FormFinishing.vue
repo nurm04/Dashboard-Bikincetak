@@ -44,6 +44,7 @@ const form = useForm({
             harga_tambahan: f.harga_tambahan,
             tipe: f.tipe ?? 'persen',
             kali_jumlah_pesan: f.kali_jumlah_pesan ? true : false,
+            kali_dimensi: f.kali_dimensi ? true : false, // 👇 TAMBAHAN STATE
             harga_bertingkat: defaultTiers
         };
     }) || []
@@ -101,6 +102,7 @@ const addFinishingToTable = (pilihan) => {
         harga_tambahan: 0,
         tipe: 'persen',
         kali_jumlah_pesan: false,
+        kali_dimensi: false, // 👇 TAMBAHAN DEFAULT VALUE
         harga_bertingkat: defaultTiers
     });
 };
@@ -222,10 +224,11 @@ const submit = () => {
                         </div>
 
                         <form @submit.prevent="submit" class="space-y-8">
+                            <!-- 👇 UBAH HEADERS TABEL 👇 -->
                             <CustomTableForm
                                 v-model="form.finishing"
                                 label="Finishing Terpilih"
-                                :headers="['Jenis Finishing', 'Min Qty', 'Tipe Penyesuaian', 'Kali Qty', 'Biaya Tambahan', 'Harga Grosir']"
+                                :headers="['Jenis Finishing', 'Min Qty', 'Tipe Penyesuaian', 'Kali Qty', 'Kali Dimensi (m²/hal)', 'Biaya Tambahan', 'Harga Grosir']"
                             >
                                 <template #row="{ row, index }">
                                     <td class="px-4 py-4 min-w-50">
@@ -252,11 +255,23 @@ const submit = () => {
                                         />
                                     </td>
 
-                                    <td class="w-24 px-2 py-4 border-l border-base-300/30">
-                                        <CustomCheckbox
-                                            v-model="form.finishing[index].kali_jumlah_pesan"
-                                            color="primary"
-                                        />
+                                    <td class="w-20 px-2 py-4 border-l border-base-300/30">
+                                        <div class="flex justify-center" title="Harga akan dikali dengan Qty keranjang">
+                                            <CustomCheckbox
+                                                v-model="form.finishing[index].kali_jumlah_pesan"
+                                                color="primary"
+                                            />
+                                        </div>
+                                    </td>
+
+                                    <!-- 👇 TAMBAHAN KOLOM KALI DIMENSI 👇 -->
+                                    <td class="w-32 px-2 py-4 border-l border-base-300/30">
+                                        <div class="flex justify-center" title="Harga akan dikalikan dengan luas m2 atau jumlah halaman">
+                                            <CustomCheckbox
+                                                v-model="form.finishing[index].kali_dimensi"
+                                                color="secondary"
+                                            />
+                                        </div>
                                     </td>
 
                                     <td class="px-4 py-4 border-l min-w-40 border-base-300/30">
@@ -327,7 +342,6 @@ const submit = () => {
                         <p class="text-sm font-medium text-base-content/60">Atur kolom <b>Max Qty</b> menjadi <b>0</b> jika tier tersebut ditujukan untuk kuantitas "seterusnya" (Tak Terhingga).</p>
                     </div>
 
-                    <!-- MENGGUNAKAN KOMPONEN CUSTOM TABLE FORM TANPA KOLOM HAPUS MANUAL -->
                     <CustomTableForm
                         v-model="activeFinishing.harga_bertingkat"
                         label="Tingkatan Harga Grosir"
