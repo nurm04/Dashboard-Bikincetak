@@ -12,14 +12,17 @@ import { ArrowLeft } from 'lucide-vue-next';
 const props = defineProps({
     voucher: Object,
     skus: Array,
+    produks: Array,
+    roles: Array,
 });
 
 const isEdit = !!props.voucher;
 
 // Mapping Opsi Dropdown
 const targetOptions = [
-    { label: 'Berlaku untuk Semua Pesanan (Grand Total)', value: 'semua_pesanan' },
-    { label: 'Berlaku Khusus 1 Produk Tertentu', value: 'produk_tertentu' },
+    { label: 'Berlaku untuk Semua Pesanan (Global)', value: 'semua_pesanan' },
+    { label: 'Hanya 1 Produk Global (Semua Variannya)', value: 'produk_tertentu' },
+    { label: 'Hanya 1 SKU Spesifik / Varian Khusus', value: 'sku_tertentu' },
 ];
 
 const statusOptions = [
@@ -27,19 +30,14 @@ const statusOptions = [
     { label: 'Nonaktif (Disembunyikan)', value: 0 }
 ];
 
-// Map SKU jadi format dropdown
-const skuOptions = computed(() => {
-    return props.skus?.map(sku => ({
-        label: `${sku.nama_sku} (${sku.id_sku})`,
-        value: sku.id_sku
-    })) || [];
-});
+// Map Dropdown Options
+const skuOptions = computed(() => props.skus?.map(sku => ({ label: `${sku.nama_sku} (${sku.id_sku})`, value: sku.id_sku })) || []);
+const produkOptions = computed(() => props.produks?.map(prd => ({ label: `${prd.nama_produk} (${prd.id_produk})`, value: prd.id_produk })) || []);
 
 // Helper untuk format ISO date (YYYY-MM-DDThh:mm) khusus input datetime-local
 const formatForInput = (dateString) => {
     if (!dateString) return '';
     const d = new Date(dateString);
-    // Sesuaikan zona waktu lokal (WIB/dll)
     return new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
 };
 
@@ -47,7 +45,14 @@ const form = useForm({
     kode_voucher: props.voucher?.kode_voucher ?? '',
     nama_promo: props.voucher?.nama_promo ?? '',
     tipe_target: props.voucher?.tipe_target ?? 'semua_pesanan',
+    id_produk_target: props.voucher?.id_produk_target ?? '',
     id_sku_target: props.voucher?.id_sku_target ?? '',
+
+    // Inisialisasi format array dari JSON database
+    role_customer_targets: Array.isArray(props.voucher?.role_customer_targets)
+        ? props.voucher.role_customer_targets.map(String)
+        : [],
+
     persentase_diskon: props.voucher?.persentase_diskon ?? '',
     maksimal_potongan_rupiah: props.voucher?.maksimal_potongan_rupiah ?? '',
     minimal_transaksi_rupiah: props.voucher?.minimal_transaksi_rupiah ?? 0,
@@ -56,6 +61,17 @@ const form = useForm({
     berlaku_sampai: formatForInput(props.voucher?.berlaku_sampai),
     is_active: props.voucher?.is_active ?? 1,
 });
+
+// Fungsi Toggling Checkbox Role Customer
+const toggleRole = (roleId) => {
+    const stringId = String(roleId);
+    const idx = form.role_customer_targets.indexOf(stringId);
+    if (idx === -1) {
+        form.role_customer_targets.push(stringId);
+    } else {
+        form.role_customer_targets.splice(idx, 1);
+    }
+};
 
 const submit = () => {
     if (isEdit) {
@@ -106,12 +122,13 @@ const submit = () => {
                             />
                         </div>
 
+                        <!-- TARGET PRODUK/SKU -->
                         <div class="p-6 border rounded-xl border-base-300 bg-base-200/30">
-                            <h3 class="mb-4 text-sm font-black tracking-widest uppercase opacity-50">Target Diskon</h3>
+                            <h3 class="mb-4 text-sm font-black tracking-widest uppercase opacity-50">Kategori Target Barang</h3>
 
                             <CustomSelect
                                 v-model="form.tipe_target"
-                                label="Tipe Target"
+                                label="Pilih Tipe Target Diskon"
                                 :options="targetOptions"
                                 labelKey="label"
                                 valueKey="value"
@@ -119,22 +136,61 @@ const submit = () => {
                                 class="mb-4"
                             />
 
-                            <div v-if="form.tipe_target === 'produk_tertentu'" class="p-4 border-l-4 rounded-lg bg-base-100 border-warning">
+                            <div v-if="form.tipe_target === 'produk_tertentu'" class="p-4 border-l-4 rounded-lg bg-base-100 border-info">
+                                <CustomSelectSearch
+                                    v-model="form.id_produk_target"
+                                    label="Pilih Produk Utama"
+                                    placeholder="Ketik nama produk..."
+                                    :options="produkOptions"
+                                    labelKey="label"
+                                    valueKey="value"
+                                    :error="form.errors.id_produk_target"
+                                />
+                                <p class="mt-2 text-[10px] font-bold text-info tracking-wider">Diskon berlaku untuk semua varian SKU di dalam produk ini.</p>
+                            </div>
+
+                            <div v-if="form.tipe_target === 'sku_tertentu'" class="p-4 border-l-4 rounded-lg bg-base-100 border-warning">
                                 <CustomSelectSearch
                                     v-model="form.id_sku_target"
-                                    label="Pilih Produk Target"
-                                    placeholder="Ketik nama atau ID produk..."
+                                    label="Pilih Varian (SKU) Spesifik"
+                                    placeholder="Ketik nama atau ID varian..."
                                     :options="skuOptions"
                                     labelKey="label"
                                     valueKey="value"
                                     :error="form.errors.id_sku_target"
                                 />
-                                <p class="mt-2 text-xs font-bold text-warning">Diskon hanya akan memotong subtotal produk ini saja.</p>
+                                <p class="mt-2 text-[10px] font-bold text-warning tracking-wider">Diskon ini sangat spesifik hanya memotong subtotal SKU terpilih.</p>
                             </div>
                         </div>
 
+                        <!-- BATAS ROLE CUSTOMER -->
                         <div class="p-6 border rounded-xl border-base-300 bg-base-200/30">
-                            <h3 class="mb-4 text-sm font-black tracking-widest uppercase opacity-50">Besaran & Syarat</h3>
+                            <h3 class="mb-1 text-sm font-black tracking-widest uppercase opacity-50">Filter Role Customer</h3>
+                            <p class="mb-4 text-xs font-medium opacity-60">Pilih level member yang berhak mengklaim voucher ini. Kosongkan (Jangan centang satupun) jika voucher bersifat publik / untuk siapa saja.</p>
+
+                            <div class="flex flex-wrap gap-3">
+                                <label
+                                    v-for="r in roles"
+                                    :key="r.id_role_customer"
+                                    class="flex items-center gap-2 px-4 py-2 transition-colors border cursor-pointer rounded-xl"
+                                    :class="form.role_customer_targets.includes(String(r.id_role_customer)) ? 'bg-primary text-primary-content border-primary shadow-sm' : 'bg-base-100 hover:border-primary border-base-300'"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        class="checkbox checkbox-sm"
+                                        :class="form.role_customer_targets.includes(String(r.id_role_customer)) ? 'checkbox-primary border-primary-content' : ''"
+                                        :checked="form.role_customer_targets.includes(String(r.id_role_customer))"
+                                        @change="toggleRole(r.id_role_customer)"
+                                    />
+                                    <span class="text-xs font-bold tracking-wider uppercase">{{ r.role }}</span>
+                                </label>
+                            </div>
+                            <p v-if="form.errors.role_customer_targets" class="mt-2 text-[10px] font-bold text-error uppercase">{{ form.errors.role_customer_targets }}</p>
+                        </div>
+
+                        <!-- ATURAN NOMINAL -->
+                        <div class="p-6 border rounded-xl border-base-300 bg-base-200/30">
+                            <h3 class="mb-4 text-sm font-black tracking-widest uppercase opacity-50">Besaran & Syarat Nominal</h3>
 
                             <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
                                 <CustomInput
@@ -164,6 +220,7 @@ const submit = () => {
                             </div>
                         </div>
 
+                        <!-- ATURAN KUOTA & WAKTU -->
                         <div class="p-6 border rounded-xl border-base-300 bg-base-200/30">
                             <h3 class="mb-4 text-sm font-black tracking-widest uppercase opacity-50">Masa Berlaku & Kuota</h3>
 

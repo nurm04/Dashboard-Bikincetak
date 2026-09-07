@@ -634,7 +634,7 @@ const handleFormSubmit = () => {
             <div :class="['space-y-6', isJasaDesain ? 'lg:col-span-12 max-w-2xl' : 'lg:col-span-6']">
                 <h3 class="flex items-center gap-2 mb-2 text-xs font-black tracking-widest uppercase text-primary">Spesifikasi Dasar</h3>
                 <div class="space-y-5">
-                    <CustomSelectSearch v-model="form.id_produk" label="Pilih Produk Master" :options="listProduks" labelKey="nama_produk" valueKey="id_produk" placeholder="-- Cari Produk --" />
+                    <CustomSelectSearch v-model="form.id_produk" label="Pilih Produk Master" :options="listProduks" labelKey="nama_produk" valueKey="id_produk" placeholder="-- Cari Produk --" :addOption=false />
 
                     <template v-if="isCustomProduct">
                         <CustomInput label="Nama Produk / Pesanan" type="text" v-model="form.custom_nama_produk" placeholder="Ketik nama pesanan secara manual..." />
@@ -645,7 +645,7 @@ const handleFormSubmit = () => {
                     </template>
 
                     <template v-else>
-                        <CustomSelectSearch v-model="form.id_sku" label="Varian & Bahan" :options="skuOptions" labelKey="label" valueKey="value" placeholder="-- Pilih Varian --" />
+                        <CustomSelectSearch v-model="form.id_sku" label="Varian & Bahan" :options="skuOptions" labelKey="label" valueKey="value" placeholder="-- Pilih Varian --" :addOption=false />
                         <CustomSelectSearch
                             v-if="!isJasaDesain"
                             v-model="form.estimasi_pengerjaan"

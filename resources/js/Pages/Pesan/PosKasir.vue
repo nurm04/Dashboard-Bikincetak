@@ -256,9 +256,6 @@ watch(() => form.id_customer, (newId, oldId) => {
 // ==========================================
 // 4. LOGIKA PENGIRIMAN & ONGKIR
 // ==========================================
-// ==========================================
-// 4. LOGIKA PENGIRIMAN & ONGKIR
-// ==========================================
 const ekspedisiOptions = [
     { id: 'Ambil di Toko', nama: 'Ambil di Toko (Rp 0)' },
     { id: 'Kurir Toko', nama: 'Kurir Lokal / Instan' },
@@ -498,32 +495,111 @@ const hitungTotalItem = (item) => {
 
 const totalProduk = computed(() => cartItems.value.reduce((total, item) => total + hitungTotalItem(item), 0));
 
-const voucherOptions = computed(() => (props.vouchers || []).map(v => ({ value: v.kode_voucher, label: `${v.kode_voucher} - Diskon ${v.persentase_diskon}%` })));
+// Tampilkan opsi voucher yang masih aktif dan belum expired saja di dropdown
+const voucherOptions = computed(() => {
+    return (props.vouchers || [])
+        .filter(v => v.is_active && new Date(v.berlaku_sampai) > new Date())
+        .map(v => ({ value: v.kode_voucher, label: `${v.kode_voucher} - Diskon ${v.persentase_diskon}%` }));
+});
 
-watch([() => form.kode_voucher, cartItems], ([newKode, newItems]) => {
-    if (!newKode) { form.diskon_voucher_nominal = 0; return; }
-    const voucher = props.vouchers?.find(v => v.kode_voucher === newKode);
-    if (!voucher) { form.diskon_voucher_nominal = 0; return; }
-
-    const subtotal = newItems.reduce((total, item) => total + hitungTotalItem(item), 0);
-    if (subtotal < Number(voucher.minimal_transaksi_rupiah)) {
+// 👇 INI FUNGSI SUPER PINTARNYA 👇
+watch([() => form.kode_voucher, cartItems, () => form.id_customer], ([newKode, newItems, newCustId]) => {
+    if (!newKode) {
         form.diskon_voucher_nominal = 0;
-        alertStore.show(`Minimal transaksi voucher: Rp ${formatRupiah(voucher.minimal_transaksi_rupiah)}`, 'warning');
         return;
     }
 
-    let kalkulasiDiskon = 0;
-    const persen = Number(voucher.persentase_diskon);
-
-    if (voucher.tipe_target === 'semua_pesanan') {
-        kalkulasiDiskon = (subtotal * persen) / 100;
-    } else if (voucher.tipe_target === 'produk_tertentu') {
-        const totalProdukTarget = newItems.filter(i => i.id_sku === voucher.id_sku_target).reduce((s, i) => s + hitungTotalItem(i), 0);
-        kalkulasiDiskon = (totalProdukTarget * persen) / 100;
+    const voucher = props.vouchers?.find(v => v.kode_voucher === newKode);
+    if (!voucher) {
+        form.diskon_voucher_nominal = 0;
+        return;
     }
 
+    // 1. Cek Status Aktif
+    if (!voucher.is_active) {
+        form.diskon_voucher_nominal = 0;
+        form.kode_voucher = '';
+        alertStore.show('Voucher sudah tidak aktif!', 'error');
+        return;
+    }
+
+    // 2. Cek Masa Berlaku
+    const now = new Date();
+    const startDate = new Date(voucher.berlaku_dari);
+    const endDate = new Date(voucher.berlaku_sampai);
+
+    if (now < startDate) {
+        form.diskon_voucher_nominal = 0;
+        form.kode_voucher = '';
+        alertStore.show('Voucher belum berlaku!', 'warning');
+        return;
+    }
+    if (now > endDate) {
+        form.diskon_voucher_nominal = 0;
+        form.kode_voucher = '';
+        alertStore.show('Voucher sudah kedaluwarsa!', 'error');
+        return;
+    }
+
+    // 3. Cek Kuota
+    if (voucher.kuota_penggunaan !== null && voucher.kuota_penggunaan <= 0) {
+        form.diskon_voucher_nominal = 0;
+        form.kode_voucher = '';
+        alertStore.show('Kuota voucher sudah habis!', 'error');
+        return;
+    }
+
+    // 4. Cek Batasan Role Customer
+    if (voucher.role_customer_targets && voucher.role_customer_targets.length > 0) {
+        const selectedCust = props.customers.find(c => c.id_customer === newCustId);
+        const roleId = String(selectedCust?.id_role_customer || '');
+
+        if (!voucher.role_customer_targets.includes(roleId)) {
+            form.diskon_voucher_nominal = 0;
+            form.kode_voucher = '';
+            alertStore.show('Voucher eksklusif, tidak berlaku untuk pelanggan ini!', 'error');
+            return;
+        }
+    }
+
+    // 5. Kalkulasi Subtotal Berdasarkan Target (Semua / Produk / Sku)
+    let subtotalTarget = 0;
+
+    if (voucher.tipe_target === 'semua_pesanan') {
+        subtotalTarget = newItems.reduce((total, item) => total + hitungTotalItem(item), 0);
+    } else if (voucher.tipe_target === 'produk_tertentu') {
+        // Ambil item yang ID Produknya sama (Ekstrak PRD-XXXX dari ID SKU)
+        const itemsTarget = newItems.filter(i => i.id_sku.split('-SKU-')[0] === voucher.id_produk_target);
+        subtotalTarget = itemsTarget.reduce((total, item) => total + hitungTotalItem(item), 0);
+    } else if (voucher.tipe_target === 'sku_tertentu') {
+        // Ambil item yang ID SKU-nya benar-benar spesifik sama
+        const itemsTarget = newItems.filter(i => i.id_sku === voucher.id_sku_target);
+        subtotalTarget = itemsTarget.reduce((total, item) => total + hitungTotalItem(item), 0);
+    }
+
+    // Jika target tidak ada di keranjang
+    if (subtotalTarget === 0 && newItems.length > 0) {
+        form.diskon_voucher_nominal = 0;
+        form.kode_voucher = '';
+        alertStore.show('Syarat item tidak terpenuhi. Voucher tidak berlaku untuk isi keranjang ini!', 'warning');
+        return;
+    }
+
+    // 6. Cek Minimal Belanja
+    if (subtotalTarget < Number(voucher.minimal_transaksi_rupiah)) {
+        form.diskon_voucher_nominal = 0;
+        // Kita nggak nge-reset kodenya, biar kalau user nambahin barang otomatis langsung kepotong diskonnya.
+        alertStore.show(`Minimal belanja item bersyarat adalah Rp ${formatRupiah(voucher.minimal_transaksi_rupiah)} untuk mengaktifkan voucher ini.`, 'info');
+        return;
+    }
+
+    // 7. Kalkulasi & Eksekusi Potongan (Limit Maksimal)
+    const persen = Number(voucher.persentase_diskon);
+    let kalkulasiDiskon = (subtotalTarget * persen) / 100;
     const maksPotongan = Number(voucher.maksimal_potongan_rupiah);
+
     form.diskon_voucher_nominal = Math.round((maksPotongan > 0 && kalkulasiDiskon > maksPotongan) ? maksPotongan : kalkulasiDiskon);
+
 }, { deep: true });
 
 const grandTotal = computed(() => Math.max(0, (totalProduk.value + (Number(form.harga_ongkir) || 0)) - (Number(form.diskon_voucher_nominal) || 0)));
@@ -661,6 +737,7 @@ const submitCheckout = async () => {
                                 :options="customerOptions"
                                 valueKey="id_customer" labelKey="nama_tampilan"
                                 placeholder="Ketik Nama Pelanggan..."
+                                :addOption=false
                             />
 
                             <CustomSelect
@@ -754,6 +831,7 @@ const submitCheckout = async () => {
                                     labelKey="label" valueKey="value"
                                     label="KODE VOUCHER PROMO"
                                     placeholder="Cari Voucher Tersedia..."
+                                    :addOption=false
                                 />
                             </div>
                         </div>

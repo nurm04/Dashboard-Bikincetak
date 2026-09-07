@@ -9,6 +9,7 @@ use App\Models\Pesan;
 use App\Models\PesananItem;
 use App\Models\PesananItemFinishing;
 use App\Models\SkuFinishing;
+use App\Models\Voucher;
 use App\Services\PesanService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -461,6 +462,17 @@ class PesanController extends Controller
                 $dataBaru,
                 null
             );
+
+            if ($request->kode_voucher && $request->diskon_voucher_nominal > 0) {
+                $dipakai = Voucher::where('kode_voucher', $request->kode_voucher)
+                                  ->whereNotNull('kuota_penggunaan')
+                                  ->where('kuota_penggunaan', '>', 0)
+                                  ->first();
+
+                if ($dipakai) {
+                    $dipakai->decrement('kuota_penggunaan');
+                }
+            }
 
             DB::commit();
 

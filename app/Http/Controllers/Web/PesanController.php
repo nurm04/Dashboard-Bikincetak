@@ -166,9 +166,14 @@ class PesanController extends Controller
     public function posKasir()
     {
         $customers = Customer::with(['user', 'alamat', 'roleCustomer'])->get();
+
         $vouchers = Voucher::where('is_active', true)
             ->where('berlaku_dari', '<=', now())
             ->where('berlaku_sampai', '>=', now())
+            ->where(function($query) {
+                $query->whereNull('kuota_penggunaan')
+                      ->orWhere('kuota_penggunaan', '>', 0);
+            })
             ->get();
 
         $typePembayaran = DB::select("SHOW COLUMNS FROM pesan WHERE Field = 'status_pembayaran'")[0]->Type;
@@ -396,6 +401,17 @@ class PesanController extends Controller
                 (int) $rincian['kode_unik'],
                 $rekening
             );
+
+            if ($request->kode_voucher && $request->diskon_voucher_nominal > 0) {
+                $dipakai = Voucher::where('kode_voucher', $request->kode_voucher)
+                                  ->whereNotNull('kuota_penggunaan')
+                                  ->where('kuota_penggunaan', '>', 0)
+                                  ->first();
+
+                if ($dipakai) {
+                    $dipakai->decrement('kuota_penggunaan');
+                }
+            }
 
             DB::commit();
 

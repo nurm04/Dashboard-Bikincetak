@@ -59,6 +59,13 @@ const formatTanggal = (tgl) => {
 
     return `${year}-${month}-${day} ${hours}:${minutes}`;
 };
+
+const getTargetLabel = (tipe) => {
+    if (tipe === 'semua_pesanan') return 'Semua Pesanan';
+    if (tipe === 'produk_tertentu') return 'Produk Global';
+    if (tipe === 'sku_tertentu') return 'SKU Spesifik';
+    return '-';
+};
 </script>
 
 <template>
@@ -100,10 +107,20 @@ const formatTanggal = (tgl) => {
                         <td class="px-6 py-4">
                             <div class="font-bold text-base-content">{{ item.nama_promo }}</div>
                             <div class="text-[10px] uppercase font-bold tracking-wider mt-1" :class="item.tipe_target === 'semua_pesanan' ? 'text-success' : 'text-warning'">
-                                Target: {{ item.tipe_target === 'semua_pesanan' ? 'Semua Pesanan' : 'Produk Spesifik' }}
+                                Target: {{ getTargetLabel(item.tipe_target) }}
                             </div>
                             <div v-if="item.tipe_target === 'produk_tertentu'" class="text-[10px] opacity-50">
+                                Produk: {{ item.produk?.nama_produk || item.id_produk_target }}
+                            </div>
+                            <div v-if="item.tipe_target === 'sku_tertentu'" class="text-[10px] opacity-50">
                                 SKU: {{ item.produk_sku?.nama_sku || item.id_sku_target }}
+                            </div>
+
+                            <!-- Batas Role -->
+                            <div v-if="item.role_customer_targets && item.role_customer_targets.length > 0" class="flex flex-wrap gap-1 mt-2">
+                                <span class="text-[9px] font-bold tracking-widest bg-info/10 text-info px-1.5 py-0.5 rounded uppercase border border-info/20">
+                                    Khusus {{ item.role_customer_targets.length }} Role
+                                </span>
                             </div>
                         </td>
 

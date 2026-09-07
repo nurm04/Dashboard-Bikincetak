@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\Voucher;
 use App\Models\ProdukSku;
+use App\Models\Produk;
+use App\Models\RoleCustomer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -14,14 +16,16 @@ class VoucherController extends Controller
     public function index()
     {
         return Inertia::render('Voucher/Index', [
-            'vouchers' => Voucher::with('produkSku')->orderBy('created_at', 'desc')->get()
+            'vouchers' => Voucher::with(['produkSku', 'produk'])->orderBy('created_at', 'desc')->get()
         ]);
     }
 
     public function create()
     {
         return Inertia::render('Voucher/Form', [
-            'skus' => ProdukSku::select('id_sku', 'nama_sku')->get()
+            'skus' => ProdukSku::select('id_sku', 'nama_sku')->get(),
+            'produks' => Produk::select('id_produk', 'nama_produk')->get(),
+            'roles' => RoleCustomer::select('id_role_customer', 'role')->get()
         ]);
     }
 
@@ -29,7 +33,9 @@ class VoucherController extends Controller
     {
         return Inertia::render('Voucher/Form', [
             'voucher' => Voucher::findOrFail($id),
-            'skus' => ProdukSku::select('id_sku', 'nama_sku')->get()
+            'skus' => ProdukSku::select('id_sku', 'nama_sku')->get(),
+            'produks' => Produk::select('id_produk', 'nama_produk')->get(),
+            'roles' => RoleCustomer::select('id_role_customer', 'role')->get()
         ]);
     }
 
@@ -38,10 +44,10 @@ class VoucherController extends Controller
         $request->validate([
             'kode_voucher' => 'required|string|unique:voucher,kode_voucher',
             'nama_promo' => 'required|string',
-            'tipe_target' => 'required|in:semua_pesanan,produk_tertentu',
-
-            'id_sku_target' => 'nullable|string|required_if:tipe_target,produk_tertentu',
-
+            'tipe_target' => 'required|in:semua_pesanan,produk_tertentu,sku_tertentu',
+            'id_produk_target' => 'nullable|string|required_if:tipe_target,produk_tertentu',
+            'id_sku_target' => 'nullable|string|required_if:tipe_target,sku_tertentu',
+            'role_customer_targets' => 'nullable|array',
             'persentase_diskon' => 'required|numeric|min:0|max:100',
             'maksimal_potongan_rupiah' => 'nullable|numeric|min:0',
             'minimal_transaksi_rupiah' => 'required|numeric|min:0',
@@ -53,9 +59,7 @@ class VoucherController extends Controller
 
         try {
             DB::beginTransaction();
-
             Voucher::create($request->all());
-
             DB::commit();
             return redirect()->route('voucher.index')->with('success', 'Voucher promo berhasil dibuat.');
         } catch (\Exception $e) {
@@ -69,8 +73,10 @@ class VoucherController extends Controller
         $request->validate([
             'kode_voucher' => 'required|string|unique:voucher,kode_voucher,' . $id . ',id_voucher',
             'nama_promo' => 'required|string',
-            'tipe_target' => 'required|in:semua_pesanan,produk_tertentu',
-            'id_sku_target' => 'nullable|string|required_if:tipe_target,produk_tertentu',
+            'tipe_target' => 'required|in:semua_pesanan,produk_tertentu,sku_tertentu',
+            'id_produk_target' => 'nullable|string|required_if:tipe_target,produk_tertentu',
+            'id_sku_target' => 'nullable|string|required_if:tipe_target,sku_tertentu',
+            'role_customer_targets' => 'nullable|array',
             'persentase_diskon' => 'required|numeric|min:0|max:100',
             'maksimal_potongan_rupiah' => 'nullable|numeric|min:0',
             'minimal_transaksi_rupiah' => 'required|numeric|min:0',
@@ -85,8 +91,17 @@ class VoucherController extends Controller
 
             $voucher = Voucher::findOrFail($id);
 
+            // Bersihkan data target yang tidak relevan
             if ($request->tipe_target === 'semua_pesanan') {
+                $request->merge(['id_sku_target' => null, 'id_produk_target' => null]);
+            } elseif ($request->tipe_target === 'produk_tertentu') {
                 $request->merge(['id_sku_target' => null]);
+            } elseif ($request->tipe_target === 'sku_tertentu') {
+                $request->merge(['id_produk_target' => null]);
+            }
+
+            if (empty($request->role_customer_targets)) {
+                $request->merge(['role_customer_targets' => null]);
             }
 
             $voucher->update($request->all());

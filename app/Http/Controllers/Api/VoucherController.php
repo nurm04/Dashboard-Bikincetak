@@ -12,6 +12,10 @@ class VoucherController extends Controller
         $vouchers = Voucher::where('is_active', true)
             ->where('berlaku_dari', '<=', now())
             ->where('berlaku_sampai', '>=', now())
+            ->where(function($query) {
+                $query->whereNull('kuota_penggunaan')
+                      ->orWhere('kuota_penggunaan', '>', 0);
+            })
             ->orderBy('created_at', 'desc')
             ->get();
 

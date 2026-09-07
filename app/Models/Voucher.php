@@ -16,7 +16,9 @@ class Voucher extends Model
     protected $fillable = [
         'kode_voucher',
         'nama_promo',
+        'role_customer_targets',
         'tipe_target',
+        'id_produk_target',
         'id_sku_target',
         'persentase_diskon',
         'maksimal_potongan_rupiah',
@@ -28,12 +30,17 @@ class Voucher extends Model
     ];
 
     protected $casts = [
+        'role_customer_targets' => 'array',
         'berlaku_dari' => 'datetime',
         'berlaku_sampai' => 'datetime',
         'is_active' => 'boolean',
         'persentase_diskon' => 'float',
     ];
 
+    public function produk(): BelongsTo
+    {
+        return $this->belongsTo(Produk::class, 'id_produk_target', 'id_produk');
+    }
     public function produkSku(): BelongsTo
     {
         return $this->belongsTo(ProdukSku::class, 'id_sku_target', 'id_sku');
