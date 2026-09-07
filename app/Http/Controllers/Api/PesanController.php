@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Events\PesananBaruEvent;
 use App\Http\Controllers\Controller;
+use App\Models\Customer;
 use App\Models\Komposisi;
 use App\Models\Pesan;
 use App\Models\PesananItem;
@@ -464,13 +465,21 @@ class PesanController extends Controller
             );
 
             if ($request->kode_voucher && $request->diskon_voucher_nominal > 0) {
-                $dipakai = Voucher::where('kode_voucher', $request->kode_voucher)
-                                  ->whereNotNull('kuota_penggunaan')
-                                  ->where('kuota_penggunaan', '>', 0)
-                                  ->first();
+                $dipakai = Voucher::where('kode_voucher', $request->kode_voucher)->first();
 
                 if ($dipakai) {
-                    $dipakai->decrement('kuota_penggunaan');
+                    // Cek Role Customer
+                    if (!empty($dipakai->role_customer_targets)) {
+                        $customer = Customer::where('id_customer', $customerId)->first();
+                        if (!$customer || !in_array((string) $customer->id_role_customer, $dipakai->role_customer_targets)) {
+                            throw new \Exception('Voucher tidak berlaku untuk level akun Anda.');
+                        }
+                    }
+
+                    // Kurangi Kuota
+                    if ($dipakai->kuota_penggunaan !== null && $dipakai->kuota_penggunaan > 0) {
+                        $dipakai->decrement('kuota_penggunaan');
+                    }
                 }
             }
 

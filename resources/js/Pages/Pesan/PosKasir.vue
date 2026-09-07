@@ -497,8 +497,23 @@ const totalProduk = computed(() => cartItems.value.reduce((total, item) => total
 
 // Tampilkan opsi voucher yang masih aktif dan belum expired saja di dropdown
 const voucherOptions = computed(() => {
+    // Ambil role pelanggan yang saat ini sedang dipilih di form kasir
+    const selectedCust = props.customers.find(c => c.id_customer === form.id_customer);
+    const roleId = String(selectedCust?.id_role_customer || '');
+
     return (props.vouchers || [])
-        .filter(v => v.is_active && new Date(v.berlaku_sampai) > new Date())
+        .filter(v => {
+            const isActive = v.is_active && new Date(v.berlaku_sampai) > new Date();
+            const hasQuota = v.kuota_penggunaan === null || v.kuota_penggunaan > 0;
+
+            // 👇 FILTER ROLE DI UI KASIR 👇
+            // Loloskan jika voucher Publik (kosong), ATAU jika role pelanggan terdaftar di target
+            const isRoleValid = !v.role_customer_targets ||
+                                v.role_customer_targets.length === 0 ||
+                                v.role_customer_targets.includes(roleId);
+
+            return isActive && hasQuota && isRoleValid;
+        })
         .map(v => ({ value: v.kode_voucher, label: `${v.kode_voucher} - Diskon ${v.persentase_diskon}%` }));
 });
 
