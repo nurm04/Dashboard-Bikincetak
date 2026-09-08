@@ -88,9 +88,10 @@ class PaymentController extends Controller
                 'qris_id'       => (int) env('KOMERCE_QRIS_ID'),
                 'amount'        => $nominalBayar,
                 'output_type'   => 'string',
-                'unique_amount' => true, // Wajib true buat tracking Komerce
+                'unique_amount' => true,
             ]);
 
+            // JIKA SUKSES
             if ($response->successful()) {
                 $data = $response->json();
 
@@ -106,9 +107,8 @@ class PaymentController extends Controller
                     ], 500);
                 }
 
-                // 👇 CATAT INVOICE PENDING KE TABEL PEMBAYARAN 👇
+                // CATAT INVOICE PENDING KE TABEL PEMBAYARAN
                 if ($historyId) {
-                    // Cari apakah sudah ada pembayaran pending untuk history ini (jaga-jaga reload halaman)
                     $existingPayment = Pembayaran::where('reference_id', $historyId)
                                                  ->where('status_pembayaran', 'menunggu_pembayaran')
                                                  ->first();
@@ -117,11 +117,11 @@ class PaymentController extends Controller
                         Pembayaran::create([
                             'id_pembayaran'       => PembayaranService::generateId(),
                             'id_pesan'            => $pesan->id_pesan,
-                            'nominal_bayar'       => $finalAmount, // Simpan nominal unik
+                            'nominal_bayar'       => $finalAmount,
                             'metode_pembayaran'   => 'qris',
                             'status_pembayaran'   => 'menunggu_pembayaran',
                             'payment_type_detail' => 'qris_komerce',
-                            'reference_id'        => (string) $historyId, // SIMPAN HISTORY ID DISINI
+                            'reference_id'        => (string) $historyId,
                             'catatan'             => 'Menunggu pembayaran via QRIS Komerce'
                         ]);
                     }
@@ -140,20 +140,30 @@ class PaymentController extends Controller
                 ]);
             }
 
+            // 👇 JIKA DITOLAK KOMERCE (Bongkar Paksa Errornya) 👇
             $errorBody = $response->json();
-            $pesanErrorKomerce = $errorBody['meta']['message'] ?? $errorBody['message'] ?? 'Ditolak Komerce tanpa alasan jelas.';
 
-            Log::error('Komerce QRIS DITOLAK: Status ' . $response->status() . ' - Body: ' . $response->body());
+            if (is_array($errorBody)) {
+                $pesanErrorKomerce = $errorBody['meta']['message'] ?? $errorBody['message'] ?? json_encode($errorBody);
+            } else {
+                // Biasanya karena Komerce down (502 Gateway) dan mengembalikan format HTML
+                $pesanErrorKomerce = 'Komerce Error HTML: ' . substr($response->body(), 0, 100);
+            }
+
+            Log::error("Komerce DITOLAK (Status {$response->status()}): " . $response->body());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal membuat QRIS dari server Komerce.'
+                'message' => 'KOMERCE: ' . $pesanErrorKomerce
             ], 500);
 
         } catch (\Exception $e) {
+            // 👇 JIKA SERVER LU YANG CRASH 👇
             Log::error('Exception QRIS: ' . $e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan internal server saat koneksi ke Komerce.'
+                'message' => 'CRASH BACKEND: ' . $e->getMessage() . ' (Baris ' . $e->getLine() . ')'
             ], 500);
         }
     }
