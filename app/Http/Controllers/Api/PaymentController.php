@@ -140,6 +140,9 @@ class PaymentController extends Controller
                 ]);
             }
 
+            $errorBody = $response->json();
+            $pesanErrorKomerce = $errorBody['meta']['message'] ?? $errorBody['message'] ?? 'Ditolak Komerce tanpa alasan jelas.';
+
             Log::error('Komerce QRIS DITOLAK: Status ' . $response->status() . ' - Body: ' . $response->body());
             return response()->json([
                 'success' => false,
