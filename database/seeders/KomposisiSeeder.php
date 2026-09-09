@@ -1100,7 +1100,7 @@ class KomposisiSeeder extends Seeder
 
             // ==============================================================================
             // KOMPOSISI: PRD-3010 (BROSUR FLYER) - 8 SKU
-            // Note: Dihitung per 1 Pcs Brosur (Bukan per Rim). 
+            // Note: Dihitung per 1 Pcs Brosur (Bukan per Rim).
             // ==============================================================================
 
             // --- SKU-001: Brosur Flyer-A3-1 Sisi ---

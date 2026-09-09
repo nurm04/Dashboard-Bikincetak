@@ -49,7 +49,7 @@ class RajaOngkirService
         // Daftar ekspedisi sesuai dokumentasi RajaOngkir by Komerce
         $couriers = $requestedCourier ? [$requestedCourier] : [
             'jne', 'pos', 'tiki', 'sicepat', 'jnt', 'ninja', 'anteraja',
-            'lion', 'wahana', 'rpx', 'ide', 'sap', 'ncs', 'rex', 'sentral', 'indah'
+            'lion', 'wahana', 'ide', 'sentral'
         ];
 
         $allResults = [];
