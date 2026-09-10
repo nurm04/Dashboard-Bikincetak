@@ -20,21 +20,25 @@ use Illuminate\Support\Facades\Log;
 
 class PesanController extends Controller
 {
-    // 👇 Fungsi Bantuan (Helper) Ekstraksi Gambar
+    // 👇 UPDATE Fungsi Bantuan Ekstraksi Gambar
     private function extractGambarUrl($item)
     {
         $gambarUrl = null;
-        if ($item->sku) {
+
+        // Panggil relasi sesuai nama di Model PesananItem (produkSku)
+        $skuData = $item->produkSku ?? $item->sku ?? null;
+
+        if ($skuData) {
             // 1. Cek gambar di level SKU
-            if (!empty($item->sku->gambar)) {
-                $gambarArray = is_string($item->sku->gambar) ? json_decode($item->sku->gambar, true) : $item->sku->gambar;
+            if (!empty($skuData->gambar)) {
+                $gambarArray = is_string($skuData->gambar) ? json_decode($skuData->gambar, true) : $skuData->gambar;
                 if (is_array($gambarArray) && !empty($gambarArray[0])) {
                     $gambarUrl = url('storage/' . $gambarArray[0]);
                 }
             }
             // 2. Jika tidak ada, fallback ke gambar Produk Master
-            elseif ($item->sku->produk && !empty($item->sku->produk->gambar)) {
-                $gambarArray = is_string($item->sku->produk->gambar) ? json_decode($item->sku->produk->gambar, true) : $item->sku->produk->gambar;
+            elseif ($skuData->produk && !empty($skuData->produk->gambar)) {
+                $gambarArray = is_string($skuData->produk->gambar) ? json_decode($skuData->produk->gambar, true) : $skuData->produk->gambar;
                 if (is_array($gambarArray) && !empty($gambarArray[0])) {
                     $gambarUrl = url('storage/' . $gambarArray[0]);
                 }
@@ -86,6 +90,7 @@ class PesanController extends Controller
                 // Inject URL Gambar
                 $item->gambar_url = $this->extractGambarUrl($item);
                 // Bersihkan object SKU agar response JSON tidak terlalu besar
+                unset($item->produkSku);
                 unset($item->sku);
             }
         }
@@ -581,6 +586,7 @@ class PesanController extends Controller
 
                     // Inject URL Gambar
                     $item->gambar_url = $this->extractGambarUrl($item);
+                    unset($item->produkSku);
                     unset($item->sku);
 
                     return $item;
@@ -629,6 +635,7 @@ class PesanController extends Controller
 
             // Inject URL Gambar
             $item->gambar_url = $this->extractGambarUrl($item);
+            unset($item->produkSku);
             unset($item->sku);
 
             return $item;
@@ -672,6 +679,7 @@ class PesanController extends Controller
 
             // Inject URL Gambar
             $item->gambar_url = $this->extractGambarUrl($item);
+            unset($item->produkSku);
             unset($item->sku);
 
             return $item;

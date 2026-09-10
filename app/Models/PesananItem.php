@@ -51,6 +51,6 @@ class PesananItem extends Model
     }
     public function produkSku(): BelongsTo
     {
-        return $this->belongsTo(produkSku::class, 'id_sku', 'id_sku');
+        return $this->belongsTo(ProdukSku::class, 'id_sku', 'id_sku');
     }
 }
