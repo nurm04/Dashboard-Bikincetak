@@ -16,7 +16,7 @@ class VoucherController extends Controller
     public function index()
     {
         return Inertia::render('Voucher/Index', [
-            'vouchers' => Voucher::with(['produkSku', 'produk'])->orderBy('created_at', 'desc')->get()
+            'vouchers' => Voucher::with(['produkSku', 'produk'])->latest()->paginate(20)->withQueryString()
         ]);
     }
 

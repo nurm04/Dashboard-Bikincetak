@@ -34,7 +34,7 @@ class AkunController extends Controller
             $query->where('saldo_normal', $filterSaldo);
         }
 
-        $akuns = $query->orderBy('id_akun', 'asc')->get();
+        $akuns = $query->orderBy('id_akun', 'asc')->paginate(20)->withQueryString();
 
         $typeKategori = DB::select("SHOW COLUMNS FROM akun WHERE Field = 'kategori'")[0]->Type;
         preg_match('/^enum\((.*)\)$/', $typeKategori, $matchesKategori);

@@ -46,7 +46,7 @@ class PembelianBahanController extends Controller
         }
 
         return inertia('PembelianBahan/Index', [
-            'pembelian' => $query->latest()->get(),
+            'pembelian' => $query->latest()->paginate(20)->withQueryString(),
             'filters' => $request->only(['search'])
         ]);
     }

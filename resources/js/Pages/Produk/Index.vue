@@ -18,7 +18,7 @@ const debounce = (fn, delay) => {
 };
 
 const props = defineProps({
-    produks: Array,
+    produks: Object,
     filters: Object
 });
 
@@ -101,8 +101,8 @@ const doDelete = () => {
                 </div>
             </div>
 
-            <CustomTable :headers="headers">
-                <tr v-for="prd in produks" :key="prd.id_produk" class="transition-colors hover:bg-base-200/50">
+            <CustomTable :headers="headers" :pagination="produks">
+                <tr v-for="prd in produks.data" :key="prd.id_produk" class="transition-colors hover:bg-base-200/50">
                     <!-- Tambah whitespace-nowrap dan ubah px-6 jadi px-4 biar lebih hemat space di mobile -->
                     <td class="px-4 py-4 font-mono text-xs font-bold text-primary whitespace-nowrap">{{ prd.id_produk }}</td>
 

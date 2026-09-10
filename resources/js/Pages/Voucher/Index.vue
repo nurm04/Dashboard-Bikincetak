@@ -8,7 +8,7 @@ import CustomTable from '@/Components/CustomTable.vue';
 import CustomAlertConfirm from '@/Components/CustomAlertConfirm.vue';
 
 const props = defineProps({
-    vouchers: Array,
+    vouchers: Object,
 });
 
 const headers = ['Kode Voucher', 'Info Promo', 'Diskon & Syarat', 'Masa Berlaku', 'Status', 'Aksi'];
@@ -98,8 +98,8 @@ const getTargetLabel = (tipe) => {
                     </CustomButton>
                 </div>
 
-                <CustomTable :headers="headers">
-                    <tr v-for="item in vouchers" :key="item.id_voucher">
+                <CustomTable :headers="headers" :pagination="vouchers">
+                    <tr v-for="item in vouchers.data" :key="item.id_voucher">
                         <td class="px-6 py-4">
                             <span class="font-mono text-sm font-black tracking-widest text-primary">{{ item.kode_voucher }}</span>
                         </td>

@@ -28,7 +28,7 @@ class ProdukController extends Controller
         }
 
         return inertia('Produk/Index', [
-            'produks' => $query->latest()->get(),
+            'produks' => $query->latest()->paginate(20)->withQueryString(),
             'filters' => $request->only(['search'])
         ]);
     }

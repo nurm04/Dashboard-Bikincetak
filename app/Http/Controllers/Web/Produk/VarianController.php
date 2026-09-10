@@ -16,7 +16,7 @@ class VarianController extends Controller
     public function index()
     {
         return Inertia::render('Varian/Index', [
-            'varians' => Varian::with('pilihanVarian')->get()
+            'varians' => Varian::with('pilihanVarian')->latest()->paginate(20)->withQueryString()
         ]);
     }
 

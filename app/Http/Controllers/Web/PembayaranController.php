@@ -54,8 +54,7 @@ class PembayaranController extends Controller
             });
         }
 
-        $pembayaran = $query->latest()
-            ->get()
+        $pembayaran = $query->latest()->paginate(20)->withQueryString()
             ->map(function ($item) {
                 $totalTagihan = $item->pesan ? PesanService::hitungTotalPesanan($item->pesan) : 0;
                 $kodeUnik = $item->pesan ? PesanService::generateKodeUnik($item->pesan->id_pesan) : 0;

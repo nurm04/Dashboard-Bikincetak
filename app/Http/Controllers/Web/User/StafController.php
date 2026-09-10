@@ -35,7 +35,7 @@ class StafController extends Controller
             $query->where('id_role_staf', $filterRole);
         }
 
-        $stafs = $query->latest()->get();
+        $stafs = $query->latest()->paginate(20)->withQueryString();
 
         $roles = RoleStaf::select('id_role_staf', 'role')->get();
 

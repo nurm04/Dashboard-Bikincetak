@@ -8,7 +8,7 @@ import CustomTable from '@/Components/CustomTable.vue';
 import CustomAlertConfirm from '@/Components/CustomAlertConfirm.vue';
 
 const props = defineProps({
-    varians: Array,
+    varians: Object,
 });
 
 const headers = ['ID Varian', 'Nama Varian', 'Daftar Pilihan', 'Aksi'];
@@ -75,8 +75,8 @@ const doDelete = () => {
                     </CustomButton>
                 </div>
 
-                <CustomTable :headers="headers">
-                    <tr v-for="varian in varians" :key="varian.id_varian" class="transition-colors hover:bg-base-200/50">
+                <CustomTable :headers="headers" :pagination="varians">
+                    <tr v-for="varian in varians.data" :key="varian.id_varian" class="transition-colors hover:bg-base-200/50">
                         <td class="px-6 py-4 font-mono text-xs font-bold text-primary">
                             {{ varian.id_varian }}
                         </td>

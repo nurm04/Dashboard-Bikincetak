@@ -23,8 +23,7 @@ class VendorController extends Controller
                       ->orWhere('nama_pic', 'like', "%{$search}%")
                       ->orWhere('no_hp', 'like', "%{$search}%");
             })
-            ->latest()
-            ->get();
+            ->latest()->paginate(20)->withQueryString();
 
         return Inertia::render('Vendor/Index', [
             'vendors' => $vendors,

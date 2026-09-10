@@ -21,7 +21,7 @@ const debounce = (fn, delay) => {
 };
 
 const props = defineProps({
-    pesanan: Array,
+    pesanan: Object,
     enumPembayaran: Array,
     enumOperasional: Array,
     filters: Object
@@ -285,9 +285,9 @@ const formatEnum = (text) => {
                 </div>
             </div>
 
-            <CustomTable :headers="headers">
+            <CustomTable :headers="headers" :pagination="pesananAkurat">
                 <tr
-                    v-for="p in pesananAkurat"
+                    v-for="p in pesananAkurat.data"
                     :key="p.id_pesan"
                     :class="p.status_operasional === 'batal' ? 'bg-base-200/30' : 'hover:bg-base-200/50'"
                     class="transition-colors"

@@ -17,7 +17,7 @@ const debounce = (fn, delay) => {
 };
 
 const props = defineProps({
-    pembelian: Array,
+    pembelian: Object,
     filters: Object
 });
 
@@ -122,8 +122,8 @@ const formatTanggal = (tgl) => {
                     </div>
                 </div>
 
-                <CustomTable :headers="headers">
-                    <tr v-for="pb in pembelian" :key="pb.id_pembelian" class="transition-colors hover:bg-base-200/50">
+                <CustomTable :headers="headers" :pagination="pembelian">
+                    <tr v-for="pb in pembelian.data" :key="pb.id_pembelian" class="transition-colors hover:bg-base-200/50">
                         <td class="px-6 py-4 font-mono text-xs font-bold text-primary">
                             {{ pb.id_pembelian }}
                         </td>

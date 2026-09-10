@@ -43,7 +43,7 @@ class PenawaranController extends Controller
             $query->where('status_penawaran', $request->status);
         }
 
-        $penawaran = $query->paginate(10)->withQueryString();
+        $penawaran = $query->latest()->paginate(20)->withQueryString();
 
         return Inertia::render('Penawaran/Index', [
             'penawaran' => $penawaran,

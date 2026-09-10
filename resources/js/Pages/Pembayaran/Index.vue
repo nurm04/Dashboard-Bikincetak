@@ -15,7 +15,7 @@ const debounce = (fn, delay) => {
 };
 
 const props = defineProps({
-    pembayaran: Array,
+    pembayaran: Object,
     filters: Object
 });
 
@@ -153,9 +153,9 @@ const namaStafDisplay = (item) => {
                     />
                 </div>
 
-                <CustomTable :headers="headers">
+                <CustomTable :headers="headers" :pagination="pembayaranAkurat">
                     <!-- PAKAI pembayaranAkurat BUKAN pembayaran -->
-                    <tr v-for="item in pembayaranAkurat" :key="item.id_pembayaran" class="transition-colors hover:bg-base-200/50">
+                    <tr v-for="item in pembayaranAkurat.data" :key="item.id_pembayaran" class="transition-colors hover:bg-base-200/50">
                         <td class="px-6 py-4 font-mono text-xs font-bold text-primary">
                             {{ item.id_pembayaran }}
                             <div v-if="item.pesan" class="text-[10px] text-base-content/50 mt-1 uppercase tracking-wider">

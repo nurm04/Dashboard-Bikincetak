@@ -146,7 +146,7 @@ const formatEnum = (text) => {
             </div>
 
             <!-- Table Section -->
-            <CustomTable :headers="headers">
+            <CustomTable :headers="headers" :pagination="penawaran">
                 <tr
                     v-for="item in penawaran.data"
                     :key="item.id_penawaran"

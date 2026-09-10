@@ -8,7 +8,7 @@ import { alertStore } from '@/Utils/alertStore';
 import CustomAlertConfirm from '@/Components/CustomAlertConfirm.vue';
 
 const props = defineProps({
-    finishings: Array,
+    finishings: Object,
 });
 
 const headers = ['ID Finishing', 'Nama Finishing', 'Daftar Pilihan', 'Aksi'];
@@ -75,8 +75,8 @@ const doDelete = () => {
                     </CustomButton>
                 </div>
 
-                <CustomTable :headers="headers">
-                    <tr v-for="finishing in finishings" :key="finishing.id_finishing" class="transition-colors hover:bg-base-200/50">
+                <CustomTable :headers="headers" :pagination="finishings">
+                    <tr v-for="finishing in finishings.data" :key="finishing.id_finishing" class="transition-colors hover:bg-base-200/50">
                         <td class="px-6 py-4 font-mono text-xs font-bold text-primary">
                             {{ finishing.id_finishing }}
                         </td>

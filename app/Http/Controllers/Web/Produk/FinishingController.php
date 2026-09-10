@@ -16,7 +16,7 @@ class FinishingController extends Controller
     public function index()
     {
         return Inertia::render('Finishing/Index', [
-            'finishings' => Finishing::with('pilihanFinishing')->get()
+            'finishings' => Finishing::with('pilihanFinishing')->latest()->paginate(20)->withQueryString()
         ]);
     }
 

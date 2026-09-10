@@ -33,7 +33,7 @@ class BahanBakuController extends Controller
         }
 
         return inertia('BahanBaku/Index', [
-            'bahan_baku' => $query->latest()->get(),
+            'bahan_baku' => $query->latest()->paginate(20)->withQueryString(),
             'filters' => $request->only(['search', 'is_active'])
         ]);
     }
