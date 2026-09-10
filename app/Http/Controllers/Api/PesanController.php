@@ -20,6 +20,29 @@ use Illuminate\Support\Facades\Log;
 
 class PesanController extends Controller
 {
+    // 👇 Fungsi Bantuan (Helper) Ekstraksi Gambar
+    private function extractGambarUrl($item)
+    {
+        $gambarUrl = null;
+        if ($item->sku) {
+            // 1. Cek gambar di level SKU
+            if (!empty($item->sku->gambar)) {
+                $gambarArray = is_string($item->sku->gambar) ? json_decode($item->sku->gambar, true) : $item->sku->gambar;
+                if (is_array($gambarArray) && !empty($gambarArray[0])) {
+                    $gambarUrl = url('storage/' . $gambarArray[0]);
+                }
+            }
+            // 2. Jika tidak ada, fallback ke gambar Produk Master
+            elseif ($item->sku->produk && !empty($item->sku->produk->gambar)) {
+                $gambarArray = is_string($item->sku->produk->gambar) ? json_decode($item->sku->produk->gambar, true) : $item->sku->produk->gambar;
+                if (is_array($gambarArray) && !empty($gambarArray[0])) {
+                    $gambarUrl = url('storage/' . $gambarArray[0]);
+                }
+            }
+        }
+        return $gambarUrl;
+    }
+
     public function getCart(Request $request)
     {
         $customerId = $request->user()?->customer?->id_customer;
@@ -33,6 +56,7 @@ class PesanController extends Controller
 
         $cart = Pesan::with([
                 'pesananItem.pesananItemFinishing.skuFinishing',
+                'pesananItem.sku.produk', // 👈 EAGER LOADING GAMBAR SKU
                 'alamat',
                 'pembayaran'
             ])
@@ -58,6 +82,11 @@ class PesanController extends Controller
                     $statusKali = $fin->kali_jumlah_pesan ?? ($fin->skuFinishing ? $fin->skuFinishing->kali_jumlah_pesan : 0);
                     $fin->kali_jumlah_pesan = filter_var($statusKali, FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
                 }
+
+                // Inject URL Gambar
+                $item->gambar_url = $this->extractGambarUrl($item);
+                // Bersihkan object SKU agar response JSON tidak terlalu besar
+                unset($item->sku);
             }
         }
 
@@ -529,7 +558,12 @@ class PesanController extends Controller
     {
         $customerId = $request->user()?->customer?->id_customer;
 
-        $pesanan = Pesan::with(['alamat', 'pesananItem.pesananItemFinishing', 'pembayaran'])
+        $pesanan = Pesan::with([
+                'alamat',
+                'pesananItem.pesananItemFinishing',
+                'pesananItem.sku.produk', // 👈 EAGER LOADING GAMBAR SKU
+                'pembayaran'
+            ])
             ->where('id_customer', $customerId)
             ->where('status_operasional', '!=', 'keranjang')
             ->latest()
@@ -544,6 +578,11 @@ class PesanController extends Controller
                     $item->atribut_custom_snapshot = is_string($item->atribut_custom_snapshot) ? json_decode($item->atribut_custom_snapshot, true) : $item->atribut_custom_snapshot;
                     $item->file_desain = is_string($item->file_desain) ? json_decode($item->file_desain, true) : $item->file_desain;
                     $item->rincian_diskon_snapshot = is_string($item->rincian_diskon_snapshot) ? json_decode($item->rincian_diskon_snapshot, true) : $item->rincian_diskon_snapshot;
+
+                    // Inject URL Gambar
+                    $item->gambar_url = $this->extractGambarUrl($item);
+                    unset($item->sku);
+
                     return $item;
                 });
 
@@ -560,7 +599,12 @@ class PesanController extends Controller
     {
         $customerId = $request->user()?->customer?->id_customer;
 
-        $pesanan = Pesan::with(['alamat', 'pesananItem.pesananItemFinishing', 'pembayaran'])
+        $pesanan = Pesan::with([
+                'alamat',
+                'pesananItem.pesananItemFinishing',
+                'pesananItem.sku.produk', // 👈 EAGER LOADING GAMBAR SKU
+                'pembayaran'
+            ])
             ->where('id_customer', $customerId)
             ->where('kode_transaksi', $kode_transaksi)
             ->first();
@@ -582,6 +626,11 @@ class PesanController extends Controller
             $item->atribut_custom_snapshot = is_string($item->atribut_custom_snapshot) ? json_decode($item->atribut_custom_snapshot, true) : $item->atribut_custom_snapshot;
             $item->file_desain = is_string($item->file_desain) ? json_decode($item->file_desain, true) : $item->file_desain;
             $item->rincian_diskon_snapshot = is_string($item->rincian_diskon_snapshot) ? json_decode($item->rincian_diskon_snapshot, true) : $item->rincian_diskon_snapshot;
+
+            // Inject URL Gambar
+            $item->gambar_url = $this->extractGambarUrl($item);
+            unset($item->sku);
+
             return $item;
         });
 
@@ -596,6 +645,7 @@ class PesanController extends Controller
         $pesanan = Pesan::with([
             'alamat',
             'pesananItem.pesananItemFinishing',
+            'pesananItem.sku.produk', // 👈 EAGER LOADING GAMBAR SKU
             'pembayaran'
         ])
         ->where('kode_transaksi', $kode_transaksi)
@@ -619,6 +669,11 @@ class PesanController extends Controller
             $item->atribut_custom_snapshot = is_string($item->atribut_custom_snapshot) ? json_decode($item->atribut_custom_snapshot, true) : $item->atribut_custom_snapshot;
             $item->file_desain = is_string($item->file_desain) ? json_decode($item->file_desain, true) : $item->file_desain;
             $item->rincian_diskon_snapshot = is_string($item->rincian_diskon_snapshot) ? json_decode($item->rincian_diskon_snapshot, true) : $item->rincian_diskon_snapshot;
+
+            // Inject URL Gambar
+            $item->gambar_url = $this->extractGambarUrl($item);
+            unset($item->sku);
+
             return $item;
         });
 
