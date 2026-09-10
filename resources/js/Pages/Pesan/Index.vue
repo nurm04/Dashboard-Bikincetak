@@ -312,6 +312,9 @@ const formatEnum = (text) => {
 
                     <td class="px-4 py-4 text-sm font-black whitespace-nowrap" :class="p.status_operasional === 'batal' ? 'opacity-40 line-through' : 'text-base-content'">
                         {{ formatRupiah(p.total_tagihan_real ?? 0) }}
+                        <div class="text-[10px] opacity-40 font-mono tracking-wider" :class="p.status_operasional === 'batal' ? 'line-through' : ''">
+                            {{ formatRupiah(p.total_dibayar ?? 0) }}/{{ formatRupiah(p.total_tagihan_real ?? 0) }}
+                        </div>
                     </td>
 
                     <td class="px-4 py-4 whitespace-nowrap" :class="p.status_operasional === 'batal' ? 'opacity-50' : ''">
@@ -334,9 +337,6 @@ const formatEnum = (text) => {
                                 {{ status.replace(/_/g, ' ').toUpperCase() }}
                             </option>
                         </select>
-                        <div class="mt-1 text-[10px] font-bold opacity-60" :class="p.status_operasional === 'batal' ? 'line-through' : ''">
-                            {{ formatRupiah(p.total_dibayar ?? 0) }} / {{ formatRupiah(p.total_tagihan_real ?? 0) }}
-                        </div>
                     </td>
 
                     <td class="px-4 py-4 whitespace-nowrap" :class="p.status_operasional === 'batal' ? 'opacity-50' : ''">

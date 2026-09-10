@@ -3,30 +3,37 @@ import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 
 const isOpen = ref(false);
 const actionRef = ref(null);
-const dropdownRef = ref(null); // Tambahan ref untuk menu dropdown
+const dropdownRef = ref(null);
 const dropdownStyle = ref({});
 
 const calculatePosition = () => {
     if (!actionRef.value) return;
 
-    // Ambil posisi tombol Aksi di layar saat ini
     const rect = actionRef.value.getBoundingClientRect();
 
-    // Hitung posisi dropdown (w-52 = 13rem = 208px)
-    // Kita kurangi lebar dropdown agar posisinya rata kanan dengan tombol
     let leftPos = rect.right - 208;
 
-    // Set posisi menggunakan 'fixed' berdasarkan layar, bukan relative ke tabel
-    dropdownStyle.value = {
-        top: `${rect.bottom + 8}px`, // Jarak 8px dari bawah tombol
-        left: `${leftPos}px`,
-    };
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+
+    if (spaceBelow < 250 && spaceAbove > spaceBelow) {
+        dropdownStyle.value = {
+            bottom: `${window.innerHeight - rect.top + 8}px`,
+            left: `${leftPos}px`,
+            top: 'auto'
+        };
+    } else {
+        dropdownStyle.value = {
+            top: `${rect.bottom + 8}px`,
+            left: `${leftPos}px`,
+            bottom: 'auto'
+        };
+    }
 };
 
 const toggle = async () => {
     if (!isOpen.value) {
         window.dispatchEvent(new CustomEvent('close-all-dropdowns'));
-        // Tunggu DOM update, lalu hitung posisi kordinatnya
         await nextTick();
         calculatePosition();
     }

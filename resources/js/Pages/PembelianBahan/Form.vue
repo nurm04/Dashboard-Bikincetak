@@ -2,7 +2,8 @@
 import StafLayout from '@/Layouts/StafLayout.vue';
 import CustomInput from '@/Components/Form/CustomInput.vue';
 import CustomInputNumber from '@/Components/Form/CustomInputNumber.vue';
-import CustomSelect from '@/Components/Form/CustomSelect.vue';
+// 👇 Ganti CustomSelect menjadi CustomSelectSearch
+import CustomSelectSearch from '@/Components/Form/CustomSelectSearch.vue';
 import CustomButton from '@/Components/Form/CustomButton.vue';
 import CustomTableForm from '@/Components/CustomTableForm.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
@@ -81,23 +82,24 @@ const submit = () => {
                             @add="addRow"
                         >
                             <template #row="{ row, index }">
-                                <td class="px-4 py-2">
-                                    <CustomSelect
+                                <td class="px-4 py-2 align-top">
+                                    <CustomSelectSearch
                                         v-model="form.details[index].id_bahan_baku"
                                         :options="bahan_baku"
                                         label-key="nama_bahan_baku"
                                         value-key="id_bahan_baku"
-                                        placeholder="Pilih Bahan..."
-                                        class="w-full"
+                                        placeholder="Cari & Pilih Bahan..."
+                                        :add-option="false"
+                                        class="w-full min-w-62.5"
                                     />
                                 </td>
-                                <td class="px-4 py-2">
+                                <td class="px-4 py-2 align-top">
                                     <CustomInputNumber
                                         v-model="form.details[index].jumlah"
                                         :min="1"
                                     />
                                 </td>
-                                <td class="px-4 py-2">
+                                <td class="px-4 py-2 align-top">
                                     <CustomInputNumber
                                         v-model="form.details[index].harga_satuan"
                                         :min="0"

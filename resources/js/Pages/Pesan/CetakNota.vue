@@ -185,10 +185,10 @@ onMounted(() => {
 
     <!-- BACKGROUND WRAPPER BIAR DI BROWSER TERLIHAT RAPI SEPERTI KERTAS -->
     <div class="min-h-screen bg-gray-100 pt-20 pb-10 print:bg-transparent print:p-0">
-        
+
         <!-- CONTAINER NOTA -->
         <div class="max-w-2xl p-6 mx-auto font-sans text-xs text-black bg-white shadow-lg print:p-0 print:shadow-none print:max-w-none">
-            
+
             <div class="p-5 space-y-4 bg-white border border-black rounded-sm">
                 <!-- Header Toko & Tujuan -->
                 <div class="flex items-start justify-between pb-4 border-b border-black">
@@ -268,7 +268,7 @@ onMounted(() => {
                             <p class="font-bold">Delivery</p>
                             <p class="text-gray-800 uppercase">{{ pesanan.ekspedisi_nama || 'Di Ambil' }} <span v-if="pesanan.ekspedisi_layanan && !pesanan.ekspedisi_nama?.includes('Ambil')">- {{ pesanan.ekspedisi_layanan }}</span></p>
                         </div>
-                        <div class="space-y-0.5 pt-2">
+                        <div v-if="sisaTagihan > 0" class="space-y-0.5 pt-2">
                             <p class="font-medium">Pembayaran :</p>
                             <p class="font-bold">{{ bank_name }} {{ bank_number }}</p>
                             <p class="italic text-[10px]">an/ {{ bank_owner }}</p>
