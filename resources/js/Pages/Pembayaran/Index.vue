@@ -88,12 +88,19 @@ const getTagihanAkurat = (pesan) => {
 
 // Map pembayaran yang masuk dan inject tagihan akurat dari pesanan
 const pembayaranAkurat = computed(() => {
-    return props.pembayaran.map(p => {
-        return {
-            ...p,
-            total_tagihan_real: getTagihanAkurat(p.pesan)
-        };
-    });
+    if (!props.pembayaran || !props.pembayaran.data) {
+        return { data: [], links: [], total: 0 };
+    }
+
+    return {
+        ...props.pembayaran,
+        data: props.pembayaran.data.map(p => {
+            return {
+                ...p,
+                total_tagihan_real: getTagihanAkurat(p.pesan)
+            };
+        })
+    };
 });
 // ==========================================
 
@@ -192,7 +199,7 @@ const namaStafDisplay = (item) => {
                         </td>
                     </tr>
 
-                    <tr v-if="pembayaran.length === 0">
+                    <tr v-if="!pembayaranAkurat.data || pembayaranAkurat.data.length === 0">
                         <td colspan="6" class="px-6 py-20 text-center">
                             <div class="flex flex-col items-center opacity-30">
                                 <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
