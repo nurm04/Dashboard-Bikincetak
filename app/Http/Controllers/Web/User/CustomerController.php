@@ -41,7 +41,7 @@ class CustomerController extends Controller
             $query->where('id_role_customer', $filterRole);
         }
 
-        $customers = $query->latest()->get();
+        $customers = $query->latest()->paginate(10)->withQueryString();
 
         $roles = RoleCustomer::all();
 

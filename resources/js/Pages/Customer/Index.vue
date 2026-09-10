@@ -19,7 +19,7 @@ const debounce = (fn, delay) => {
 };
 
 const props = defineProps({
-    customers: Array,
+    customers: Object,
     roles: Array,
     filters: Object
 });
@@ -130,8 +130,8 @@ const doDelete = () => {
                     </div>
                 </div>
 
-                <CustomTable :headers="headers">
-                    <tr v-for="cust in customers" :key="cust.id_customer" class="transition-colors hover:bg-base-200/50">
+                <CustomTable :headers="headers" :pagination="customers">
+                    <tr v-for="cust in customers.data" :key="cust.id_customer" class="transition-colors hover:bg-base-200/50">
                         <td class="px-6 py-4 font-mono text-xs font-bold text-primary">{{ cust.id_customer }}</td>
                         <td class="px-6 py-4">
                             <div class="font-bold text-base-content">{{ cust.user?.name }}</div>
