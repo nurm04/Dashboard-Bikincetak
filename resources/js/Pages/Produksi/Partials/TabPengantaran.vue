@@ -1,9 +1,18 @@
+<style scoped>
+.custom-scrollbar::-webkit-scrollbar { display: none; }
+.custom-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+</style>
+
 <script setup>
 import { ref, computed, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import axios from 'axios';
 import { alertStore } from '@/Utils/alertStore';
 import { Truck, Printer, Clock } from 'lucide-vue-next';
+
+// 👇 IMPORT KOMPONEN TABEL 👇
+import CustomTable from '@/Components/CustomTable.vue';
+import CustomTableAction from '@/Components/CustomTableAction.vue';
 import CustomInput from '@/Components/Form/CustomInput.vue';
 import CustomSelect from '@/Components/Form/CustomSelect.vue';
 
@@ -12,6 +21,8 @@ const props = defineProps({
     currentUser: Object,
 });
 
+const headers = ['ID Pesanan', 'Customer', 'Tanggal Pesan', 'Status', 'Aksi'];
+
 const formatTanggal = (tgl) => {
     if (!tgl) return '-';
     const date = new Date(tgl);
@@ -19,6 +30,23 @@ const formatTanggal = (tgl) => {
 };
 
 const cleanProductName = (name) => name ? name.replace(/^[A-Za-z]+-\d+-/, '').replace(/-/g, ' ') : '';
+const parseAtribut = (str) => { if (!str) return null; if (typeof str === 'object') return str; try { return JSON.parse(str); } catch (e) { return null; } };
+const getValidAttributes = (str) => { const p = parseAtribut(str); return (!p || typeof p !== 'object') ? [] : Object.entries(p).filter(([_, v]) => v !== null && v !== undefined && v !== '').map(([k, v]) => ({ key: k, value: v })); };
+
+// ==========================================
+// LOGIC MODAL DETAIL
+// ==========================================
+const isDetailModalOpen = ref(false);
+const selectedPesananDetail = ref(null);
+
+const openDetailModal = (pesanan) => {
+    selectedPesananDetail.value = pesanan;
+    isDetailModalOpen.value = true;
+};
+const closeDetailModal = () => {
+    isDetailModalOpen.value = false;
+    selectedPesananDetail.value = null;
+};
 
 // ==========================================
 // LOGIC PENGANTARAN & KIRIM REGULER
@@ -166,88 +194,154 @@ const handleProsesPengantaran = (pesanan) => {
 <template>
     <div class="space-y-6">
 
-        <!-- DESAIN EMPTY STATE KONSISTEN -->
-        <div v-if="pesananList.length === 0" class="flex flex-col items-center justify-center py-20 mt-4 duration-500 border bg-base-200/20 border-base-300 rounded-3xl animate-in fade-in zoom-in-95">
-            <Truck class="w-12 h-12 mb-3 opacity-30 text-base-content" stroke-width="1.5" />
-            <h3 class="text-sm font-bold opacity-80 text-base-content">Belum Ada Pesanan Siap Kirim</h3>
-            <p class="mt-1 text-xs text-center opacity-50 text-base-content">Pesanan yang semua itemnya selesai akan otomatis muncul di sini.</p>
-        </div>
+        <!-- 👇 TABEL LIST PESANAN 👇 -->
+        <CustomTable :headers="headers" :pagination="false">
+            <tr v-for="pesanan in pesananList" :key="pesanan.id_pesan" class="transition-colors hover:bg-base-200/50">
+                <!-- 1. ID Pesanan -->
+                <td class="px-4 py-4 font-mono text-xs font-bold whitespace-nowrap text-primary">
+                    {{ pesanan.id_pesan }}
+                </td>
 
-        <div v-for="pesanan in pesananList" :key="pesanan.id_pesan" class="overflow-hidden border shadow-sm rounded-xl border-base-200 bg-base-100 animate-in fade-in slide-in-from-bottom-2">
+                <!-- 2. Customer -->
+                <td class="px-4 py-4 whitespace-nowrap">
+                    <div class="font-bold text-base-content">{{ pesanan.customer?.user?.name || 'Walk-in / Umum' }}</div>
+                    <div class="text-[10px] text-base-content/50">{{ pesanan.customer?.id_customer || '-' }}</div>
+                </td>
 
-            <!-- HEADER PESANAN RESPONSIVE -->
-            <div class="flex flex-col items-start justify-between gap-4 p-4 border-b sm:p-5 sm:flex-row sm:items-center border-base-200 bg-base-50/30">
-                <div class="flex items-start w-full gap-3 sm:items-center sm:w-auto">
-                    <!-- shrink-0 agar kotak ID tidak gepeng -->
-                    <div v-if="currentUser?.role !== 'vendor'" class="shrink-0 px-3 py-1.5 border rounded-lg border-base-300 bg-base-100 flex flex-col items-center justify-center">
-                        <span class="text-[9px] sm:text-[10px] font-black text-base-content/50 uppercase tracking-widest">ID Pesan</span>
-                        <span class="text-xs font-black sm:text-sm text-base-content">{{ pesanan.id_pesan }}</span>
+                <!-- 3. Tanggal Pesan -->
+                <td class="px-4 py-4 whitespace-nowrap">
+                    <div class="flex items-center gap-1.5">
+                        <Clock class="w-3.5 h-3.5 opacity-50" />
+                        <span class="font-black tracking-tight text-base-content">
+                            {{ formatTanggal(pesanan.tanggal_pesan) }}
+                        </span>
                     </div>
-                    <div class="flex-1 min-w-0">
-                        <h3 v-if="currentUser?.role !== 'vendor'" class="text-sm font-bold truncate sm:text-base text-base-content">{{ pesanan.customer?.user?.name }}</h3>
-                        <div class="flex flex-wrap items-center gap-2 mt-1">
-                            <span class="flex items-center gap-1.5 text-[10px] sm:text-xs font-bold px-2.5 py-1 rounded-full border border-green-200 text-green-600 bg-green-50">
-                                <span class="w-1.5 h-1.5 rounded-full bg-green-600 animate-pulse"></span> Produksi Selesai
-                            </span>
+                </td>
+
+                <!-- 4. Status -->
+                <td class="px-4 py-4 whitespace-nowrap">
+                    <span class="flex items-center gap-1.5 text-[10px] sm:text-xs font-bold px-2.5 py-1 rounded-full border border-green-200 text-green-600 bg-green-50 w-fit">
+                        <span class="w-1.5 h-1.5 rounded-full bg-green-600 animate-pulse"></span> Siap Kirim
+                    </span>
+                </td>
+
+                <!-- 5. Aksi Pop-up -->
+                <td class="px-4 py-4 text-center whitespace-nowrap">
+                    <CustomTableAction v-slot="{ close }">
+                        <div class="px-4 py-2 text-[10px] font-black text-base-content/40 uppercase tracking-widest border-b border-base-300/50 mb-1 text-left">
+                            Menu Pengantaran
                         </div>
-                    </div>
-                </div>
 
-                <!-- Bagian Kanan Header (Deadline & Tombol) -->
-                <div class="flex flex-col w-full gap-3 pt-3 border-t sm:border-t-0 sm:pt-0 border-base-200 sm:w-auto sm:items-end shrink-0">
-                    <div class="flex items-center gap-2 text-xs sm:text-sm">
-                        <Clock class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-base-content/40" />
-                        <span class="font-medium text-base-content/60">Tgl Pesan:</span>
-                        <span class="font-black tracking-tight text-base-content">{{ formatTanggal(pesanan.tanggal_pesan) }}</span>
-                    </div>
-                    <!-- Tombol flex-1 / full width di HP -->
-                    <div class="flex items-center w-full gap-2 mt-1 sm:w-auto" v-if="currentUser?.role !== 'vendor'">
-                        <a :href="route('pesan.cetakLabel', pesanan.id_pesan)" target="_blank" class="w-full font-bold tracking-wider uppercase sm:w-auto btn btn-xs sm:btn-sm btn-outline hover:bg-base-200 hover:text-base-content hover:border-base-300 border-base-300 text-base-content/70 text-[9px] sm:text-[10px]">
-                            <Printer class="w-3.5 h-3.5" /> Cetak Label
+                        <!-- Aksi: Detail Produk & Ekspedisi -->
+                        <button @click="openDetailModal(pesanan); close()" class="flex items-center w-full text-left whitespace-nowrap px-4 py-2.5 text-sm font-bold text-base-content hover:bg-base-200 transition-colors">
+                            <svg class="w-4 h-4 mr-3 shrink-0 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            Detail & Ekspedisi
+                        </button>
+
+                        <!-- Aksi: Proses Pengantaran -->
+                        <button v-if="$can('produksi', 'ubah') && currentUser?.role !== 'vendor'" @click="handleProsesPengantaran(pesanan); close()" class="flex items-center w-full text-left whitespace-nowrap px-4 py-2.5 text-sm font-bold text-primary hover:bg-primary/10 transition-colors">
+                            <Truck class="w-4 h-4 mr-3 shrink-0" />
+                            Proses Pengantaran
+                        </button>
+
+                        <div class="my-1 border-t border-base-300/50" v-if="currentUser?.role !== 'vendor'"></div>
+
+                        <!-- Aksi: Cetak Label -->
+                        <a v-if="currentUser?.role !== 'vendor'" :href="route('pesan.cetakLabel', pesanan.id_pesan)" target="_blank" @click="close()" class="flex items-center w-full text-left whitespace-nowrap px-4 py-2.5 text-sm font-bold text-info hover:bg-info/10 transition-colors">
+                            <Printer class="w-4 h-4 mr-3 shrink-0" /> Cetak Label
                         </a>
-                    </div>
-                </div>
-            </div>
 
-            <!-- BODY KONTEN PENGANTARAN RESPONSIVE -->
-            <div class="flex flex-col gap-6 p-4 sm:p-5 md:flex-row">
-                <!-- Info Produk Ringkas -->
-                <div class="flex-1 space-y-3">
-                    <h4 class="text-[9px] sm:text-[10px] font-black text-base-content/50 uppercase tracking-widest block mb-1.5">Produk Siap Kirim</h4>
-                    <div class="space-y-2">
-                        <div v-for="item in pesanan.pesanan_item" :key="item.id" class="flex items-center justify-between p-3 border shadow-sm bg-base-50/50 rounded-xl border-base-200">
-                            <span class="text-xs font-bold capitalize sm:text-sm text-base-content">{{ cleanProductName(item.nama_produk_snapshot) }}</span>
-                            <span class="text-[10px] sm:text-xs font-black bg-base-100 px-2.5 py-1 rounded-md border border-base-300">Qty: {{ item.jumlah }}</span>
+                        <!-- Aksi: Cetak Nota -->
+                        <a v-if="currentUser?.role !== 'vendor'" :href="route('pesan.cetakNota', pesanan.id_pesan)" target="_blank" @click="close()" class="flex items-center w-full text-left whitespace-nowrap px-4 py-2.5 text-sm font-bold text-warning hover:bg-warning/10 transition-colors">
+                            <Printer class="w-4 h-4 mr-3 shrink-0" /> Cetak Nota
+                        </a>
+                    </CustomTableAction>
+                </td>
+            </tr>
+
+            <!-- Jika Data Kosong -->
+            <tr v-if="pesananList.length === 0">
+                <td colspan="5" class="px-6 py-20 text-center">
+                    <div class="flex flex-col items-center justify-center opacity-30">
+                        <Truck class="w-12 h-12 mb-4" stroke-width="1.5" />
+                        <h3 class="text-base font-semibold text-base-content">Belum Ada Pesanan Siap Kirim</h3>
+                        <p class="mt-1 text-sm text-base-content/50">Pesanan yang semua itemnya selesai akan otomatis muncul di sini.</p>
+                    </div>
+                </td>
+            </tr>
+        </CustomTable>
+
+
+        <!-- 👇 MODAL DETAIL PRODUK & EKSPEDISI 👇 -->
+        <dialog class="modal" :class="{'modal-open': isDetailModalOpen}">
+            <div class="max-w-4xl p-0 modal-box rounded-2xl">
+                <div class="flex items-center justify-between p-4 border-b sm:p-5 border-base-200 bg-base-50">
+                    <div>
+                        <h3 class="text-base font-bold text-base-content">Detail Pengantaran</h3>
+                        <p class="text-[11px] sm:text-sm font-medium text-base-content/50 mt-0.5">ID Transaksi: <span class="font-bold text-primary">{{ selectedPesananDetail?.id_pesan }}</span></p>
+                    </div>
+                    <button @click="closeDetailModal" class="btn btn-sm btn-circle btn-ghost text-base-content/40 hover:text-error">✕</button>
+                </div>
+
+                <div class="p-4 sm:p-5 max-h-[70vh] overflow-y-auto custom-scrollbar space-y-6">
+
+                    <!-- Info Ekspedisi (Bawaan Customer) -->
+                    <div class="p-4 border shadow-sm border-orange-100 bg-orange-50/50 rounded-xl">
+                        <div class="flex items-start gap-3">
+                            <Truck class="w-5 h-5 mt-0.5 text-orange-500 shrink-0" />
+                            <div>
+                                <h4 class="text-[10px] sm:text-[11px] font-black text-orange-600/70 uppercase tracking-widest mb-1">Informasi Ekspedisi (Pilihan Customer)</h4>
+                                <p class="text-sm font-black text-orange-900">
+                                    {{ selectedPesananDetail?.ekspedisi_nama || 'Kurir Toko' }}
+                                    <span v-if="selectedPesananDetail?.ekspedisi_layanan">- {{ selectedPesananDetail.ekspedisi_layanan }}</span>
+                                </p>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Info Ekspedisi Awal -->
-                <div class="w-full pt-4 space-y-3 border-t md:w-1/3 md:border-t-0 md:border-l-2 border-base-200 md:pt-0 md:pl-6 shrink-0">
-                    <h4 class="text-[9px] sm:text-[10px] font-black text-base-content/50 uppercase tracking-widest block mb-1.5">Informasi Ekspedisi</h4>
-                    <div class="p-4 border border-orange-100 bg-orange-50 rounded-xl">
-                        <p class="text-[9px] sm:text-[10px] font-black text-orange-600/70 uppercase tracking-widest mb-1">Pilihan Customer</p>
-                        <p class="text-sm font-black text-orange-900">{{ pesanan.ekspedisi_nama || 'Kurir Toko' }} <span v-if="pesanan.ekspedisi_layanan">- {{ pesanan.ekspedisi_layanan }}</span></p>
+                    <!-- List Produk Lengkap -->
+                    <div class="overflow-x-auto border rounded-xl border-base-200">
+                        <table class="w-full text-sm text-left min-w-150">
+                            <thead class="text-[10px] uppercase tracking-widest border-b-2 text-base-content/50 border-base-200 bg-base-100">
+                                <tr>
+                                    <th class="w-1/2 px-4 py-3 font-bold">Item Produk</th>
+                                    <th class="px-4 py-3 font-bold">Spesifikasi / Catatan</th>
+                                    <th class="w-24 px-4 py-3 font-bold text-center">Kuantitas</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-base-200/50 bg-base-100">
+                                <tr v-for="item in selectedPesananDetail?.pesanan_item" :key="item.id" class="transition-colors hover:bg-base-50">
+                                    <td class="px-4 py-4 font-medium align-top">
+                                        <span class="font-bold capitalize text-primary">{{ cleanProductName(item.nama_produk_snapshot) }}</span>
+                                        <div v-if="getValidAttributes(item.atribut_custom_snapshot).length > 0" class="mt-1 text-[10px] font-bold flex flex-wrap gap-1">
+                                            <span v-for="(attr, idx) in getValidAttributes(item.atribut_custom_snapshot)" :key="attr.key">
+                                                <span v-if="idx > 0" class="mx-1 opacity-40 text-base-content">|</span><span class="opacity-70">{{ attr.key }}:</span> {{ attr.value }}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-4 text-xs align-top text-base-content/70">
+                                        <p class="italic opacity-80 leading-tight">"{{ item.catatan ?? "Tidak ada Catatan" }}"</p>
+                                    </td>
+                                    <td class="px-4 py-4 text-lg font-black text-center align-top">{{ item.jumlah }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
+
                 </div>
             </div>
+            <form method="dialog" class="modal-backdrop bg-base-content/20"><button @click="closeDetailModal">close</button></form>
+        </dialog>
 
-            <!-- TOMBOL PROSES PENGANTARAN (Dipindah & Responsif) -->
-            <div class="flex flex-col gap-4 p-4 border-t sm:p-5 sm:flex-row sm:items-center sm:justify-between border-base-200 bg-base-50/50" v-if="currentUser?.role !== 'vendor'">
-                <p class="text-[10px] sm:text-xs font-medium text-base-content/60 leading-relaxed text-center sm:text-left">Klik tombol untuk memasukkan nomor resi atau ongkir aktual sebelum memindahkan pesanan ke histori.</p>
-                <button v-if="$can('produksi', 'ubah')" @click="handleProsesPengantaran(pesanan)" class="w-full font-bold tracking-wider uppercase sm:w-auto btn btn-sm btn-neutral rounded-xl text-[10px] sm:text-xs shrink-0">
-                    <Truck class="w-4 h-4 sm:mr-1.5" />
-                    <span class="sm:hidden">Proses Kirim</span>
-                    <span class="hidden sm:inline">Input Resi / Proses Pengantaran</span>
-                </button>
-            </div>
-        </div>
 
         <!-- ============================================== -->
         <!-- MODAL TENTUKAN BERAT CUSTOM (KONSISTEN) -->
         <!-- ============================================== -->
         <dialog class="modal" :class="{'modal-open': isModalBeratOpen}">
-            <div class="flex flex-col max-w-lg p-0 overflow-hidden modal-box rounded-2xl">
+            <div class="flex flex-col max-w-lg p-0 overflow-hidden modal-box rounded-2xl z-100">
                 <!-- Header Modal -->
                 <div class="flex items-start justify-between p-4 border-b sm:items-center sm:p-5 border-base-200">
                     <div>
@@ -258,7 +352,7 @@ const handleProsesPengantaran = (pesanan) => {
                 </div>
 
                 <!-- Body Modal -->
-                <div class="p-4 sm:p-5 max-h-[70vh] overflow-y-auto space-y-4 bg-base-50/50 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-base-300 [&::-webkit-scrollbar-thumb]:rounded-full">
+                <div class="p-4 sm:p-5 max-h-[70vh] overflow-y-auto space-y-4 bg-base-50/50 custom-scrollbar">
                     <div v-if="selectedPengantaran?.ekspedisi_nama" class="flex items-start gap-3 p-4 mb-2 border border-blue-100 shadow-sm rounded-xl bg-blue-50">
                         <Truck class="w-5 h-5 mt-0.5 shrink-0 text-blue-500" />
                         <div>
@@ -298,14 +392,14 @@ const handleProsesPengantaran = (pesanan) => {
                     </button>
                 </div>
             </div>
-            <form method="dialog" class="modal-backdrop bg-base-content/20"><button @click="closeModalBerat">close</button></form>
+            <form method="dialog" class="modal-backdrop bg-base-content/50 z-90"><button @click="closeModalBerat">close</button></form>
         </dialog>
 
         <!-- ============================================== -->
         <!-- MODAL PENGANTARAN & CEK ONGKIR (KONSISTEN) -->
         <!-- ============================================== -->
         <dialog class="modal" :class="{'modal-open': isPengantaranModalOpen}">
-            <div class="flex flex-col max-w-xl p-0 overflow-hidden modal-box rounded-2xl">
+            <div class="flex flex-col max-w-xl p-0 overflow-hidden modal-box rounded-2xl z-100">
                 <!-- Header Modal -->
                 <div class="flex items-start justify-between p-4 border-b sm:items-center sm:p-5 border-base-200">
                     <div>
@@ -316,7 +410,7 @@ const handleProsesPengantaran = (pesanan) => {
                 </div>
 
                 <!-- Body Modal -->
-                <div class="p-4 sm:p-5 max-h-[70vh] overflow-y-auto space-y-6 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-base-300 [&::-webkit-scrollbar-thumb]:rounded-full">
+                <div class="p-4 sm:p-5 max-h-[70vh] overflow-y-auto space-y-6 custom-scrollbar">
                     <div class="grid grid-cols-1 gap-4 p-4 border sm:grid-cols-2 bg-base-200/30 rounded-xl border-base-200">
 
                         <div class="col-span-1 sm:col-span-2">
@@ -381,14 +475,14 @@ const handleProsesPengantaran = (pesanan) => {
                     </button>
                 </div>
             </div>
-            <form method="dialog" class="modal-backdrop bg-base-content/20"><button @click="closePengantaranModal">close</button></form>
+            <form method="dialog" class="modal-backdrop bg-base-content/50 z-90"><button @click="closePengantaranModal">close</button></form>
         </dialog>
 
         <!-- ============================================== -->
         <!-- MODAL KIRIM REGULER (KONSISTEN) -->
         <!-- ============================================== -->
         <dialog class="modal" :class="{'modal-open': isConfirmKirimOpen}">
-            <div class="max-w-sm p-0 modal-box rounded-2xl">
+            <div class="max-w-sm p-0 modal-box rounded-2xl z-100">
                 <!-- Header Modal -->
                 <div class="flex items-start justify-between p-4 border-b sm:items-center sm:p-5 border-base-200">
                     <div>
@@ -420,7 +514,7 @@ const handleProsesPengantaran = (pesanan) => {
                     </form>
                 </div>
             </div>
-            <form method="dialog" class="modal-backdrop bg-base-content/20"><button @click="closeKirimModal">close</button></form>
+            <form method="dialog" class="modal-backdrop bg-base-content/50 z-90"><button @click="closeKirimModal">close</button></form>
         </dialog>
 
     </div>

@@ -1,17 +1,27 @@
+<style scoped>
+.custom-scrollbar::-webkit-scrollbar { display: none; }
+.custom-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+</style>
+
 <script setup>
 import { ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { alertStore } from '@/Utils/alertStore';
 import { Clock, CheckCircle, Paperclip, UploadCloud, Printer, Inbox } from 'lucide-vue-next';
+
 import CustomInput from '@/Components/Form/CustomInput.vue';
 import CustomTable from '@/Components/CustomTable.vue';
 import CustomInputFile from '@/Components/Form/CustomInputFile.vue';
+import CustomTableAction from '@/Components/CustomTableAction.vue';
 
 const props = defineProps({
     pesananList: Array,
     currentUser: Object,
     currentVendorId: String,
 });
+
+const headers = ['ID Pesanan', 'Customer', 'Deadline', 'Status', 'Aksi'];
+const headersProses = ['Pelaksana', 'Instruksi / Keterangan', 'Qty', 'Status', 'Aksi'];
 
 const formatTanggal = (tgl) => {
     if (!tgl) return '-';
@@ -38,12 +48,29 @@ const checkAccess = (schedule) => {
     return (schedule.status_pengerjaan === 'selesai' && !isAdmin) ? 'view' : 'edit';
 };
 
-const headersProses = ['Pelaksana', 'Instruksi / Keterangan', 'Qty', 'Status', 'Aksi'];
+// ==========================================
+// LOGIC MODAL DETAIL & PROGRESS
+// ==========================================
+const isDetailModalOpen = ref(false);
+const selectedPesananDetail = ref(null);
 
+const openDetailModal = (pesanan) => {
+    selectedPesananDetail.value = pesanan;
+    isDetailModalOpen.value = true;
+};
+const closeDetailModal = () => {
+    isDetailModalOpen.value = false;
+    selectedPesananDetail.value = null;
+};
+
+// ==========================================
+// LOGIC MODAL UPDATE PROGRESS
+// ==========================================
 const isUpdateModalOpen = ref(false);
 const selectedSchedule = ref(null);
 const selectedItemUpdate = ref(null);
 const isViewOnly = ref(false);
+
 const updateForm = useForm({ deskripsi_pengerjaan: '', total_tagihan_vendor: null, file_nota: null, hasil_desain: null });
 const fileNotaObj = ref({ tipe_file: 'upload', file: null, link_file: '' });
 const fileHasilObj = ref({ tipe_file: 'upload', file: null, link_file: '' });
@@ -64,6 +91,7 @@ const openUpdateModal = (schedule, item) => {
     isUpdateModalOpen.value = true;
 };
 const closeUpdateModal = () => { isUpdateModalOpen.value = false; updateForm.reset(); };
+
 const submitUpdate = () => {
     updateForm.post(route('produksi.selesaikan', selectedSchedule.value.id), {
         forceFormData: true,
@@ -76,136 +104,175 @@ const submitUpdate = () => {
 <template>
     <div class="space-y-6">
 
-        <!-- DESAIN EMPTY STATE -->
-        <div v-if="pesananList.length === 0" class="flex flex-col items-center justify-center py-20 mt-4 duration-500 border bg-base-200/20 border-base-300 rounded-3xl animate-in fade-in zoom-in-95">
-            <Inbox class="w-12 h-12 mb-3 opacity-30 text-base-content" stroke-width="1.5" />
-            <h3 class="text-sm font-bold opacity-80 text-base-content">Tidak Ada Pekerjaan</h3>
-            <p class="mt-1 text-xs opacity-50 text-base-content">Belum ada pesanan yang sedang diproses saat ini.</p>
-        </div>
+        <!-- 👇 TABEL LIST PESANAN 👇 -->
+        <CustomTable :headers="headers" :pagination="false">
+            <tr v-for="pesanan in pesananList" :key="pesanan.id_pesan" class="transition-colors hover:bg-base-200/50">
+                <!-- 1. ID Pesanan -->
+                <td class="px-4 py-4 font-mono text-xs font-bold whitespace-nowrap text-primary">
+                    {{ pesanan.id_pesan }}
+                </td>
 
-        <div v-for="pesanan in pesananList" :key="pesanan.id_pesan" class="overflow-hidden border shadow-sm rounded-xl border-base-200 bg-base-100 animate-in fade-in slide-in-from-bottom-2">
+                <!-- 2. Customer -->
+                <td class="px-4 py-4 whitespace-nowrap">
+                    <div class="font-bold text-base-content">{{ pesanan.customer?.user?.name || 'Walk-in / Umum' }}</div>
+                    <div class="text-[10px] text-base-content/50">{{ pesanan.customer?.id_customer || '-' }}</div>
+                </td>
 
-            <!-- HEADER PESANAN RESPONSIVE -->
-            <div class="flex flex-col items-start justify-between gap-4 p-4 border-b sm:p-5 sm:flex-row sm:items-center border-base-200 bg-base-50/30">
-                <div class="flex items-start w-full gap-3 sm:items-center sm:w-auto">
-                    <!-- shrink-0 agar kotak ID tidak gepeng -->
-                    <div v-if="currentUser?.role !== 'vendor'" class="shrink-0 px-3 py-1.5 border rounded-lg border-base-300 bg-base-100 flex flex-col items-center justify-center">
-                        <span class="text-[9px] sm:text-[10px] font-black text-base-content/50 uppercase tracking-widest">ID Pesan</span>
-                        <span class="text-xs font-black sm:text-sm text-base-content">{{ pesanan.id_pesan }}</span>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <h3 v-if="currentUser?.role !== 'vendor'" class="text-sm font-bold truncate sm:text-base text-base-content">{{ pesanan.customer?.user?.name }}</h3>
-                        <div class="flex flex-wrap items-center gap-2 mt-1">
-                            <span class="flex items-center gap-1.5 text-[10px] sm:text-xs font-bold px-2.5 py-1 rounded-full border border-blue-200 text-blue-600 bg-blue-50">
-                                <span class="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span> Sedang Diproses
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Bagian Kanan Header (Deadline & Tombol) -->
-                <div class="flex flex-col w-full gap-3 pt-3 border-t sm:border-t-0 sm:pt-0 border-base-200 sm:w-auto sm:items-end shrink-0">
-                    <div class="flex items-center gap-2 text-xs sm:text-sm">
-                        <Clock class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-base-content/40" />
-                        <span class="font-medium text-base-content/60">Deadline:</span>
+                <!-- 3. Deadline -->
+                <td class="px-4 py-4 whitespace-nowrap">
+                    <div class="flex items-center gap-1.5">
+                        <Clock class="w-3.5 h-3.5 opacity-50" />
                         <span class="font-black tracking-tight" :class="isDeadlinePassed(pesanan.waktu_deadline) ? 'text-error' : 'text-base-content'">
                             {{ formatTanggal(pesanan.waktu_deadline) }}
                         </span>
                     </div>
-                    <!-- flex-1 di HP agar tombol membagi ruang rata 50:50 -->
-                    <div class="flex items-center w-full gap-2 mt-1 sm:w-auto" v-if="currentUser?.role !== 'vendor'">
-                        <a :href="route('pesan.cetakLabel', pesanan.id_pesan)" target="_blank" class="flex-1 font-bold tracking-wider uppercase sm:flex-none btn btn-xs sm:btn-sm btn-outline hover:bg-base-200 hover:text-base-content hover:border-base-300 border-base-300 text-base-content/70 text-[9px] sm:text-[10px]">
-                            <Printer class="w-3.5 h-3.5" /> Label
+                </td>
+
+                <!-- 4. Status -->
+                <td class="px-4 py-4 whitespace-nowrap">
+                    <span class="flex items-center gap-1.5 text-[10px] sm:text-xs font-bold px-2.5 py-1 rounded-full border border-blue-200 text-blue-600 bg-blue-50 w-fit">
+                        <span class="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span> Sedang Diproses
+                    </span>
+                </td>
+
+                <!-- 5. Aksi Pop-up -->
+                <td class="px-4 py-4 text-center whitespace-nowrap">
+                    <CustomTableAction v-slot="{ close }">
+                        <div class="px-4 py-2 text-[10px] font-black text-base-content/40 uppercase tracking-widest border-b border-base-300/50 mb-1 text-left">
+                            Menu Produksi
+                        </div>
+
+                        <!-- Aksi: Detail Produk & Update Progress -->
+                        <button @click="openDetailModal(pesanan); close()" class="flex items-center w-full text-left whitespace-nowrap px-4 py-2.5 text-sm font-bold text-base-content hover:bg-base-200 transition-colors">
+                            <svg class="w-4 h-4 mr-3 shrink-0 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            Detail & Pengerjaan
+                        </button>
+
+                        <div class="my-1 border-t border-base-300/50" v-if="currentUser?.role !== 'vendor'"></div>
+
+                        <!-- Aksi: Cetak Label -->
+                        <a v-if="currentUser?.role !== 'vendor'" :href="route('pesan.cetakLabel', pesanan.id_pesan)" target="_blank" @click="close()" class="flex items-center w-full text-left whitespace-nowrap px-4 py-2.5 text-sm font-bold text-info hover:bg-info/10 transition-colors">
+                            <Printer class="w-4 h-4 mr-3 shrink-0" /> Cetak Label
                         </a>
-                        <a :href="route('pesan.cetakNota', pesanan.id_pesan)" target="_blank" class="flex-1 font-bold tracking-wider uppercase sm:flex-none btn btn-xs sm:btn-sm btn-outline hover:bg-base-200 hover:text-base-content hover:border-base-300 border-base-300 text-base-content/70 text-[9px] sm:text-[10px]">
-                            <Printer class="w-3.5 h-3.5" /> Nota
+
+                        <!-- Aksi: Cetak Nota -->
+                        <a v-if="currentUser?.role !== 'vendor'" :href="route('pesan.cetakNota', pesanan.id_pesan)" target="_blank" @click="close()" class="flex items-center w-full text-left whitespace-nowrap px-4 py-2.5 text-sm font-bold text-warning hover:bg-warning/10 transition-colors">
+                            <Printer class="w-4 h-4 mr-3 shrink-0" /> Cetak Nota
                         </a>
+                    </CustomTableAction>
+                </td>
+            </tr>
+
+            <!-- Jika Data Kosong -->
+            <tr v-if="pesananList.length === 0">
+                <td colspan="5" class="px-6 py-20 text-center">
+                    <div class="flex flex-col items-center justify-center opacity-30">
+                        <Inbox class="w-12 h-12 mb-4" />
+                        <h3 class="text-base font-semibold text-base-content">Tidak Ada Pekerjaan</h3>
+                        <p class="mt-1 text-sm text-base-content/50">Belum ada pesanan yang sedang diproses saat ini.</p>
                     </div>
+                </td>
+            </tr>
+        </CustomTable>
+
+        <!-- 👇 MODAL DETAIL PRODUK & PENGERJAAN 👇 -->
+        <dialog class="modal" :class="{'modal-open': isDetailModalOpen}">
+            <div class="max-w-5xl p-0 modal-box rounded-2xl">
+                <div class="flex items-center justify-between p-4 border-b sm:p-5 border-base-200 bg-base-50">
+                    <div>
+                        <h3 class="text-base font-bold text-base-content">Detail Item & Status Pengerjaan</h3>
+                        <p class="text-[11px] sm:text-sm font-medium text-base-content/50 mt-0.5">ID Transaksi: <span class="font-bold text-primary">{{ selectedPesananDetail?.id_pesan }}</span></p>
+                    </div>
+                    <button @click="closeDetailModal" class="btn btn-sm btn-circle btn-ghost text-base-content/40 hover:text-error">✕</button>
                 </div>
-            </div>
 
-            <div class="p-4 space-y-6 sm:p-5">
-                <!-- DAFTAR ITEM RESPONSIVE -->
-                <div v-for="item in pesanan.pesanan_item" :key="item.id" class="overflow-hidden border shadow-sm rounded-xl border-base-200">
+                <div class="p-4 sm:p-5 max-h-[70vh] overflow-y-auto custom-scrollbar space-y-6">
+                    <div v-for="item in selectedPesananDetail?.pesanan_item" :key="item.id" class="overflow-hidden border shadow-sm rounded-xl border-base-200 bg-base-100">
 
-                    <div class="flex flex-col gap-4 p-4 border-b bg-base-50/30 border-base-200 sm:flex-row">
-                        <div class="sm:w-2/5">
-                            <span class="text-[9px] sm:text-[10px] font-black text-base-content/50 uppercase tracking-widest block mb-1.5">Item Produk</span>
-                            <h4 class="text-sm font-black capitalize sm:text-base text-base-content">{{ cleanProductName(item.nama_produk_snapshot) }}</h4>
+                        <!-- Bagian Detail Produk (Atas) -->
+                        <div class="flex flex-col gap-4 p-4 border-b bg-base-50/30 border-base-200 sm:flex-row">
+                            <div class="sm:w-2/5">
+                                <span class="text-[9px] sm:text-[10px] font-black text-base-content/50 uppercase tracking-widest block mb-1.5">Item Produk</span>
+                                <h4 class="text-sm font-black capitalize sm:text-base text-base-content">{{ cleanProductName(item.nama_produk_snapshot) }}</h4>
 
-                            <div v-if="getValidAttributes(item.atribut_custom_snapshot).length > 0" class="mt-1 text-[10px] font-bold text-primary flex flex-wrap gap-1 mb-2">
-                                <span v-for="(attr, idx) in getValidAttributes(item.atribut_custom_snapshot)" :key="attr.key">
-                                    <span v-if="idx > 0" class="mx-1 opacity-40 text-base-content">|</span>
-                                    <span class="opacity-70">{{ attr.key }}:</span> {{ attr.value }}
-                                </span>
-                            </div>
+                                <div v-if="getValidAttributes(item.atribut_custom_snapshot).length > 0" class="mt-1 text-[10px] font-bold text-primary flex flex-wrap gap-1 mb-2">
+                                    <span v-for="(attr, idx) in getValidAttributes(item.atribut_custom_snapshot)" :key="attr.key">
+                                        <span v-if="idx > 0" class="mx-1 opacity-40 text-base-content">|</span>
+                                        <span class="opacity-70">{{ attr.key }}:</span> {{ attr.value }}
+                                    </span>
+                                </div>
 
-                            <div v-if="item.pesanan_item_finishing?.length" class="flex flex-col gap-0.5 mb-2 mt-1">
-                                <div v-for="(fin, fIdx) in item.pesanan_item_finishing" :key="'fin'+fIdx" class="flex items-start gap-1">
-                                    <span class="mt-px text-xs opacity-50">▸</span>
-                                    <span class="text-xs font-medium text-base-content">{{ fin.nama_finishing_snapshot }}</span>
+                                <div v-if="item.pesanan_item_finishing?.length" class="flex flex-col gap-0.5 mb-2 mt-1">
+                                    <div v-for="(fin, fIdx) in item.pesanan_item_finishing" :key="'fin'+fIdx" class="flex items-start gap-1">
+                                        <span class="mt-px text-xs opacity-50">▸</span>
+                                        <span class="text-xs font-medium text-base-content">{{ fin.nama_finishing_snapshot }}</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div class="sm:flex-1">
-                            <span class="text-[9px] sm:text-[10px] font-black text-base-content/50 uppercase tracking-widest block mb-1.5">Spesifikasi / Catatan</span>
-                            <div v-if="getFileDisplay(item)" class="mb-2">
-                                <template v-if="getFileDisplay(item).tipe === 'upload'">
-                                    <a v-if="item.file_desain" :href="'/storage/' + getFileDisplay(item).nilai" target="_blank" class="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 hover:underline bg-blue-50 px-2 py-0.5 rounded border border-blue-100">📁 Download File</a>
-                                    <span v-else class="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 max-w-40 truncate">📁 {{ getFileDisplay(item).nilai }}</span>
-                                </template>
-                                <template v-else-if="getFileDisplay(item).tipe === 'link'">
-                                    <a :href="getFileDisplay(item).nilai.startsWith('http') ? getFileDisplay(item).nilai : 'https://' + getFileDisplay(item).nilai" target="_blank" class="inline-flex items-center gap-1 text-[10px] font-bold text-purple-600 hover:underline bg-purple-50 px-2 py-0.5 rounded border border-purple-100">🔗 GDrive Link</a>
-                                </template>
+                            <div class="sm:flex-1">
+                                <span class="text-[9px] sm:text-[10px] font-black text-base-content/50 uppercase tracking-widest block mb-1.5">Spesifikasi / Catatan</span>
+                                <div v-if="getFileDisplay(item)" class="mb-2">
+                                    <template v-if="getFileDisplay(item).tipe === 'upload'">
+                                        <a v-if="item.file_desain" :href="'/storage/' + getFileDisplay(item).nilai" target="_blank" class="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 hover:underline bg-blue-50 px-2 py-0.5 rounded border border-blue-100">📁 Download File</a>
+                                        <span v-else class="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 max-w-40 truncate">📁 {{ getFileDisplay(item).nilai }}</span>
+                                    </template>
+                                    <template v-else-if="getFileDisplay(item).tipe === 'link'">
+                                        <a :href="getFileDisplay(item).nilai.startsWith('http') ? getFileDisplay(item).nilai : 'https://' + getFileDisplay(item).nilai" target="_blank" class="inline-flex items-center gap-1 text-[10px] font-bold text-purple-600 hover:underline bg-purple-50 px-2 py-0.5 rounded border border-purple-100">🔗 GDrive Link</a>
+                                    </template>
+                                </div>
+                                <div v-else class="mb-2 inline-flex items-center gap-1 text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-100">❌ File Belum Ada</div>
+                                <p class="text-[11px] italic opacity-80 leading-tight border-l-2 border-base-300 pl-2 mt-1">"{{ item.catatan ?? "Tidak ada Catatan" }}"</p>
                             </div>
-                            <div v-else class="mb-2 inline-flex items-center gap-1 text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-100">❌ File Belum Ada</div>
-                            <p class="text-[11px] italic opacity-80 leading-tight border-l-2 border-base-300 pl-2 mt-1">"{{ item.catatan ?? "Tidak ada Catatan" }}"</p>
+
+                            <div class="sm:w-24 sm:text-right">
+                                <span class="text-[9px] sm:text-[10px] font-black text-base-content/50 uppercase tracking-widest block mb-1.5">Qty</span>
+                                <span class="text-lg font-black text-base-content">{{ item.jumlah }}</span>
+                            </div>
                         </div>
 
-                        <div class="sm:w-24 sm:text-right">
-                            <span class="text-[9px] sm:text-[10px] font-black text-base-content/50 uppercase tracking-widest block mb-1.5">Qty</span>
-                            <span class="text-lg font-black text-base-content">{{ item.jumlah }}</span>
-                        </div>
-                    </div>
-
-                    <!-- TABEL CUSTOM (Bisa Scroll Horizontal) -->
-                    <div class="p-0 overflow-x-auto sm:p-2 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:bg-base-300 [&::-webkit-scrollbar-thumb]:rounded-full pb-2">
-                        <div class="min-w-150">
-                            <CustomTable :headers="headersProses" class="bg-transparent border-none shadow-none">
-                                <tr v-for="schedule in item.pesanan_item_produksi" :key="schedule.id" class="border-b border-base-200/50 hover:bg-base-200/30">
-                                    <td class="px-4 py-3 text-xs font-medium whitespace-nowrap">
-                                        {{ schedule.tipe_pengerjaan === 'sendiri' ? 'In-House' : (schedule.vendor?.nama_vendor || 'Vendor') }}
-                                        <div v-if="schedule.file_revisi" class="mt-1">
-                                            <a :href="'/storage/' + schedule.file_revisi" target="_blank" class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 hover:underline bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
-                                                ✅ Hasil File
-                                            </a>
-                                        </div>
-                                    </td>
-                                    <td class="px-4 py-3 text-xs text-base-content/70 whitespace-nowrap">{{ schedule.instruksi_pengerjaan || '-' }}</td>
-                                    <td class="px-4 py-3 text-xs font-semibold text-center whitespace-nowrap">{{ schedule.qty_dikerjakan }}</td>
-                                    <td class="px-4 py-3 text-center whitespace-nowrap">
-                                        <button v-if="schedule.status_pengerjaan === 'selesai'" @click="openUpdateModal(schedule, item)" class="inline-flex gap-1.5 text-xs font-medium text-green-600 hover:underline">
-                                            <CheckCircle class="w-3.5 h-3.5" /> Selesai
-                                        </button>
-                                        <span v-else class="inline-flex gap-1.5 text-xs font-medium text-base-content/50"><span class="w-1.5 h-1.5 rounded-full bg-base-content/30"></span> Proses</span>
-                                    </td>
-                                    <td class="px-4 py-3 text-center whitespace-nowrap">
-                                        <button v-if="schedule.status_pengerjaan !== 'selesai'" @click="openUpdateModal(schedule, item)" class="text-xs font-medium text-blue-600 hover:underline" :disabled="checkAccess(schedule) !== 'edit'">
-                                            Update
-                                        </button>
-                                    </td>
-                                </tr>
-                            </CustomTable>
+                        <!-- Bagian Progress Pekerjaan (Bawah) -->
+                        <div class="p-0 overflow-x-auto sm:p-2 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:bg-base-300 [&::-webkit-scrollbar-thumb]:rounded-full pb-2">
+                            <div class="min-w-150">
+                                <CustomTable :headers="headersProses" class="bg-transparent border-none shadow-none">
+                                    <tr v-for="schedule in item.pesanan_item_produksi" :key="schedule.id" class="border-b border-base-200/50 hover:bg-base-200/30">
+                                        <td class="px-4 py-3 text-xs font-medium whitespace-nowrap">
+                                            {{ schedule.tipe_pengerjaan === 'sendiri' ? 'In-House' : (schedule.vendor?.nama_vendor || 'Vendor') }}
+                                            <div v-if="schedule.file_revisi" class="mt-1">
+                                                <a :href="'/storage/' + schedule.file_revisi" target="_blank" class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 hover:underline bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
+                                                    ✅ Hasil File
+                                                </a>
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3 text-xs text-base-content/70 whitespace-nowrap">{{ schedule.instruksi_pengerjaan || '-' }}</td>
+                                        <td class="px-4 py-3 text-xs font-semibold text-center whitespace-nowrap">{{ schedule.qty_dikerjakan }}</td>
+                                        <td class="px-4 py-3 text-center whitespace-nowrap">
+                                            <button v-if="schedule.status_pengerjaan === 'selesai'" @click="openUpdateModal(schedule, item)" class="inline-flex gap-1.5 text-xs font-medium text-green-600 hover:underline">
+                                                <CheckCircle class="w-3.5 h-3.5" /> Selesai
+                                            </button>
+                                            <span v-else class="inline-flex gap-1.5 text-xs font-medium text-base-content/50"><span class="w-1.5 h-1.5 rounded-full bg-base-content/30"></span> Proses</span>
+                                        </td>
+                                        <td class="px-4 py-3 text-center whitespace-nowrap">
+                                            <button v-if="schedule.status_pengerjaan !== 'selesai'" @click="openUpdateModal(schedule, item)" class="text-xs font-medium text-blue-600 hover:underline" :disabled="checkAccess(schedule) !== 'edit'">
+                                                Update
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </CustomTable>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+            <form method="dialog" class="modal-backdrop bg-base-content/20"><button @click="closeDetailModal">close</button></form>
+        </dialog>
 
-        <!-- MODAL UPDATE PROGRESS -->
+        <!-- 👇 MODAL UPDATE PROGRESS 👇 -->
         <dialog class="modal" :class="{'modal-open': isUpdateModalOpen}">
-            <div class="max-w-lg p-0 modal-box rounded-2xl">
+            <div class="max-w-lg p-0 modal-box rounded-2xl z-100">
                 <!-- Header Modal -->
                 <div class="flex items-start justify-between p-4 border-b sm:items-center sm:p-5 border-base-200">
                     <div>
@@ -221,7 +288,7 @@ const submitUpdate = () => {
 
                 <form @submit.prevent="submitUpdate">
                     <!-- Body Modal -->
-                    <div class="p-4 sm:p-5 max-h-[70vh] overflow-y-auto space-y-5 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-base-300 [&::-webkit-scrollbar-thumb]:rounded-full">
+                    <div class="p-4 sm:p-5 max-h-[70vh] overflow-y-auto space-y-5 custom-scrollbar">
                         <div>
                             <label class="block mb-1.5 text-[11px] font-black uppercase tracking-widest text-base-content/50">Laporan Pengerjaan <span v-if="!isViewOnly" class="text-error">*</span></label>
                             <textarea v-model="updateForm.deskripsi_pengerjaan" :disabled="isViewOnly" class="w-full h-24 font-medium rounded-xl textarea textarea-bordered disabled:bg-base-200 disabled:text-base-content/70 disabled:cursor-not-allowed" placeholder="Tulis rincian hasil pengerjaan..."></textarea>
@@ -286,7 +353,9 @@ const submitUpdate = () => {
                     </div>
                 </form>
             </div>
-            <form method="dialog" class="modal-backdrop bg-base-content/20"><button @click="closeUpdateModal">close</button></form>
+            <!-- Z-index tinggi agar overlay nutupin modal pertama -->
+            <form method="dialog" class="modal-backdrop bg-base-content/50 z-90"><button @click="closeUpdateModal">close</button></form>
         </dialog>
+
     </div>
 </template>
