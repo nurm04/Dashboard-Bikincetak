@@ -82,7 +82,7 @@ class PesanController extends Controller
         }
 
         $pesanan = $query->latest()->paginate(20)->withQueryString()
-            ->map(function ($pesan) {
+            ->through(function ($pesan) {
                 $pesan->total_tagihan = PesanService::hitungTotalPesanan($pesan);
                 $pesan->total_dibayar = $pesan->pembayaran
                     ->where('status_pembayaran', 'berhasil')

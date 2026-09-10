@@ -90,12 +90,17 @@ const getTagihanAkurat = (pesan) => {
 };
 
 const pesananAkurat = computed(() => {
-    return props.pesanan.map(p => {
-        return {
-            ...p,
-            total_tagihan_real: getTagihanAkurat(p)
-        };
-    });
+    if (!props.pesanan || !props.pesanan.data) return props.pesanan;
+
+    return {
+        ...props.pesanan,
+        data: props.pesanan.data.map(p => {
+            return {
+                ...p,
+                total_tagihan_real: getTagihanAkurat(p)
+            };
+        })
+    };
 });
 
 const headers = ['ID Pesanan', 'Kode Transaksi', 'Customer', 'Total Tagihan', 'Pembayaran', 'Operasional', 'Aksi'];
@@ -381,7 +386,7 @@ const formatEnum = (text) => {
                     </td>
                 </tr>
 
-                <tr v-if="pesanan.length === 0">
+                <tr v-if="!pesananAkurat.data || pesananAkurat.data.length === 0">
                     <td colspan="7" class="px-6 py-20 text-center">
                         <div class="flex flex-col items-center gap-2 opacity-30">
                             <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
