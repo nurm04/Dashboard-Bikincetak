@@ -56,7 +56,7 @@ class PesanController extends Controller
 
         $cart = Pesan::with([
                 'pesananItem.pesananItemFinishing.skuFinishing',
-                'pesananItem.sku.produk', // 👈 EAGER LOADING GAMBAR SKU
+                'pesananItem.produkSku.produk', // 👈 EAGER LOADING GAMBAR SKU
                 'alamat',
                 'pembayaran'
             ])
@@ -561,7 +561,7 @@ class PesanController extends Controller
         $pesanan = Pesan::with([
                 'alamat',
                 'pesananItem.pesananItemFinishing',
-                'pesananItem.sku.produk', // 👈 EAGER LOADING GAMBAR SKU
+                'pesananItem.produkSku.produk', // 👈 EAGER LOADING GAMBAR SKU
                 'pembayaran'
             ])
             ->where('id_customer', $customerId)
@@ -602,7 +602,7 @@ class PesanController extends Controller
         $pesanan = Pesan::with([
                 'alamat',
                 'pesananItem.pesananItemFinishing',
-                'pesananItem.sku.produk', // 👈 EAGER LOADING GAMBAR SKU
+                'pesananItem.produkSku.produk', // 👈 EAGER LOADING GAMBAR SKU
                 'pembayaran'
             ])
             ->where('id_customer', $customerId)
@@ -645,7 +645,7 @@ class PesanController extends Controller
         $pesanan = Pesan::with([
             'alamat',
             'pesananItem.pesananItemFinishing',
-            'pesananItem.sku.produk', // 👈 EAGER LOADING GAMBAR SKU
+            'pesananItem.produkSku.produk', // 👈 EAGER LOADING GAMBAR SKU
             'pembayaran'
         ])
         ->where('kode_transaksi', $kode_transaksi)
