@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Produk;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB; // 👇 WAJIB TAMBAH INI
+use Illuminate\Support\Facades\DB;
 
 class ProdukController extends Controller
 {
@@ -50,7 +50,13 @@ class ProdukController extends Controller
             return [
                 'id_produk' => $produk->id_produk,
                 'nama_produk' => $produk->nama_produk,
-                'kategori' => $produk->kategori ? $produk->kategori->nama_kategori : null,
+                'kategori' => $produk->kategori ? [
+                    'id_kategori' => $produk->kategori->id_kategori,
+                    'nama_kategori' => $produk->kategori->nama_kategori,
+                    'urutan' => $produk->kategori->urutan,
+                    'is_active' => $produk->kategori->is_active,
+                    'icon' => $produk->kategori->icon,
+                ] : null,
                 'is_active' => $produk->is_active,
                 'gambar_urls' => $gambarUrls,
                 'harga_mulai_dari' => $hargaTermurah ?? 0,
@@ -90,15 +96,19 @@ class ProdukController extends Controller
             $formattedProduk = [
                 'id_produk' => $produk->id_produk,
                 'nama_produk' => $produk->nama_produk,
-                'kategori' => $produk->kategori ? $produk->kategori->nama_kategori : null,
+                'kategori' => $produk->kategori ? [
+                    'id_kategori' => $produk->kategori->id_kategori,
+                    'nama_kategori' => $produk->kategori->nama_kategori,
+                    'urutan' => $produk->kategori->urutan,
+                    'is_active' => $produk->kategori->is_active,
+                    'icon' => $produk->kategori->icon,
+                ] : null,
                 'is_active' => $produk->is_active,
                 'gambar_urls' => $gambarUrls,
 
-                // Memaksa baca Pivot Database!
                 'varians' => $produk->varians->map(function ($varian) use ($id) {
                     $jenis = $varian->pivot->jenis_varian ?? null;
 
-                    // Kalau relasi withPivot gagal, paksa cari manual di DB
                     if (!$jenis) {
                         $pivot = DB::table('produk_varian')
                             ->where('id_produk', $id)
@@ -116,15 +126,12 @@ class ProdukController extends Controller
                 }),
 
                 'skus' => $produk->produkSku->map(function ($sku) {
-                    // 👇 PERBAIKAN FATAL: Memastikan Gambar Menjadi ARRAY!
                     $gambarArray = [];
                     if (!empty($sku->gambar)) {
-                        // Jika berupa string JSON, decode jadi array
                         if (is_string($sku->gambar)) {
                             $decoded = json_decode($sku->gambar, true);
                             $gambarArray = is_array($decoded) ? $decoded : [$sku->gambar];
                         }
-                        // Jika sudah array dari cast model
                         else if (is_array($sku->gambar)) {
                             $gambarArray = $sku->gambar;
                         }
@@ -133,7 +140,7 @@ class ProdukController extends Controller
                     return [
                         'id_sku' => $sku->id_sku,
                         'nama_sku' => $sku->nama_sku,
-                        'gambar' => $gambarArray, // 👈 KIRIM ARRAY YANG UDAH BERSIH
+                        'gambar' => $gambarArray,
                         'satuan' => $sku->satuan,
                         'deskripsi' => $sku->deskripsi,
                         'tipe_kalkulasi' => $sku->tipe_kalkulasi,

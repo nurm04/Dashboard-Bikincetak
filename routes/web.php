@@ -10,6 +10,7 @@ use App\Http\Controllers\Web\ModulController;
 use App\Http\Controllers\Web\PembayaranController;
 use App\Http\Controllers\Web\PembelianBahanController;
 use App\Http\Controllers\Web\PenawaranController;
+use App\Http\Controllers\Web\PengaturanWebController;
 use App\Http\Controllers\Web\PesanController;
 use App\Http\Controllers\Web\Produk\DiskonCustomerController;
 use App\Http\Controllers\Web\Produk\FinishingController;
@@ -240,6 +241,11 @@ Route::middleware('auth')->group(function () {
         });
         Route::get('/file-manage', [FileManageController::class, 'index'])->middleware('akses:hak-akses')->name('file-manage.index');
         Route::post('/file-manage/hapus', [FileManageController::class, 'hapusMassal'])->middleware('akses:hak-akses,hapus')->name('file-manage.hapus');
+        Route::middleware('akses:tampilan-web')->prefix('tampilan-web')->name('tampilan-web.')->group(function () {
+            Route::get('/', [PengaturanWebController::class, 'index'])->name('index');
+            Route::get('/kategori', [PengaturanWebController::class, 'kategori'])->middleware('akses:tampilan-web,ubah')->name('kategori');
+            Route::post('/kategori/sync', [PengaturanWebController::class, 'syncKategori'])->middleware('akses:tampilan-web,ubah')->name('kategori.sync');
+        });
     });
 
 });

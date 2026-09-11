@@ -376,6 +376,17 @@ const toggleSettingsDropdown = () => {
                 </button>
 
                 <div v-show="isSettingsDropdownOpen && !isMiniMode" class="pl-2 mt-1 ml-4 space-y-2 border-l-2 border-base-300/50">
+                    <Link v-if="$can('tampilan-web')" :href="route('tampilan-web.index')"
+                        class="flex items-center px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-all duration-300 rounded-lg"
+                        :class="{
+                            'bg-primary text-white shadow-lg shadow-primary/30 translate-x-1': route().current('tampilan-web.*'),
+                            'text-base-content/60 hover:bg-base-200 hover:text-base-content hover:translate-x-1': !route().current('tampilan-web.*')
+                        }"
+                        @click="emit('closeMobile')"
+                    >
+                        Tampilan Web
+                    </Link>
+
                     <Link v-if="$can('hak-akses')" :href="route('hak-akses.index')"
                         class="flex items-center px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-all duration-300 rounded-lg"
                         :class="{

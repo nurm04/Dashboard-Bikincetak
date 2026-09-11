@@ -17,6 +17,13 @@ class Kategori extends Model
     protected $fillable = [
         'id_kategori',
         'nama_kategori',
+        'urutan',
+        'is_active',
+        'icon',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
     ];
 
     public function produk(): HasMany
