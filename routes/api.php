@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AlamatController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\PengaturanWebController;
 use App\Http\Controllers\Api\PesanController;
 use App\Http\Controllers\Api\ProdukController;
 use App\Http\Controllers\Api\ShippingController;
@@ -27,6 +28,13 @@ Route::get('/shipping/districts/{cityId}', [ShippingController::class, 'getDistr
 Route::post('/webhook/komerce/qris', [PaymentController::class, 'webhookKomerce']);
 Route::get('/pembayaran/qris/{id_pesan}', [PaymentController::class, 'generateQris']);
 Route::get('/upload-qris-master', [PaymentController::class, 'uploadQrisKeKomerce']);
+
+Route::prefix('web')->group(function () {
+    Route::get('/banners', [PengaturanWebController::class, 'getBanners']);
+    Route::get('/pengaturan', [PengaturanWebController::class, 'getPengaturan']);
+    Route::get('/halaman-statis', [PengaturanWebController::class, 'getHalamanStatis']);
+    Route::get('/halaman-statis/{slug}', [PengaturanWebController::class, 'getHalamanStatis']);
+});
 
 Route::middleware('auth:sanctum')->group(function () {
 

@@ -245,6 +245,11 @@ Route::middleware('auth')->group(function () {
             Route::get('/', [PengaturanWebController::class, 'index'])->name('index');
             Route::get('/kategori', [PengaturanWebController::class, 'kategori'])->middleware('akses:tampilan-web,ubah')->name('kategori');
             Route::post('/kategori/sync', [PengaturanWebController::class, 'syncKategori'])->middleware('akses:tampilan-web,ubah')->name('kategori.sync');
+            Route::get('/banner', [PengaturanWebController::class, 'banner'])->middleware('akses:tampilan-web,ubah')->name('banner');
+            Route::post('/banner', [PengaturanWebController::class, 'storeBanner'])->middleware('akses:tampilan-web,tambah')->name('banner.store');
+            Route::post('/banner/sync', [PengaturanWebController::class, 'syncBanner'])->middleware('akses:tampilan-web,ubah')->name('banner.sync');
+            Route::post('/banner/{id}', [PengaturanWebController::class, 'updateBanner'])->middleware('akses:tampilan-web,ubah')->name('banner.update');
+            Route::delete('/banner/{id}', [PengaturanWebController::class, 'destroyBanner'])->middleware('akses:tampilan-web,hapus')->name('banner.destroy');
         });
     });
 

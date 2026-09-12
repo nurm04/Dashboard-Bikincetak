@@ -15,7 +15,7 @@ const menus = [
     {
         title: 'Banner Slider',
         description: 'Ganti gambar carousel/promo yang berjalan di beranda.',
-        route: null, // Nanti diisi kalau route banner udah ada
+        route: 'tampilan-web.banner',
         icon: ImageIcon,
         color: 'text-info',
         bg: 'bg-info/10'
