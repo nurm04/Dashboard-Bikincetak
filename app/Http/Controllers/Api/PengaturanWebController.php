@@ -7,6 +7,7 @@ use App\Models\BannerSlider;
 use App\Models\HalamanStatis;
 use App\Models\PengaturanWeb;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Redis;
 
 class PengaturanWebController extends Controller
 {
@@ -99,29 +100,48 @@ class PengaturanWebController extends Controller
     public function getHalamanStatis($slug = null)
     {
         try {
-            // Jika slug dikirim, ambil detail konten halamannya (Untuk halaman Syarat, FAQ, dll)
             if ($slug) {
-                $halaman = HalamanStatis::where('slug', $slug)
-                    ->where('is_active', true)
-                    ->firstOrFail();
+                $cacheKey = 'bikincetak:web:halaman_statis_detail:' . $slug;
 
-                return response()->json([
-                    'success' => true,
-                    'data' => [
+                $cachedData = Redis::get($cacheKey);
+
+                if ($cachedData) {
+                    $dataArr = json_decode($cachedData, true);
+                } else {
+                    $halaman = HalamanStatis::where('slug', $slug)
+                        ->where('is_active', true)
+                        ->firstOrFail();
+
+                    $dataArr = [
                         'id' => $halaman->id,
                         'judul' => $halaman->judul,
                         'slug' => $halaman->slug,
                         'tipe' => $halaman->tipe,
                         'konten' => $halaman->konten,
                         'updated_at' => $halaman->updated_at,
-                    ]
+                    ];
+
+                    Redis::setex($cacheKey, 86400, json_encode($dataArr));
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'data' => $dataArr
                 ], 200);
             }
 
-            // Jika tanpa slug, ambil list / daftarnya saja (tanpa nge-load isi konten biar API ringan)
-            $halamanList = HalamanStatis::where('is_active', true)
-                ->orderBy('id', 'desc')
-                ->get(['id', 'judul', 'slug', 'tipe']);
+            $cacheKeyList = 'bikincetak:web:halaman_statis_list';
+            $cachedList = Redis::get($cacheKeyList);
+
+            if ($cachedList) {
+                $halamanList = json_decode($cachedList, true);
+            } else {
+                $halamanList = HalamanStatis::where('is_active', true)
+                    ->orderBy('id', 'desc')
+                    ->get(['id', 'judul', 'slug', 'tipe']);
+
+                Redis::setex($cacheKeyList, 86400, json_encode($halamanList));
+            }
 
             return response()->json([
                 'success' => true,

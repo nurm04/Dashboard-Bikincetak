@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\BannerSlider;
+use App\Models\HalamanStatis;
 use App\Models\Kategori;
 use App\Models\PengaturanWeb;
 use Illuminate\Http\Request;
@@ -216,5 +217,79 @@ class PengaturanWebController extends Controller
             DB::rollBack();
             return redirect()->back()->with('error', 'Gagal menyimpan pengaturan: ' . $e->getMessage());
         }
+    }
+
+
+    public function halamanStatis()
+    {
+        $halaman = HalamanStatis::orderBy('id', 'desc')->get();
+
+        return Inertia::render('Settings/TampilanWeb/HalamanStatis', [
+            'halaman_statis' => $halaman
+        ]);
+    }
+
+    public function storeHalamanStatis(Request $request)
+    {
+        $request->validate([
+            'judul' => 'required|string|max:255',
+            'tipe' => 'required|string|max:50',
+            'konten' => 'required|string',
+            'is_active' => 'boolean'
+        ]);
+
+        HalamanStatis::create([
+            'judul' => $request->judul,
+            'slug' => \Illuminate\Support\Str::slug($request->judul),
+            'tipe' => $request->tipe,
+            'konten' => $request->konten,
+            'is_active' => $request->is_active ?? true,
+        ]);
+
+        Redis::del('bikincetak:web:halaman_statis_list');
+
+        return redirect()->back()->with('success', 'Halaman Statis berhasil ditambahkan!');
+    }
+
+    public function updateHalamanStatis(Request $request, $id)
+    {
+        $halaman = HalamanStatis::findOrFail($id);
+
+        $request->validate([
+            'judul' => 'required|string|max:255',
+            'tipe' => 'required|string|max:50',
+            'konten' => 'required|string',
+            'is_active' => 'boolean'
+        ]);
+
+        $slugLama = $halaman->slug;
+        $slugBaru = \Illuminate\Support\Str::slug($request->judul);
+
+        $halaman->update([
+            'judul' => $request->judul,
+            'slug' => $slugBaru,
+            'tipe' => $request->tipe,
+            'konten' => $request->konten,
+            'is_active' => $request->has('is_active') ? $request->is_active : $halaman->is_active,
+        ]);
+
+        Redis::del('bikincetak:web:halaman_statis_list');
+        Redis::del('bikincetak:web:halaman_statis_detail:' . $slugLama);
+        Redis::del('bikincetak:web:halaman_statis_detail:' . $slugBaru);
+
+        return redirect()->back()->with('success', 'Halaman Statis berhasil diperbarui!');
+    }
+
+    public function destroyHalamanStatis($id)
+    {
+        $halaman = HalamanStatis::findOrFail($id);
+        $slug = $halaman->slug;
+
+        $halaman->delete();
+
+        Redis::del('bikincetak:web:halaman_statis_list');
+        Redis::del('bikincetak:web:halaman_statis_detail:' . $slug);
+
+        return redirect()->back()->with('success', 'Halaman Statis berhasil dihapus!');
     }
 }

@@ -252,6 +252,10 @@ Route::middleware('auth')->group(function () {
             Route::delete('/banner/{id}', [PengaturanWebController::class, 'destroyBanner'])->middleware('akses:tampilan-web,hapus')->name('banner.destroy');
             Route::get('/pengaturan', [PengaturanWebController::class, 'pengaturanUmum'])->middleware('akses:tampilan-web,ubah')->name('pengaturan');
             Route::post('/pengaturan', [PengaturanWebController::class, 'updatePengaturanUmum'])->middleware('akses:tampilan-web,ubah')->name('pengaturan.update');
+            Route::get('/halaman-statis', [PengaturanWebController::class, 'halamanStatis'])->middleware('akses:tampilan-web,ubah')->name('halaman-statis');
+            Route::post('/halaman-statis', [PengaturanWebController::class, 'storeHalamanStatis'])->middleware('akses:tampilan-web,tambah')->name('halaman-statis.store');
+            Route::put('/halaman-statis/{id}', [PengaturanWebController::class, 'updateHalamanStatis'])->middleware('akses:tampilan-web,ubah')->name('halaman-statis.update');
+            Route::delete('/halaman-statis/{id}', [PengaturanWebController::class, 'destroyHalamanStatis'])->middleware('akses:tampilan-web,hapus')->name('halaman-statis.destroy');
         });
     });
 

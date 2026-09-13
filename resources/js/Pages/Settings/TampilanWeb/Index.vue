@@ -31,7 +31,7 @@ const menus = [
     {
         title: 'Halaman Statis',
         description: 'Kelola isi halaman Tentang Kami, FAQ, Syarat & Ketentuan.',
-        route: null,
+        route: 'tampilan-web.halaman-statis',
         icon: Type,
         color: 'text-success',
         bg: 'bg-success/10'
