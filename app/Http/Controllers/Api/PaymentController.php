@@ -144,6 +144,19 @@ class PaymentController extends Controller
                 }
 
                 // =========================================================
+                // 👇 SINKRONISASI KODE UNIK KOMERCE DENGAN DATABASE LU 👇
+                // =========================================================
+                if ($finalAmount != $nominalBayar) {
+                    $selisihKomerce = $finalAmount - $nominalBayar;
+
+                    $pesan->kode_unik = $pesan->kode_unik + $selisihKomerce;
+                    $pesan->save();
+
+                    $nominalBayar = $finalAmount;
+                }
+                // =========================================================
+
+                // =========================================================
                 // 👇 2. SIMPAN HASIL GENERATE KE REDIS (Tahan 24 Jam) 👇
                 // =========================================================
                 if ($historyId) {
@@ -154,6 +167,8 @@ class PaymentController extends Controller
                         'qr_url'     => $qrUrl
                     ];
                     \Illuminate\Support\Facades\Redis::setex($cacheKey, 86400, json_encode($dataToCache));
+
+                    // (Lanjutan kode insert Pembayaran::create yang lama...)
 
                     // CATAT INVOICE PENDING KE TABEL PEMBAYARAN
                     $existingPayment = Pembayaran::where('reference_id', $historyId)
