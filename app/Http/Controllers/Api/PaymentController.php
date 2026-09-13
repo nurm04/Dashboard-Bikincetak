@@ -77,6 +77,38 @@ class PaymentController extends Controller
             }
         }
 
+        // =========================================================
+        // 👇 1. CEK CACHE REDIS DULU SEBELUM TEMBAK API KOMERCE 👇
+        // =========================================================
+        $cacheKey = "qris_pesanan:{$id_pesan}_{$nominalBayar}";
+        $cachedQris = \Illuminate\Support\Facades\Redis::get($cacheKey);
+
+        if ($cachedQris) {
+            $dataQris = json_decode($cachedQris, true);
+
+            // Pastikan pembayaran ini beneran masih "menunggu" di DB
+            $existingPayment = Pembayaran::where('reference_id', $dataQris['history_id'])
+                                         ->where('status_pembayaran', 'menunggu_pembayaran')
+                                         ->first();
+
+            // Kalau masih menunggu, KEMBALIKAN QRIS YANG LAMA (Nggak perlu potong saldo 100 perak lagi)
+            if ($existingPayment) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'QRIS berhasil diambil dari memori',
+                    'data' => [
+                        'order_id'   => $pesan->id_pesan,
+                        'history_id' => $dataQris['history_id'],
+                        'amount'     => $dataQris['amount'],
+                        'qr_string'  => $dataQris['qr_string'],
+                        'qr_url'     => $dataQris['qr_url'] ?? null,
+                    ]
+                ]);
+            }
+        }
+        // =========================================================
+
+
         $isProduction = env('APP_ENV') === 'production';
         $baseUrl = $isProduction ? env('KOMERCE_V2_LIVE_URL') : env('KOMERCE_V2_SANDBOX_URL');
         $baseUrl = rtrim($baseUrl, '/');
@@ -92,7 +124,7 @@ class PaymentController extends Controller
                 'qris_id'       => (int) env('KOMERCE_QRIS_ID'),
                 'amount'        => $nominalBayar,
                 'output_type'   => 'string',
-                'unique_amount' => true,
+                'unique_amount' => false,
             ]);
 
             // JIKA SUKSES
@@ -111,8 +143,19 @@ class PaymentController extends Controller
                     ], 500);
                 }
 
-                // CATAT INVOICE PENDING KE TABEL PEMBAYARAN
+                // =========================================================
+                // 👇 2. SIMPAN HASIL GENERATE KE REDIS (Tahan 24 Jam) 👇
+                // =========================================================
                 if ($historyId) {
+                    $dataToCache = [
+                        'history_id' => $historyId,
+                        'amount'     => $finalAmount,
+                        'qr_string'  => $qrString,
+                        'qr_url'     => $qrUrl
+                    ];
+                    \Illuminate\Support\Facades\Redis::setex($cacheKey, 86400, json_encode($dataToCache));
+
+                    // CATAT INVOICE PENDING KE TABEL PEMBAYARAN
                     $existingPayment = Pembayaran::where('reference_id', $historyId)
                                                  ->where('status_pembayaran', 'menunggu_pembayaran')
                                                  ->first();
@@ -133,7 +176,7 @@ class PaymentController extends Controller
 
                 return response()->json([
                     'success' => true,
-                    'message' => 'QRIS berhasil di-generate',
+                    'message' => 'QRIS baru berhasil di-generate',
                     'data' => [
                         'order_id'   => $pesan->id_pesan,
                         'history_id' => $historyId,
