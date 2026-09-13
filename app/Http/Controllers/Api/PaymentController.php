@@ -59,6 +59,10 @@ class PaymentController extends Controller
             return response()->json(['success' => false, 'message' => 'Pesanan ini sudah lunas.'], 400);
         }
 
+        if ($pesan->status_operasional === 'batal') {
+            return response()->json(['success' => false, 'message' => 'Pesanan ini sudah dibatalkan.'], 400);
+        }
+
         $rincian = PesanService::kalkulasiRincianPesanan($pesan);
         $sisaTagihan = (int) ceil($rincian['sisa_tagihan']);
 

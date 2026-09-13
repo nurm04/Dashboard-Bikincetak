@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\BannerSlider;
 use App\Models\Kategori;
+use App\Models\PengaturanWeb;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
@@ -79,6 +81,8 @@ class PengaturanWebController extends Controller
             'is_active' => true,
         ]);
 
+        Redis::del('bikincetak:web:banners');
+
         return redirect()->back()->with('success', 'Banner berhasil ditambahkan!');
     }
 
@@ -103,6 +107,8 @@ class PengaturanWebController extends Controller
         $banner->link_tujuan = $request->link_tujuan ?? '';
         $banner->save();
 
+        Redis::del('bikincetak:web:banners');
+
         return redirect()->back()->with('success', 'Banner berhasil diperbarui!');
     }
 
@@ -113,6 +119,8 @@ class PengaturanWebController extends Controller
             Storage::disk('public')->delete($banner->gambar_url);
         }
         $banner->delete();
+
+        Redis::del('bikincetak:web:banners');
 
         return redirect()->back()->with('success', 'Banner berhasil dihapus!');
     }
@@ -135,7 +143,75 @@ class PengaturanWebController extends Controller
                 ]);
             }
             DB::commit();
+
+            Redis::del('bikincetak:web:banners');
+
             return redirect()->back()->with('success', 'Urutan dan status Banner berhasil disimpan!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal menyimpan pengaturan: ' . $e->getMessage());
+        }
+    }
+
+    public function pengaturanUmum()
+    {
+        $pengaturan = PengaturanWeb::all()->keyBy('kunci');
+
+        return Inertia::render('Settings/TampilanWeb/PengaturanUmum', [
+            'pengaturan' => $pengaturan
+        ]);
+    }
+
+    public function updatePengaturanUmum(Request $request)
+    {
+        $data = $request->except(['_token', '_method']);
+
+        DB::beginTransaction();
+        try {
+            foreach ($data as $key => $value) {
+                $setting = PengaturanWeb::where('kunci', $key)->first();
+
+                if ($setting) {
+                    if ($request->hasFile($key)) {
+                        if ($setting->nilai && Storage::disk('public')->exists($setting->nilai)) {
+                            Storage::disk('public')->delete($setting->nilai);
+                        }
+                        $setting->nilai = $request->file($key)->store('img_web', 'public');
+                    }
+                    else if (is_array($value)) {
+                        $arrayData = $value;
+
+                        foreach ($arrayData as $index => &$item) {
+                            if (is_array($item)) {
+                                if ($request->hasFile("{$key}.{$index}.icon_file")) {
+                                    $file = $request->file("{$key}.{$index}.icon_file");
+                                    $path = $file->store('img_web/payment', 'public');
+
+                                    $item['icon_url'] = $path;
+                                }
+
+                                unset($item['icon_file']);
+                                unset($item['icon_preview']);
+                            }
+                        }
+                        unset($item);
+
+                        $setting->nilai = json_encode($arrayData);
+                    }
+                    else {
+                        $setting->nilai = $value;
+                    }
+
+                    $setting->save();
+                }
+            }
+
+            DB::commit();
+
+            Redis::del('bikincetak:web:pengaturan');
+
+            return redirect()->back()->with('success', 'Pengaturan Umum berhasil diperbarui!');
+
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with('error', 'Gagal menyimpan pengaturan: ' . $e->getMessage());

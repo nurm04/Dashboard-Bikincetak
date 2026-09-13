@@ -250,6 +250,8 @@ Route::middleware('auth')->group(function () {
             Route::post('/banner/sync', [PengaturanWebController::class, 'syncBanner'])->middleware('akses:tampilan-web,ubah')->name('banner.sync');
             Route::post('/banner/{id}', [PengaturanWebController::class, 'updateBanner'])->middleware('akses:tampilan-web,ubah')->name('banner.update');
             Route::delete('/banner/{id}', [PengaturanWebController::class, 'destroyBanner'])->middleware('akses:tampilan-web,hapus')->name('banner.destroy');
+            Route::get('/pengaturan', [PengaturanWebController::class, 'pengaturanUmum'])->middleware('akses:tampilan-web,ubah')->name('pengaturan');
+            Route::post('/pengaturan', [PengaturanWebController::class, 'updatePengaturanUmum'])->middleware('akses:tampilan-web,ubah')->name('pengaturan.update');
         });
     });
 

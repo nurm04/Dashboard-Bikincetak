@@ -16,3 +16,6 @@ Schedule::command('pesanan:auto-complete')->dailyAt('01:00');
 // 2. Cek Staf Alpha setiap jam 23:50 malam (Senin-Sabtu)
 // Metode ->days([1,2,3,4,5,6]) memastikan tidak jalan di hari Minggu (0)
 Schedule::command('absen:check-alpha')->dailyAt('23:50')->days([1, 2, 3, 4, 5, 6]);
+
+// 3. Batalkan pesanan web yang belum dibayar lebih dari 1 hari (Jalan setiap jam)
+Schedule::command('pesanan:auto-cancel')->hourly();

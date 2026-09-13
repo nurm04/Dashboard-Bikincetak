@@ -23,7 +23,7 @@ const menus = [
     {
         title: 'Pengaturan Umum',
         description: 'Ubah teks footer, nomor WhatsApp, email, dan link sosmed.',
-        route: null,
+        route: 'tampilan-web.pengaturan',
         icon: Settings,
         color: 'text-warning',
         bg: 'bg-warning/10'
