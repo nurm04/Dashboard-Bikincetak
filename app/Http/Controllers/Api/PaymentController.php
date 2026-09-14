@@ -66,7 +66,8 @@ class PaymentController extends Controller
         $rincian = PesanService::kalkulasiRincianPesanan($pesan);
         $sisaTagihan = (int) ceil($rincian['sisa_tagihan']);
 
-        $nominalBayar = $sisaTagihan;
+        $nominalAsliWeb = $sisaTagihan - (int) ($pesan->kode_unik_komerce ?? 0);
+        $nominalBayar = $nominalAsliWeb;
 
         if ($request->has('nominal') && is_numeric($request->nominal)) {
             $requestNominal = (int) $request->nominal;
