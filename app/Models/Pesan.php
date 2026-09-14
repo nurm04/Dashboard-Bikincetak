@@ -25,6 +25,7 @@ class Pesan extends Model
         'sumber_pesanan',
         'status_operasional',
         'status_pembayaran',
+        'kode_unik_komerce',
         'waktu_deadline',
         'kode_voucher',
         'diskon_voucher_nominal',

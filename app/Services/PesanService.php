@@ -171,7 +171,11 @@ class PesanService
         $ongkir = (int) $pesan->harga_ongkir;
         $diskonVoucher = (int) $pesan->diskon_voucher_nominal;
 
-        $kodeUnik = self::generateKodeUnik($pesan->id_pesan);
+        $kodeUnikSistem = self::generateKodeUnik($pesan->id_pesan);
+
+        $kodeUnikKomerce = (int) ($pesan->kode_unik_komerce ?? 0);
+
+        $kodeUnik = $kodeUnikSistem + $kodeUnikKomerce;
 
         $grandTotal = $subtotal + $ongkir + $kodeUnik - $diskonVoucher;
         $grandTotal = max(0, $grandTotal);

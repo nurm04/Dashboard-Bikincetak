@@ -149,7 +149,7 @@ class PaymentController extends Controller
                 if ($finalAmount != $nominalBayar) {
                     $selisihKomerce = $finalAmount - $nominalBayar;
 
-                    $pesan->kode_unik = $pesan->kode_unik + $selisihKomerce;
+                    $pesan->kode_unik_komerce = $pesan->kode_unik_komerce + $selisihKomerce;
                     $pesan->save();
 
                     $nominalBayar = $finalAmount;
