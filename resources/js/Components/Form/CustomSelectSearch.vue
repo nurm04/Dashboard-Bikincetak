@@ -9,7 +9,8 @@ const props = defineProps({
     labelKey: { type: String, default: 'label' },
     valueKey: { type: String, default: 'value' },
     placeholder: { type: String, default: 'Pilih data...' },
-    addOption: { type: Boolean, default: true }
+    addOption: { type: Boolean, default: true },
+    disabled: { type: Boolean, default: false }
 });
 
 const emit = defineEmits(['update:modelValue', 'onCreate']);
@@ -115,8 +116,9 @@ onUnmounted(() => {
         </label>
 
         <div
-            @click="isOpen = !isOpen"
-            class="flex items-center justify-between w-full px-3 py-2 transition border rounded-lg shadow-sm cursor-pointer border-base-300 bg-base-100 focus-within:ring-4 focus-within:ring-primary/10 focus-within:border-primary"
+            @click="!disabled && (isOpen = !isOpen)"
+            :class="disabled ? 'opacity-50 cursor-not-allowed bg-base-200' : 'cursor-pointer bg-base-100 focus-within:ring-4 focus-within:ring-primary/10 focus-within:border-primary'"
+            class="flex items-center justify-between w-full px-3 py-2 transition border rounded-lg shadow-sm border-base-300"
         >
             <span :class="modelValue ? 'text-base-content' : 'text-base-content/30'" class="text-sm font-bold truncate">
                 {{ selectedLabel || placeholder }}

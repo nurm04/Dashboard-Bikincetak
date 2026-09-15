@@ -272,6 +272,11 @@ onMounted(() => {
                             <p class="font-medium">Pembayaran :</p>
                             <p class="font-bold">{{ bank_name }} {{ bank_number }}</p>
                             <p class="italic text-[10px]">an/ {{ bank_owner }}</p>
+
+                            <div class="pt-1 mt-1 border-t border-dashed border-gray-300 w-fit">
+                                <p class="font-bold mb-1.5 text-[11px]">Atau Scan QRIS:</p>
+                                <img src="/storage/qr_qris_asli.jpeg" alt="QRIS" class="w-30 h-30 object-contain rounded-sm" />
+                            </div>
                         </div>
                     </div>
 

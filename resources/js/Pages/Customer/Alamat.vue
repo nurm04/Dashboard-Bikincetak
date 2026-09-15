@@ -5,7 +5,8 @@ import { alertStore } from '@/Utils/alertStore';
 import StafLayout from '@/Layouts/StafLayout.vue';
 import CustomInput from '@/Components/Form/CustomInput.vue';
 import CustomButton from '@/Components/Form/CustomButton.vue';
-import CustomSelect from '@/Components/Form/CustomSelect.vue';
+// 👇 IMPORT DIUBAH JADI CustomSelectSearch
+import CustomSelectSearch from '@/Components/Form/CustomSelectSearch.vue';
 import CustomCheckbox from '@/Components/Form/CustomCheckbox.vue';
 import { ArrowLeft } from 'lucide-vue-next';
 
@@ -74,7 +75,6 @@ const fetchProvinsi = async () => {
             headers: { 'Accept': 'application/json' }
         });
         const data = await response.json();
-        console.log('Data Provinsi: ', data);
         listProvinsi.value = normalizeData(data);
     } catch (error) {
         console.error('Gagal fetch provinsi', error);
@@ -235,7 +235,9 @@ const hapusAlamat = (alamat) => {
                             <CustomInput v-model="form.nama_penerima" label="Nama Penerima" :error="form.errors.nama_penerima" required/>
                             <CustomInput v-model="form.no_hp" label="No HP" :error="form.errors.no_hp" required/>
                             <CustomInput v-model="form.kode_pos" label="Kode Pos" :error="form.errors.kode_pos" required/>
-                            <CustomSelect
+
+                            <!-- 👇 TIGA ELEMEN INI YANG DIUBAH 👇 -->
+                            <CustomSelectSearch
                                 v-model="form.provinsi_id"
                                 label="Provinsi"
                                 :options="listProvinsi"
@@ -243,9 +245,10 @@ const hapusAlamat = (alamat) => {
                                 valueKey="value"
                                 placeholder="Pilih Provinsi..."
                                 :error="form.errors.provinsi_id"
+                                :addOption="false"
                                 @update:modelValue="onProvinsiChange"
                             />
-                            <CustomSelect
+                            <CustomSelectSearch
                                 v-model="form.kota_id"
                                 label="Kota / Kabupaten"
                                 :options="listKota"
@@ -254,9 +257,10 @@ const hapusAlamat = (alamat) => {
                                 placeholder="Pilih Kota..."
                                 :error="form.errors.kota_id"
                                 :disabled="!form.provinsi_id"
+                                :addOption="false"
                                 @update:modelValue="onKotaChange"
                             />
-                            <CustomSelect
+                            <CustomSelectSearch
                                 v-model="form.kecamatan_id"
                                 label="Kecamatan"
                                 :options="listKecamatan"
@@ -265,8 +269,11 @@ const hapusAlamat = (alamat) => {
                                 placeholder="Pilih Kecamatan..."
                                 :error="form.errors.kecamatan_id"
                                 :disabled="!form.kota_id"
+                                :addOption="false"
                                 @update:modelValue="onKecamatanChange"
                             />
+                            <!-- 👆 ======================= 👆 -->
+
                         </div>
 
                         <CustomInput v-model="form.alamat_lengkap" label="Alamat Lengkap" :error="form.errors.alamat_lengkap" required/>
