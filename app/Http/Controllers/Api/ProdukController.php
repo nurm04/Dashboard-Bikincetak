@@ -62,6 +62,7 @@ class ProdukController extends Controller
                 'harga_mulai_dari' => $hargaTermurah ?? 0,
                 'diskon_roles' => $diskonRoles,
                 'dataSkus' => $skus,
+                'updated_at' => $produk->updated_at,
             ];
         });
 
@@ -105,6 +106,7 @@ class ProdukController extends Controller
                 ] : null,
                 'is_active' => $produk->is_active,
                 'gambar_urls' => $gambarUrls,
+                'updated_at' => $produk->updated_at,
 
                 'varians' => $produk->varians->map(function ($varian) use ($id) {
                     $jenis = $varian->pivot->jenis_varian ?? null;

@@ -4,10 +4,11 @@ import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import StafLayout from '@/Layouts/StafLayout.vue';
 import CustomButton from '@/Components/Form/CustomButton.vue';
 import CustomInput from '@/Components/Form/CustomInput.vue';
-import CustomTextarea from '@/Components/Form/CustomTextarea.vue';
-import CustomTable from '@/Components/CustomTable.vue'; // 👈 IMPORT
-import CustomTableAction from '@/Components/CustomTableAction.vue'; // 👈 IMPORT
-import { ArrowLeft, FileText, Plus, Edit, Trash2, CheckCircle2, XCircle } from 'lucide-vue-next';
+import CustomTable from '@/Components/CustomTable.vue';
+import CustomTableAction from '@/Components/CustomTableAction.vue';
+import { QuillEditor } from '@vueup/vue-quill';
+import '@vueup/vue-quill/dist/vue-quill.snow.css';
+import { ArrowLeft, FileText, Plus, Edit, Trash2, CheckCircle2, XCircle, AlertCircle } from 'lucide-vue-next';
 import { alertStore } from '@/Utils/alertStore';
 
 const props = defineProps({
@@ -176,15 +177,24 @@ const tableHeaders = ['Judul Halaman', 'Tipe / Slug', 'Status', 'Aksi'];
                     <div class="w-full">
                         <div class="flex items-center justify-between mb-1 ml-1">
                             <label class="text-xs font-bold text-base-content/70">Konten Halaman</label>
-                            <span class="text-[9px] font-bold text-primary/60 uppercase tracking-widest">Bisa pakai Tag HTML</span>
                         </div>
-                        <CustomTextarea
-                            v-model="form.konten"
-                            placeholder="Tulis konten halaman di sini... (Anda bisa menggunakan tag HTML seperti <b>, <i>, <br>)"
-                            :rows="10"
-                            :error="form.errors.konten"
-                            required
-                        />
+                        <div class="flex items-start gap-2 p-3 mb-3 border rounded-xl bg-warning/10 border-warning/20 text-warning-content">
+                            <AlertCircle class="w-4 h-4 mt-0.5 shrink-0 text-warning" />
+                            <p class="text-xs font-medium leading-relaxed opacity-90">
+                                <strong class="font-bold text-warning">Perhatian:</strong> Jika Anda menyisipkan gambar menggunakan ikon <i>Image</i>, pastikan ukuran per gambar <strong class="font-bold">di bawah 1 MB</strong> (disarankan format kompresi JPG/WebP). Gambar yang terlalu besar akan membuat loading website menjadi lambat.
+                            </p>
+                        </div>
+                        <div class="overflow-hidden border rounded-xl bg-base-100" :class="form.errors.konten ? 'border-error' : 'border-base-300'">
+                            <QuillEditor
+                                v-model:content="form.konten"
+                                contentType="html"
+                                theme="snow"
+                                toolbar="full"
+                                class="min-h-62.5 text-base-content"
+                                placeholder="Ketik konten halaman di sini..."
+                            />
+                        </div>
+                        <p v-if="form.errors.konten" class="mt-1 text-xs text-error">{{ form.errors.konten }}</p>
                     </div>
 
                     <div class="flex items-center gap-3 p-4 border rounded-xl bg-base-200/50 border-base-300">
@@ -209,3 +219,16 @@ const tableHeaders = ['Judul Halaman', 'Tipe / Slug', 'Status', 'Aksi'];
         </dialog>
     </StafLayout>
 </template>
+<style>
+/* Memperbaiki tampilan border Quill Editor biar nyatu sama Tailwind */
+.ql-toolbar.ql-snow {
+    border: none !important;
+    border-bottom: 1px solid var(--fallback-bc, oklch(var(--bc) / 0.2)) !important;
+    background-color: var(--fallback-b2, oklch(var(--b2) / 1));
+}
+.ql-container.ql-snow {
+    border: none !important;
+    font-size: 1rem !important;
+    font-family: inherit !important;
+}
+</style>
