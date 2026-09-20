@@ -18,6 +18,7 @@ defineProps({
         type: String,
         required: true,
     },
+    pengaturan: Object,
 });
 </script>
 
