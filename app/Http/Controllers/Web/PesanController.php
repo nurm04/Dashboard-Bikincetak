@@ -6,6 +6,7 @@ use App\Events\ProduksiBaruEvent;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Komposisi;
+use App\Models\PengaturanWeb;
 use App\Models\Pesan;
 use App\Models\PesananItem;
 use App\Models\PesananItemFinishing;
@@ -447,12 +448,17 @@ class PesanController extends Controller
 
         $rincian = PesanService::kalkulasiRincianPesanan($pesanan);
 
+        $pengaturan = PengaturanWeb::all()->keyBy('kunci')->map(function ($item) {
+            return $item->nilai_parsed;
+        });
+
         return inertia('Pesan/CetakNota', [
             'pesanan'       => $pesanan,
             'kode_unik'     => $rincian['kode_unik'],
             'grand_total'   => $rincian['grand_total'],
             'total_dibayar' => $rincian['total_dibayar'],
             'sisa_tagihan'  => $rincian['sisa_tagihan'],
+            'pengaturan'    => $pengaturan,
 
             'bank_name'     => env('BANK_NAME', 'BCA'),
             'bank_number'   => env('BANK_NUMBER', '1930566086'),

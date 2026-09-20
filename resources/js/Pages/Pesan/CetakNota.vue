@@ -11,7 +11,8 @@ const props = defineProps({
     sisa_tagihan: Number,
     bank_name: String,
     bank_number: String,
-    bank_owner: String
+    bank_owner: String,
+    pengaturan: Object
 });
 
 const formatRupiah = (angka) => {
@@ -193,10 +194,22 @@ onMounted(() => {
                 <!-- Header Toko & Tujuan -->
                 <div class="flex items-start justify-between pb-4 border-b border-black">
                     <div>
-                        <h1 class="text-2xl font-black tracking-tight text-blue-950">BIKIN CETAK</h1>
+                        <div class="flex items-center gap-2 mb-1">
+                            <!-- 👇 TAMPILKAN LOGO (IKON) JIKA ADA 👇 -->
+                            <img
+                                v-if="pengaturan?.logo_utama"
+                                :src="'/storage/' + pengaturan.logo_utama"
+                                alt="Logo Web"
+                                class="object-contain w-auto h-8"
+                            />
+                            <!-- 👇 TEKS BIKIN CETAK TETAP MUNCUL 👇 -->
+                            <h1 class="text-2xl font-black tracking-tight uppercase text-blue-950">
+                                {{ pengaturan?.nama_web || 'BIKIN CETAK' }}
+                            </h1>
+                        </div>
                         <p class="text-[10px] italic text-gray-700">Digital Printing, Offset, Merchandise</p>
                         <p class="text-[9px] mt-1.5 text-gray-800 leading-tight">
-                            WA : 081213139490 | Email : order@bikincetak.co.id <br>
+                            WA : {{ pengaturan?.kontak_wa || '081213139490' }} | Email : order@bikincetak.co.id <br>
                             Alamat : Jl. Barata Jaya XVII No. 3 Gubeng - Surabaya
                         </p>
                     </div>
@@ -270,7 +283,9 @@ onMounted(() => {
                         </div>
                         <div v-if="sisaTagihan > 0" class="space-y-0.5 pt-2">
                             <p class="font-medium">Pembayaran :</p>
-                            <p class="font-bold">{{ bank_name }} {{ bank_number }}</p>
+                            <p class="font-bold">
+                                {{ pengaturan?.bank_nama || 'BCA' }} {{ pengaturan?.bank_rekening || '1930566086' }}
+                            </p>
                             <p class="italic text-[10px]">an/ {{ bank_owner }}</p>
 
                             <div class="pt-1 mt-1 border-t border-dashed border-gray-300 w-fit">
