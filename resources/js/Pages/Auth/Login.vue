@@ -12,6 +12,7 @@ defineProps({
     status: {
         type: String,
     },
+    pengaturan: Object,
 });
 
 const form = useForm({
@@ -36,7 +37,13 @@ const submit = () => {
             <div class="mb-8 text-center">
                 <div className="flex flex-col items-center mb-5">
                     <div className="relative mb-2">
-                        <ApplicationLogo class="h-20 w-20 fill-current text-gray-500" />
+                        <img 
+                            v-if="pengaturan?.logo_utama" 
+                            :src="'/storage/' + pengaturan.logo_utama" 
+                            alt="Logo Web" 
+                            class="object-contain w-20 h-20 drop-shadow-sm" 
+                        />
+                        <ApplicationLogo v-else class="h-20 w-20 fill-current text-gray-500" />
                     </div>
                     <div className="h-1.5 w-8 bg-primary rounded-full"></div>
                 </div>

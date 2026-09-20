@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\PengaturanWeb;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,9 +19,14 @@ class AuthenticatedSessionController extends Controller
      */
     public function create(): Response
     {
+        $pengaturan = PengaturanWeb::all()->keyBy('kunci')->map(function ($item) {
+            return $item->nilai_parsed;
+        });
+
         return Inertia::render('Auth/Login', [
             'canResetPassword' => Route::has('password.request'),
             'status' => session('status'),
+            'pengaturan' => $pengaturan,
         ]);
     }
 

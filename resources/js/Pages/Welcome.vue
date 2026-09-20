@@ -26,14 +26,20 @@ defineProps({
     <GuestLayout>
         <div class="w-full max-w-lg p-10 text-center border shadow-2xl bg-base-100 rounded-3xl border-base-content/5">
             <div class="flex justify-center mb-6">
-                <ApplicationLogo class="w-24 h-24 drop-shadow-md text-primary" />
+                <img 
+                    v-if="pengaturan?.logo_utama" 
+                    :src="'/storage/' + pengaturan.logo_utama" 
+                    alt="Logo Web" 
+                    class="object-contain w-24 h-24 drop-shadow-md" 
+                />
+                <ApplicationLogo v-else class="w-24 h-24 drop-shadow-md text-primary" />
             </div>
 
             <h1 class="mb-2 text-3xl font-black tracking-widest uppercase text-primary">
                 Bikin Cetak
             </h1>
             <p class="mb-10 text-[10px] font-bold tracking-widest uppercase text-base-content/60">
-                Sistem Manajemen ERP & Kasir Percetakan
+                Sistem Manajemen & Kasir Percetakan
             </p>
 
             <nav v-if="canLogin" class="flex flex-col gap-4">

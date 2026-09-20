@@ -36,17 +36,23 @@ use App\Http\Controllers\Web\User\RoleStafController;
 use App\Http\Controllers\Web\User\StafController;
 use App\Http\Controllers\Web\User\VendorController;
 use App\Http\Controllers\Web\VoucherController;
+use App\Models\PengaturanWeb;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
+    $pengaturan = PengaturanWeb::all()->keyBy('kunci')->map(function ($item) {
+        return $item->nilai_parsed;
+    });
+
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
         'laravelVersion' => Application::VERSION,
         'phpVersion' => PHP_VERSION,
+        'pengaturan' => $pengaturan,
     ]);
 });
 
