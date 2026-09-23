@@ -14,7 +14,6 @@ const props = defineProps({
     produk: Object,
 });
 
-// 👇 1. Hapus 'Daftar Harga Pengerjaan' dari Header Tabel 👇
 const headers = ['Nama SKU / ID SKU', 'Daftar Finishing', 'Daftar Harga Bertingkat', 'Daftar Diskon', 'Aksi'];
 
 // --- STATE DELETE ---
@@ -35,13 +34,47 @@ const skalaOptions = computed(() => [
     { value: 'semua_produk', label: 'Berlaku untuk Semua Produk (Sesuai ID di CSV)' },
 ]);
 
-// 👇 2. Hapus opsi 'harga_pengerjaan' dari dropdown import 👇
 const importOptions = [
+    { value: 'data_utama_sku', label: '0. Data Utama SKU Dasar (Deskripsi, Tipe, Satuan, dll)' },
     { value: 'sku_finishing', label: '1. Data Master Finishing & Harga Grosir' },
     { value: 'harga_bertingkat', label: '2. Data Harga Bertingkat (Matriks SLA)' },
     { value: 'diskon_customer', label: '3. Data Diskon Customer (Member)' },
     { value: 'komposisi', label: '4. Data Komposisi (BOM)' },
 ];
+
+// --- STATE SPREADSHEET SYNC ---
+const isSyncModalOpen = ref(false);
+const syncForm = useForm({
+    skala_import: 'produk_ini',
+    tipe_import: 'harga_bertingkat',
+    sheet_url: '',
+    filter_qty: '',
+});
+
+const closeSyncModal = () => {
+    isSyncModalOpen.value = false;
+    syncForm.reset();
+    syncForm.clearErrors();
+};
+
+const submitSync = () => {
+    if (!syncForm.sheet_url) {
+        alertStore.show('Masukkan link Google Sheets terlebih dahulu!', 'warning');
+        return;
+    }
+
+    syncForm.post(route('sku.syncSpreadsheet', props.produk.id_produk), {
+        preserveScroll: true,
+        onSuccess: () => {
+            closeSyncModal();
+            alertStore.show('Data Spreadsheet berhasil disinkronisasi!', 'success');
+        },
+        onError: (errors) => {
+            console.error(errors);
+            alertStore.show(errors.sheet_url || errors.message || 'Gagal sinkronisasi data', 'error');
+        }
+    });
+};
 
 // --- FUNGSI DELETE ---
 const openDeleteModal = (id) => {
@@ -101,7 +134,11 @@ const downloadTemplate = () => {
 
     const contohSku = props.produk?.produk_sku?.[0]?.id_sku || "PRD-001-SKU-001";
 
-    if (tipe === 'sku_finishing') {
+    if (tipe === 'data_utama_sku') {
+        headerArray = ["id_sku", "deskripsi", "tipe_kalkulasi", "satuan", "minimum_pesan", "kelipatan_pesan", "harga", "harga_tambahan_dimensi"];
+        rowContoh = [contohSku, "Deskripsi produk yang tampil di frontstore...", "standard", "Pcs", "1", "1", "15000", "0"];
+        rowContoh2 = ["", "", "cetak_meteran", "Meter", "1", "1", "25000", "5000"];
+    } else if (tipe === 'sku_finishing') {
         headerArray = ["id_sku", "id_pilihan_finishing", "minimum_pesan", "harga_tambahan", "tipe", "kali_jumlah_pesan", "min", "max", "tipe_diskon", "nilai"];
         rowContoh = [contohSku, "FIN-001", "1", "40000", "nominal", "1", "1", "50", "nominal", "40000"];
         rowContoh2 = ["", "", "", "", "", "", "51", "99", "nominal", "38000"];
@@ -140,6 +177,59 @@ const downloadTemplate = () => {
         confirmText="Ya, Hapus Semua" @close="closeDeleteModal" @confirm="doDelete"
     />
 
+    <!-- MODAL SYNC SPREADSHEETS -->
+    <dialog :class="['modal', { 'modal-open': isSyncModalOpen }]">
+        <div class="max-w-lg modal-box bg-base-100 rounded-2xl">
+            <h3 class="flex items-center gap-2 mb-4 text-lg font-black text-success">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12l-3-3m0 0l-3 3m3-3v6m-1.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                Sync Harga dari Google Sheets
+            </h3>
+
+            <div class="space-y-4">
+                <CustomSelect
+                    v-model="syncForm.skala_import"
+                    label="Skala Penerapan Data"
+                    :options="[{ value: 'produk_ini', label: `Hanya untuk Produk Ini (${props.produk?.id_produk})` }]"
+                    valueKey="value" labelKey="label"
+                />
+
+                <CustomSelect
+                    v-model="syncForm.tipe_import"
+                    label="Target Sinkronisasi"
+                    :options="[{ value: 'harga_bertingkat', label: '2. Data Harga Bertingkat (Matriks SLA)' }]"
+                    valueKey="value" labelKey="label"
+                />
+
+                <div class="w-full form-control">
+                    <label class="label"><span class="text-xs font-bold label-text opacity-70">Link Google Sheets</span></label>
+                    <input type="text" v-model="syncForm.sheet_url" placeholder="https://docs.google.com/spreadsheets/d/..." class="w-full input input-bordered focus:border-success focus:ring-success" />
+                    <label class="mt-1 label">
+                        <span class="text-xs font-bold label-text-alt text-error" v-if="syncForm.errors.sheet_url">{{ syncForm.errors.sheet_url }}</span>
+                        <span class="text-xs label-text-alt opacity-50" v-else>Pastikan akses link "Anyone with the link can view"</span>
+                    </label>
+                </div>
+
+                <div class="w-full form-control">
+                    <label class="label"><span class="text-xs font-bold label-text opacity-70">Filter Qty / Jumlah Pesanan (Opsional)</span></label>
+                    <input type="text" v-model="syncForm.filter_qty" placeholder="Contoh: 300, 500, 1000" class="w-full input input-bordered focus:border-success focus:ring-success" />
+                    <label class="mt-1 label">
+                        <span class="text-xs label-text-alt opacity-50">Pisahkan dengan koma. Kosongkan jika ingin menarik SEMUA angka Qty dari tabel.</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="gap-2 mt-6 modal-action">
+                <button type="button" class="text-xs font-bold uppercase btn" @click="closeSyncModal" :disabled="syncForm.processing">Batal</button>
+                <CustomButton variant="success" class="px-8 text-xs font-black tracking-widest uppercase" @click="submitSync" :disabled="syncForm.processing || !syncForm.sheet_url">
+                    <span v-if="syncForm.processing" class="loading loading-spinner loading-sm"></span>
+                    <span v-else>Tarik Data</span>
+                </CustomButton>
+            </div>
+        </div>
+        <form method="dialog" class="modal-backdrop"><button @click="closeSyncModal">close</button></form>
+    </dialog>
+
+    <!-- MODAL IMPORT CSV -->
     <dialog :class="['modal', { 'modal-open': isImportModalOpen }]">
         <div class="max-w-lg modal-box bg-base-100 rounded-2xl">
             <h3 class="flex items-center gap-2 mb-4 text-lg font-black">
@@ -206,10 +296,18 @@ const downloadTemplate = () => {
                     </h2>
                 </div>
 
-                <button @click="isImportModalOpen = true" class="w-full text-xs font-black tracking-widest uppercase shadow-md md:w-auto btn btn-sm btn-primary rounded-xl shadow-primary/20">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>
-                    Import CSV
-                </button>
+                <div class="flex flex-col gap-2 md:flex-row">
+                    <!-- TOMBOL SYNC SHEETS BARU -->
+                    <button @click="isSyncModalOpen = true" class="w-full text-xs font-black tracking-widest uppercase shadow-md md:w-auto btn btn-sm btn-success text-white rounded-xl shadow-success/20">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
+                        Sync Sheets
+                    </button>
+                    <!-- TOMBOL IMPORT CSV -->
+                    <button @click="isImportModalOpen = true" class="w-full text-xs font-black tracking-widest uppercase shadow-md md:w-auto btn btn-sm btn-primary rounded-xl shadow-primary/20">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>
+                        Import CSV
+                    </button>
+                </div>
             </div>
         </template>
 

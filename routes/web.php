@@ -177,6 +177,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/produk/sku/{id_sku}/edit', [ProdukSkuController::class, 'editSku'])->name('sku.edit');
             Route::put('/produk/sku/{id_sku}', [ProdukSkuController::class, 'updateSku'])->name('sku.update');
             Route::post('/produk/sku/{id_produk}/import-csv', [ProdukSkuController::class, 'importCsv'])->middleware('akses:produk-sku,ubah')->name('sku.importCsv');
+            Route::post('/produk/sku/{id_produk}/sync-spreadsheet', [ProdukSkuController::class, 'syncSpreadsheet'])->middleware('akses:produk-sku,ubah')->name('sku.syncSpreadsheet');
             Route::get('produk/{id}/sku', [ProdukController::class, 'sku'])->middleware('akses:produk-sku,ubah')->name('produk.sku');
             Route::post('produk/{id}/sku', [ProdukSkuController::class, 'syncSku'])->middleware('akses:produk-sku,ubah')->name('produk.syncSku');
             Route::get('/produk/{id}/detail-sku', [ProdukController::class, 'detailSku'])->name('produk.detailSku');
