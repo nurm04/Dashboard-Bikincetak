@@ -199,21 +199,34 @@ class ProdukSkuController extends Controller
         ]);
 
         $file = $request->file('file_csv');
-        $csvData = array_map('str_getcsv', file($file->getRealPath(), FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
+
+        // ==============================================================================
+        // 🌟 PERBAIKAN: GUNAKAN fgetcsv AGAR DESKRIPSI MULTILINE TIDAK HANCUR 🌟
+        // ==============================================================================
+        $csvData = [];
+        if (($handle = fopen($file->getRealPath(), "r")) !== FALSE) {
+            while (($data = fgetcsv($handle, 10000, ",")) !== FALSE) {
+                // Jangan masukkan baris yang benar-benar kosong
+                if (!empty(array_filter($data))) {
+                    $csvData[] = $data;
+                }
+            }
+            fclose($handle);
+        }
 
         if (count($csvData) < 2) {
             return back()->withErrors(['message' => 'File CSV kosong atau tidak memiliki baris data.']);
         }
 
-        $headers = array_map('trim', $csvData[0]);
-        $headers[0] = preg_replace('/[\xef\xbb\xbf]/', '', $headers[0]); // Hapus BOM
+        // Bersihkan Header (Hilangkan spasi, BOM, dan pastikan lowercase murni)
+        $headers = array_map(function($header) {
+            $cleaned = preg_replace('/[\xef\xbb\xbf]/', '', $header); // Hapus BOM
+            $cleaned = preg_replace('/[\x00-\x1F\x7F-\x9F]/u', '', $cleaned); // Hapus hidden chars
+            return strtolower(trim($cleaned));
+        }, $csvData[0]);
 
-        $headers[0] = strtolower($headers[0]);
         if ($headers[0] === 'varian' || $headers[0] === 'sku') {
             $headers[0] = 'id_sku';
-        }
-        if (isset($headers[1])) {
-            $headers[1] = strtolower($headers[1]);
         }
 
         $rows = array_slice($csvData, 1);
@@ -258,19 +271,21 @@ class ProdukSkuController extends Controller
                     if ($request->skala_import === 'produk_ini' && !in_array($skuFinal, $validSkus)) continue;
 
                     $updateData = [];
+                    // 👇 PERBAIKAN: Pengecekan disamakan persis dengan lowercase header
                     if (array_key_exists('deskripsi', $rowData)) $updateData['deskripsi'] = $rowData['deskripsi'];
-                    if (!empty($rowData['tipe_kalkulasi'])) $updateData['tipe_kalkulasi'] = strtolower($rowData['tipe_kalkulasi']);
+                    if (!empty($rowData['tipe_kalkulasi']) || array_key_exists('tipe_kalkulasi', $rowData)) $updateData['tipe_kalkulasi'] = strtolower($rowData['tipe_kalkulasi']);
                     if (array_key_exists('satuan', $rowData)) $updateData['satuan'] = $rowData['satuan'];
                     if (isset($rowData['minimum_pesan']) && is_numeric($rowData['minimum_pesan'])) $updateData['minimum_pesan'] = $rowData['minimum_pesan'];
                     if (isset($rowData['kelipatan_pesan']) && is_numeric($rowData['kelipatan_pesan'])) $updateData['kelipatan_pesan'] = $rowData['kelipatan_pesan'];
 
-                    // 👇 PEMBULATAN KELIPATAN 50 KE ATAS (DATA UTAMA) 👇
                     if (isset($rowData['harga']) && is_numeric($rowData['harga'])) {
                         $rawHarga = (float) str_replace(['.', ','], ['', '.'], $rowData['harga']);
                         $updateData['harga'] = ceil($rawHarga / 50) * 50;
                     }
-                    if (isset($rowData['harga_tambahan_dimensi']) && is_numeric($rowData['harga_tambahan_dimensi'])) {
-                        $rawDimensi = (float) str_replace(['.', ','], ['', '.'], $rowData['harga_tambahan_dimensi']);
+                    // Toleransi penulisan kolom "harga_tambahan_dimensi"
+                    $dimensiKey = array_key_exists('harga_tambahan_dimensi', $rowData) ? 'harga_tambahan_dimensi' : (array_key_exists('harga_tambahan dimensi', $rowData) ? 'harga_tambahan dimensi' : null);
+                    if ($dimensiKey && isset($rowData[$dimensiKey]) && is_numeric($rowData[$dimensiKey])) {
+                        $rawDimensi = (float) str_replace(['.', ','], ['', '.'], $rowData[$dimensiKey]);
                         $updateData['harga_tambahan_dimensi'] = ceil($rawDimensi / 50) * 50;
                     }
 
@@ -349,7 +364,6 @@ class ProdukSkuController extends Controller
                         if ($nilaiRaw !== '' && $nilaiRaw !== '-') {
                             $nilaiBersih = (float) str_replace(['.', ','], ['', '.'], preg_replace('/[^\d.,]/', '', $nilaiRaw));
 
-                            // 👇 PEMBULATAN KELIPATAN 50 KE ATAS (MATRIKS CSV) 👇
                             if ($nilaiBersih > 0) {
                                 $nilaiBersih = ceil($nilaiBersih / 50) * 50;
 
@@ -382,7 +396,6 @@ class ProdukSkuController extends Controller
                         $tipe = empty($rowData['tipe']) ? 'nominal' : strtolower($rowData['tipe']);
                         $rawHarga = (float) str_replace(['.', ','], ['', '.'], $rowData['harga_tambahan']);
 
-                        // 👇 PEMBULATAN 50 (HANYA JIKA TIPE NOMINAL, BUKAN PERSEN) 👇
                         $hargaFinal = ($tipe === 'nominal' && $rawHarga > 0) ? ceil($rawHarga / 50) * 50 : $rawHarga;
 
                         $finishingGroups[$key]['master'] = [
@@ -401,7 +414,6 @@ class ProdukSkuController extends Controller
                         $tipeDiskon = empty($rowData['tipe_diskon']) ? 'nominal' : strtolower($rowData['tipe_diskon']);
                         $rawNilai = (!isset($rowData['nilai']) || $rowData['nilai'] === '') ? 0 : (float) str_replace(['.', ','], ['', '.'], $rowData['nilai']);
 
-                        // 👇 PEMBULATAN 50 UNTUK TIER FINISHING 👇
                         $nilaiFinal = ($tipeDiskon === 'nominal' && $rawNilai > 0) ? ceil($rawNilai / 50) * 50 : $rawNilai;
 
                         $finishingGroups[$key]['tiers'][] = [
@@ -667,13 +679,11 @@ class ProdukSkuController extends Controller
                                                 $allSkuMins[$matchedSkuId][] = $minQty;
                                             }
 
-                                            $sla = "3 Hari";
-                                            if ($minQty < 300) $sla = "3 Hari";
-                                            elseif ($minQty >= 300 && $minQty <= 500) $sla = "3 Hari";
-                                            elseif ($minQty >= 501 && $minQty <= 1000) $sla = "5 Hari";
-                                            elseif ($minQty >= 1001 && $minQty <= 2000) $sla = "7 Hari";
-                                            elseif ($minQty >= 2001 && $minQty <= 3000) $sla = "9 Hari";
-                                            elseif ($minQty >= 3001) $sla = "11 Hari";
+                                            $sla = "7 Hari";
+                                            if ($minQty < 300) $sla = "7 Hari";
+                                            elseif ($minQty >= 300 && $minQty <= 500) $sla = "7 Hari";
+                                            elseif ($minQty >= 2001 && $minQty <= 3000) $sla = "12 Hari";
+                                            elseif ($minQty >= 3001) $sla = "12 Hari";
 
                                             $matrixHargaBertingkat[$matchedSkuId][] = [
                                                 'min' => $minQty,
