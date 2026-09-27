@@ -681,9 +681,8 @@ class ProdukSkuController extends Controller
 
                                             $sla = "7 Hari";
                                             if ($minQty < 300) $sla = "7 Hari";
-                                            elseif ($minQty >= 300 && $minQty <= 500) $sla = "7 Hari";
-                                            elseif ($minQty >= 2001 && $minQty <= 3000) $sla = "12 Hari";
-                                            elseif ($minQty >= 3001) $sla = "12 Hari";
+                                            elseif ($minQty >= 300 && $minQty <= 2000) $sla = "7 Hari";
+                                            elseif ($minQty >= 2001) $sla = "12 Hari";
 
                                             $matrixHargaBertingkat[$matchedSkuId][] = [
                                                 'min' => $minQty,
