@@ -250,6 +250,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/file-manage/hapus', [FileManageController::class, 'hapusMassal'])->middleware('akses:hak-akses,hapus')->name('file-manage.hapus');
         Route::middleware('akses:tampilan-web')->prefix('tampilan-web')->name('tampilan-web.')->group(function () {
             Route::get('/', [PengaturanWebController::class, 'index'])->name('index');
+            Route::get('/produk', [PengaturanWebController::class, 'produk'])->middleware('akses:tampilan-web,ubah')->name('produk');
+            Route::post('/produk/sync', [PengaturanWebController::class, 'syncProduk'])->middleware('akses:tampilan-web,ubah')->name('produk.sync');
             Route::get('/kategori', [PengaturanWebController::class, 'kategori'])->middleware('akses:tampilan-web,ubah')->name('kategori');
             Route::post('/kategori/sync', [PengaturanWebController::class, 'syncKategori'])->middleware('akses:tampilan-web,ubah')->name('kategori.sync');
             Route::get('/banner', [PengaturanWebController::class, 'banner'])->middleware('akses:tampilan-web,ubah')->name('banner');

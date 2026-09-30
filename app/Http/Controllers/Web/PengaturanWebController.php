@@ -7,6 +7,7 @@ use App\Models\BannerSlider;
 use App\Models\HalamanStatis;
 use App\Models\Kategori;
 use App\Models\PengaturanWeb;
+use App\Models\Produk;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -18,6 +19,40 @@ class PengaturanWebController extends Controller
     public function index()
     {
         return Inertia::render('Settings/TampilanWeb/Index');
+    }
+
+    public function produk()
+    {
+        return Inertia::render('Settings/TampilanWeb/Produk', [
+            'produks' => Produk::with('kategori')->orderBy('urutan', 'asc')->orderBy('id_produk', 'asc')->get()
+        ]);
+    }
+
+    public function syncProduk(Request $request)
+    {
+        $request->validate([
+            'produks' => 'required|array',
+            'produks.*.id_produk' => 'required|exists:produk,id_produk',
+            'produks.*.urutan' => 'required|integer',
+            'produks.*.is_active' => 'required|boolean',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            foreach ($request->produks as $prod) {
+                Produk::where('id_produk', $prod['id_produk'])->update([
+                    'urutan'    => $prod['urutan'],
+                    'is_active' => $prod['is_active'],
+                ]);
+            }
+
+            DB::commit();
+            return redirect()->back()->with('success', 'Urutan dan tampilan produk berhasil disimpan!');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal menyimpan urutan produk: ' . $e->getMessage());
+        }
     }
 
     public function kategori()

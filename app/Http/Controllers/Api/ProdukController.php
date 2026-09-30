@@ -50,6 +50,7 @@ class ProdukController extends Controller
             return [
                 'id_produk' => $produk->id_produk,
                 'nama_produk' => $produk->nama_produk,
+                'urutan' => $produk->urutan,
                 'kategori' => $produk->kategori ? [
                     'id_kategori' => $produk->kategori->id_kategori,
                     'nama_kategori' => $produk->kategori->nama_kategori,
@@ -97,6 +98,7 @@ class ProdukController extends Controller
             $formattedProduk = [
                 'id_produk' => $produk->id_produk,
                 'nama_produk' => $produk->nama_produk,
+                'urutan' => $produk->urutan,
                 'kategori' => $produk->kategori ? [
                     'id_kategori' => $produk->kategori->id_kategori,
                     'nama_kategori' => $produk->kategori->nama_kategori,

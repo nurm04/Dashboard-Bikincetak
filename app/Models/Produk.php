@@ -19,6 +19,7 @@ class Produk extends Model
         'id_produk',
         'id_kategori',
         'nama_produk',
+        'urutan',
         'gambar',
         'is_active',
     ];

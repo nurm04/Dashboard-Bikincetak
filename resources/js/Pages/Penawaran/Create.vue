@@ -2,7 +2,7 @@
 import { ref, computed, watch } from 'vue';
 import { Head, useForm, router, Link } from '@inertiajs/vue3';
 import { alertStore } from '@/Utils/alertStore';
-import axios from 'axios'; // Pastiin axios di-import buat fetchOngkir
+import axios from 'axios';
 import StafLayout from '@/Layouts/StafLayout.vue';
 import CustomSelectSearch from '@/Components/Form/CustomSelectSearch.vue';
 import CustomSelect from '@/Components/Form/CustomSelect.vue';
@@ -189,7 +189,7 @@ watch(() => form.id_customer, (newId, oldId) => {
 // 3. LOGIKA PENGIRIMAN & ONGKIR
 // ==========================================
 const ekspedisiOptions = [
-    { id: 'Belum Termasuk Biaya Kirim', nama: 'Belum Termasuk Biaya Kirim (Rp 0)' }, // Default Penawaran
+    { id: 'Belum Termasuk Biaya Kirim', nama: 'Belum Termasuk Biaya Kirim (Rp 0)' },
     { id: 'Ambil di Toko', nama: 'Ambil di Toko (Rp 0)' },
     { id: 'Kurir Toko', nama: 'Kurir Lokal / Instan' },
     { id: 'jne', nama: 'JNE (Jalur Nugraha Ekakurir)' },
@@ -210,14 +210,31 @@ const ekspedisiOptions = [
     { id: 'indah', nama: 'Indah Logistik' }
 ];
 
-const manualLayananOptions = [
+const manualLayananOptions = ref([
     { id: 'Gojek / Grab (Instan)', nama: 'Gojek / Grab (Instan)' },
     { id: 'Lalamove / Deliveree', nama: 'Lalamove / Deliveree' },
     { id: 'Kurir Toko (Motor)', nama: 'Kurir Toko (Motor)' },
     { id: 'Kurir Toko (Mobil)', nama: 'Kurir Toko (Mobil)' },
     { id: 'Titip Travel', nama: 'Titip Travel' },
     { id: 'Lainnya', nama: 'Lainnya' },
-];
+]);
+
+const handleCreateLayananLokal = (newValue) => {
+    if (!newValue || newValue.trim() === '') return;
+
+    const exists = manualLayananOptions.value.find(
+        (opt) => opt.nama.toLowerCase() === newValue.toLowerCase()
+    );
+
+    if (!exists) {
+        manualLayananOptions.value.push({
+            id: newValue,
+            nama: newValue
+        });
+    }
+
+    form.ekspedisi_layanan = newValue;
+};
 
 const layananOptions = ref([]);
 const isLoadingOngkir = ref(false);
@@ -475,7 +492,17 @@ const submitPenawaran = async () => {
 
                             <div class="md:col-span-4" v-if="form.ekspedisi_nama !== 'Ambil di Toko' && form.ekspedisi_nama !== 'Belum Termasuk Biaya Kirim'">
                                 <template v-if="isManualEkspedisi">
-                                    <CustomSelect v-model="form.ekspedisi_layanan" label="Layanan Lokal" :options="manualLayananOptions" valueKey="id" labelKey="nama" placeholder="Pilih Instan/Lokal..." />
+                                    <!-- 👇 TELEPORT CUSTOMSELECTSEARCH 👇 -->
+                                    <CustomSelectSearch
+                                        v-model="form.ekspedisi_layanan"
+                                        label="Layanan Lokal"
+                                        :options="manualLayananOptions"
+                                        valueKey="id"
+                                        labelKey="nama"
+                                        placeholder="Pilih Instan/Lokal..."
+                                        :addOption="true"
+                                        @onCreate="handleCreateLayananLokal"
+                                    />
                                 </template>
                                 <template v-else>
                                     <div v-if="isLoadingOngkir" class="flex flex-col gap-1">

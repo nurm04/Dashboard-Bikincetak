@@ -277,14 +277,35 @@ const ekspedisiOptions = [
     { id: 'indah', nama: 'Indah Logistik' }
 ];
 
-const manualLayananOptions = [
+// 👇 1. Buat opsi default dan load custom dari localStorage 👇
+const manualLayananOptions = ref([
     { id: 'Gojek / Grab (Instan)', nama: 'Gojek / Grab (Instan)' },
     { id: 'Lalamove / Deliveree', nama: 'Lalamove / Deliveree' },
     { id: 'Kurir Toko (Motor)', nama: 'Kurir Toko (Motor)' },
     { id: 'Kurir Toko (Mobil)', nama: 'Kurir Toko (Mobil)' },
     { id: 'Titip Travel', nama: 'Titip Travel' },
     { id: 'Lainnya', nama: 'Lainnya' },
-];
+]);
+
+const handleCreateLayananLokal = (newValue) => {
+    if (!newValue || newValue.trim() === '') return;
+
+    // Gunakan .value karena ini adalah ref
+    const exists = manualLayananOptions.value.find(
+        (opt) => opt.nama.toLowerCase() === newValue.toLowerCase()
+    );
+
+    if (!exists) {
+        // Push ke dalam .value array-nya
+        manualLayananOptions.value.push({
+            id: newValue,
+            nama: newValue
+        });
+    }
+
+    // Set nilai yang dipilih ke form
+    form.ekspedisi_layanan = newValue;
+};
 
 const layananOptions = ref([]);
 const isLoadingOngkir = ref(false);
@@ -773,7 +794,16 @@ const submitCheckout = async () => {
 
                             <div class="md:col-span-4" v-if="form.ekspedisi_nama !== 'Ambil di Toko'">
                                 <template v-if="isManualEkspedisi">
-                                    <CustomSelect v-model="form.ekspedisi_layanan" label="Layanan Lokal" :options="manualLayananOptions" valueKey="id" labelKey="nama" placeholder="Pilih Instan/Lokal..." />
+                                    <CustomSelectSearch
+                                        v-model="form.ekspedisi_layanan"
+                                        label="Layanan Lokal"
+                                        :options="manualLayananOptions"
+                                        valueKey="id"
+                                        labelKey="nama"
+                                        placeholder="Pilih Instan/Lokal..."
+                                        :addOption="true"
+                                        @onCreate="handleCreateLayananLokal"
+                                    />
                                 </template>
                                 <template v-else>
                                     <div v-if="isLoadingOngkir" class="flex flex-col gap-1">

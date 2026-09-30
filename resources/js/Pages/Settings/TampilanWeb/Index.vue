@@ -1,9 +1,17 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
 import StafLayout from '@/Layouts/StafLayout.vue';
-import { LayoutGrid, Image as ImageIcon, Settings, Type } from 'lucide-vue-next';
+import { LayoutGrid, Image as ImageIcon, Settings, Type, Package } from 'lucide-vue-next';
 
 const menus = [
+    {
+        title: 'Tampilan Produk',
+        description: 'Atur urutan dan sembunyikan produk di katalog halaman utama.',
+        route: 'tampilan-web.produk',
+        icon: Package,
+        color: 'text-secondary',
+        bg: 'bg-secondary/10'
+    },
     {
         title: 'Tampilan Kategori',
         description: 'Atur urutan, icon, dan sembunyikan kategori di halaman utama.',

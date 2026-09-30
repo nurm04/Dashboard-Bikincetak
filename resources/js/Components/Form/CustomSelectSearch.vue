@@ -140,7 +140,7 @@ onUnmounted(() => {
                     <input
                         v-model="search"
                         type="text"
-                        class="w-full px-3 py-2 text-xs border-none rounded-lg bg-base-200 focus:ring-2 focus:ring-primary/30 text-base-content outline-none"
+                        class="w-full px-3 py-2 text-xs border-none rounded-lg outline-none bg-base-200 focus:ring-2 focus:ring-primary/30 text-base-content"
                         :placeholder="'Cari ' + (label || '') + '...'"
                         autofocus
                     />
@@ -159,7 +159,7 @@ onUnmounted(() => {
                     </li>
                 </ul>
 
-                <div v-if="addOption" @click="handleCreate" class="p-2 border-t bg-base-200 border-base-300 cursor-pointer">
+                <div v-if="addOption" @click="handleCreate" class="p-2 border-t cursor-pointer bg-base-200 border-base-300">
                     <button type="button" class="flex items-center justify-center w-full gap-2 py-2 text-xs font-black transition-all rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
                         TAMBAH {{ label?.toUpperCase() || 'DATA' }} BARU
