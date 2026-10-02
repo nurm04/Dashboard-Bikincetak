@@ -279,12 +279,14 @@ const ekspedisiOptions = [
 
 // 👇 1. Buat opsi default dan load custom dari localStorage 👇
 const manualLayananOptions = ref([
-    { id: 'Gojek / Grab (Instan)', nama: 'Gojek / Grab (Instan)' },
-    { id: 'Lalamove / Deliveree', nama: 'Lalamove / Deliveree' },
-    { id: 'Kurir Toko (Motor)', nama: 'Kurir Toko (Motor)' },
-    { id: 'Kurir Toko (Mobil)', nama: 'Kurir Toko (Mobil)' },
-    { id: 'Titip Travel', nama: 'Titip Travel' },
-    { id: 'Lainnya', nama: 'Lainnya' },
+    { id: 'Gojek / Grab - Bayar Langsung', nama: 'Gojek / Grab - Bayar Langsung' },
+    { id: 'Gojek / Grab - COD (Bayar di Tempat)', nama: 'Gojek / Grab - COD (Bayar di Tempat)' },
+    { id: 'Lalamove / Deliveree - Bayar Langsung', nama: 'Lalamove / Deliveree - Bayar Langsung' },
+    { id: 'Lalamove / Deliveree - COD (Bayar di Tempat)', nama: 'Lalamove / Deliveree - COD (Bayar di Tempat)' },
+    { id: 'Kurir Toko - Bayar Langsung', nama: 'Kurir Toko - Bayar Langsung' },
+    { id: 'Kurir Toko - COD (Bayar di Tempat)', nama: 'Kurir Toko - COD (Bayar di Tempat)' },
+    { id: 'J&T Cargo - Bayar Langsung', nama: 'J&T Cargo - Bayar Langsung' },
+    { id: 'J&T Cargo - COD (Bayar di Tempat)', nama: 'J&T Cargo - COD (Bayar di Tempat)' },
 ]);
 
 const handleCreateLayananLokal = (newValue) => {

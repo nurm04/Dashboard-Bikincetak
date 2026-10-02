@@ -5,6 +5,7 @@ import axios from 'axios';
 import { alertStore } from '@/Utils/alertStore';
 import CustomInput from '@/Components/Form/CustomInput.vue';
 import CustomInputNumber from '@/Components/Form/CustomInputNumber.vue';
+import CustomSelectSearch from '@/Components/Form/CustomSelectSearch.vue';
 import CustomSelect from '@/Components/Form/CustomSelect.vue';
 import CustomButton from '@/Components/Form/CustomButton.vue';
 
@@ -92,13 +93,25 @@ const resetModalBayar = () => {
 const ekspedisiOptions = [
     { id: 'Ambil di Toko', nama: 'Ambil di Toko (Rp 0)' },
     { id: 'Kurir Toko', nama: 'Kurir Lokal / Instan' },
-    { id: 'jne', nama: 'JNE' },
-    { id: 'sicepat', nama: 'SiCepat' },
-    { id: 'jnt', nama: 'J&T' },
+    { id: 'jne', nama: 'JNE (Jalur Nugraha Ekakurir)' },
     { id: 'pos', nama: 'POS Indonesia' },
+    { id: 'tiki', nama: 'TIKI' },
+    { id: 'sicepat', nama: 'SiCepat Ekspres' },
+    { id: 'jnt', nama: 'J&T Express' },
+    { id: 'ninja', nama: 'Ninja Xpress' },
+    { id: 'anteraja', nama: 'AnterAja' },
+    { id: 'lion', nama: 'Lion Parcel' },
+    { id: 'wahana', nama: 'Wahana Prestasi Logistik' },
+    { id: 'rpx', nama: 'RPX Holding' },
+    { id: 'sap', nama: 'SAP Express' },
+    { id: 'ide', nama: 'ID Express' },
+    { id: 'ncs', nama: 'NCS Express' },
+    { id: 'rex', nama: 'REX Express' },
+    { id: 'sentral', nama: 'Sentral Cargo' },
+    { id: 'indah', nama: 'Indah Logistik' }
 ];
 
-const manualLayananOptions = [
+const manualLayananOptions = ref([
     { id: 'Gojek / Grab - Bayar Langsung', nama: 'Gojek / Grab - Bayar Langsung' },
     { id: 'Gojek / Grab - COD (Bayar di Tempat)', nama: 'Gojek / Grab - COD (Bayar di Tempat)' },
     { id: 'Lalamove / Deliveree - Bayar Langsung', nama: 'Lalamove / Deliveree - Bayar Langsung' },
@@ -107,7 +120,26 @@ const manualLayananOptions = [
     { id: 'Kurir Toko - COD (Bayar di Tempat)', nama: 'Kurir Toko - COD (Bayar di Tempat)' },
     { id: 'J&T Cargo - Bayar Langsung', nama: 'J&T Cargo - Bayar Langsung' },
     { id: 'J&T Cargo - COD (Bayar di Tempat)', nama: 'J&T Cargo - COD (Bayar di Tempat)' },
-];
+]);
+
+const handleCreateLayananBaru = (keyword) => {
+    if (!keyword || !keyword.trim()) return;
+
+    const newName = keyword.trim();
+
+    const exists = manualLayananOptions.value.some(
+        opt => opt.nama.toLowerCase() === newName.toLowerCase()
+    );
+
+    if (!exists) {
+        manualLayananOptions.value.push({
+            id: newName,
+            nama: newName
+        });
+    }
+
+    formAlamat.ekspedisi_layanan = newName;
+};
 
 const layananOptions = ref([]);
 const isLoadingOngkir = ref(false);
@@ -237,8 +269,13 @@ const submitAlamat = () => {
         return;
     }
 
-    const namaEkspedisiAsli = ekspedisiOptions.find(e => e.id === formAlamat.ekspedisi_nama)?.nama || formAlamat.ekspedisi_nama;
-    const finalEkspedisiNama = isManualEkspedisi.value ? formAlamat.ekspedisi_nama : namaEkspedisiAsli.toUpperCase();
+    let finalEkspedisiNama = formAlamat.ekspedisi_nama;
+
+    if (!isManualEkspedisi.value) {
+        const found = ekspedisiOptions.find(e => e.id === formAlamat.ekspedisi_nama);
+        const namaEkspedisiAsli = found ? found.nama : formAlamat.ekspedisi_nama;
+        finalEkspedisiNama = namaEkspedisiAsli.toUpperCase();
+    }
 
     const payload = {
         id_alamat: formAlamat.id_alamat,
@@ -465,19 +502,24 @@ const statusPembayaranClass = (status) => {
                     </div>
 
                     <!-- KANAN: EKSPEDISI & ONGKIR -->
-                    <!-- UBAH: Tambah relative z-20 biar layer form ongkir ada di posisi tertinggi saat dropdown terbuka -->
                     <div class="relative z-20 flex flex-col flex-1 h-full p-6 lg:w-2/5 bg-base-200/30">
                         <div class="flex items-center gap-2 mb-4 shrink-0">
                             <div class="flex items-center justify-center w-6 h-6 text-xs font-black rounded-full bg-primary/10 text-primary">2</div>
                             <h4 class="text-xs font-bold tracking-widest uppercase text-base-content/70">Opsi Pengiriman</h4>
                         </div>
-
                         <div class="flex flex-col flex-1 space-y-4">
                             <CustomSelect v-model="formAlamat.ekspedisi_nama" label="Kurir / Ekspedisi" :options="ekspedisiOptions" valueKey="id" labelKey="nama" />
-
                             <div v-if="formAlamat.ekspedisi_nama !== 'Ambil di Toko'" class="space-y-4">
                                 <template v-if="isManualEkspedisi">
-                                    <CustomSelect v-model="formAlamat.ekspedisi_layanan" label="Layanan Lokal" :options="manualLayananOptions" valueKey="id" labelKey="nama" placeholder="Pilih Instan/Lokal..." />
+                                    <CustomSelectSearch
+                                        v-model="formAlamat.ekspedisi_layanan"
+                                        label="Layanan Lokal"
+                                        :options="manualLayananOptions"
+                                        valueKey="id"
+                                        labelKey="nama"
+                                        placeholder="Pilih atau ketik Instan/Lokal baru..."
+                                        @onCreate="handleCreateLayananBaru"
+                                    />
                                 </template>
 
                                 <template v-else>
@@ -487,11 +529,12 @@ const statusPembayaranClass = (status) => {
                                             <span class="loading loading-spinner loading-xs"></span> Mengkalkulasi Tarif...
                                         </div>
                                     </div>
-                                    <CustomSelect v-else v-model="formAlamat.ekspedisi_layanan" label="Layanan Ongkir" :options="layananOptions" valueKey="id" labelKey="nama" placeholder="Pilih Layanan Ekspedisi..." />
+                                    <div v-else class="relative z-40">
+                                        <CustomSelect v-model="formAlamat.ekspedisi_layanan" label="Layanan Ongkir" :options="layananOptions" valueKey="id" labelKey="nama" placeholder="Pilih Layanan Ekspedisi..." />
+                                    </div>
                                 </template>
 
-                                <!-- Form Biaya Ongkir Custom Styling -->
-                                <div class="pt-2">
+                                <div class="relative z-30 pt-2">
                                     <label class="text-[10px] font-bold uppercase opacity-70 ml-1 block mb-1.5">Total Biaya Ongkir</label>
                                     <div class="relative flex items-center">
                                         <span class="absolute text-xs font-black left-4 text-base-content/50">Rp</span>
@@ -508,6 +551,7 @@ const statusPembayaranClass = (status) => {
 
                             <!-- Layout Jika Ambil Di Toko -->
                             <div v-else class="flex flex-col items-center justify-center flex-1 p-6 border border-dashed rounded-2xl border-base-300 opacity-60 bg-base-100/50">
+                                <!-- (SVG Icon Tetap Sama) -->
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 mb-3 text-base-content/50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
                                 <span class="text-[10px] font-bold uppercase tracking-widest text-center leading-relaxed">Pesanan akan diambil<br>langsung di Toko</span>
                             </div>

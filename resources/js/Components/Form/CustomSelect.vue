@@ -14,28 +14,28 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue']);
 
 const isOpen = ref(false);
-const actionRef = ref(null); // Samain kayak CustomTableAction
-const dropdownRef = ref(null); // Ref untuk menu dropdown teleport
+const actionRef = ref(null);
+const dropdownRef = ref(null);
 const dropdownStyle = ref({});
+
+// TAMBAHAN: Target teleport dinamis (default body)
+const teleportTarget = ref('body');
 
 const calculatePosition = () => {
     if (!actionRef.value) return;
 
-    // Ambil posisi elemen input select saat ini
     const rect = actionRef.value.getBoundingClientRect();
 
-    // Set koordinat, lebar disamakan dengan input aslinya
     dropdownStyle.value = {
-        top: `${rect.bottom + 8}px`, // Jarak 8px dari bawah tombol
+        top: `${rect.bottom + 8}px`,
         left: `${rect.left}px`,
-        width: `${rect.width}px`     // Penting: Biar lebarnya nggak acak-acakan
+        width: `${rect.width}px`
     };
 };
 
 const toggle = async () => {
     if (!isOpen.value) {
         window.dispatchEvent(new CustomEvent('close-all-dropdowns'));
-        // Tunggu DOM update, lalu hitung posisi kordinatnya
         await nextTick();
         calculatePosition();
     }
@@ -55,9 +55,7 @@ const selectOption = (opt) => {
 };
 
 const handleClickOutside = (event) => {
-    // Cek apakah klik terjadi di dalam tombol toggle
     const isClickInsideButton = actionRef.value && actionRef.value.contains(event.target);
-    // Cek apakah klik terjadi di dalam menu dropdown yang di-teleport
     const isClickInsideDropdown = dropdownRef.value && dropdownRef.value.contains(event.target);
 
     if (!isClickInsideButton && !isClickInsideDropdown) {
@@ -82,8 +80,18 @@ const handleScroll = (event) => {
 onMounted(() => {
     document.addEventListener('click', handleClickOutside);
     window.addEventListener('close-all-dropdowns', handleCloseAll);
-    // Angka "true" wajib ada untuk menangkap scroll dari dalam tabel
     window.addEventListener('scroll', handleScroll, true);
+
+    // FIX AJAIB: Deteksi otomatis apakah dipanggil di dalam Modal
+    const modalParent = actionRef.value?.closest('dialog, .modal');
+    if (modalParent) {
+        // Buatkan ID sementara jika modalnya belum punya ID agar Teleport akurat
+        if (!modalParent.id) {
+            modalParent.id = 'modal-target-' + Math.random().toString(36).substr(2, 9);
+        }
+        // Ubah target teleport ke dalam modal tersebut
+        teleportTarget.value = `#${modalParent.id}`;
+    }
 });
 
 onUnmounted(() => {
@@ -94,16 +102,14 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <!-- ref actionRef dipindah ke div pembungkus utama -->
     <div class="relative inline-block w-full" ref="actionRef">
         <label v-if="label" class="block mb-1 ml-1 text-xs font-bold text-base-content/70">
             {{ label }}
         </label>
 
-        <!-- Tombol Pemicu / Input Palsu -->
         <div
             @click.stop="toggle"
-            class="flex items-center justify-between w-full px-3 py-2 transition-all duration-300 border rounded-xl cursor-pointer bg-base-100"
+            class="flex items-center justify-between w-full px-3 py-2 transition-all duration-300 border cursor-pointer rounded-xl bg-base-100"
             :class="isOpen
                 ? 'border-primary ring-4 ring-primary/10'
                 : 'border-base-300 hover:border-primary/50'"
@@ -116,8 +122,8 @@ onUnmounted(() => {
             </svg>
         </div>
 
-        <!-- AJAIBNYA VUE 3: Teleport akan memindahkan elemen ini keluar dari tabel langsung ke <body> -->
-        <Teleport to="body">
+        <!-- UBAH: Teleport sekarang mengarah ke variabel dinamis -->
+        <Teleport :to="teleportTarget">
             <Transition
                 enter-active-class="transition duration-200 ease-out"
                 enter-from-class="scale-95 translate-y-2 opacity-0"
@@ -126,7 +132,7 @@ onUnmounted(() => {
                 leave-from-class="scale-100 translate-y-0 opacity-100"
                 leave-to-class="scale-95 translate-y-2 opacity-0"
             >
-                <!-- CLASS fixed DAN z-9999 SEKARANG HARDFIX DI SINI -->
+                <!-- FIX KRUSIAL: z-9999 diubah jadi z-[9999] -->
                 <div
                     v-if="isOpen"
                     ref="dropdownRef"

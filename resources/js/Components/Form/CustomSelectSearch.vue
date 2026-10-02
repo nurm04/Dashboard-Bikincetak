@@ -20,15 +20,14 @@ const search = ref('');
 const container = ref(null);
 const dropdownRef = ref(null);
 const dropdownStyle = ref({});
+const teleportTarget = ref('body');
 
-// Filter data berdasarkan ketikan
 const filteredOptions = computed(() => {
     return props.options.filter(opt =>
         String(opt[props.labelKey] || '').toLowerCase().includes(search.value.toLowerCase())
     );
 });
 
-// Ambil label dari value yang terpilih
 const selectedLabel = computed(() => {
     const selected = props.options.find(opt => opt[props.valueKey] === props.modelValue);
     return selected ? selected[props.labelKey] : '';
@@ -46,31 +45,40 @@ const handleCreate = () => {
 };
 
 // ==========================================
-// LOGIC POSISI FIXED (AGAR KELUAR DARI TABEL)
+// LOGIC POSISI & TINGGI DINAMIS
 // ==========================================
 const calculatePosition = () => {
     if (!container.value || !isOpen.value) return;
 
     const rect = container.value.getBoundingClientRect();
     const spaceBelow = window.innerHeight - rect.bottom;
-    const dropdownHeight = 300; // Estimasi tinggi dropdown
+    const spaceAbove = rect.top;
+    const dropdownHeight = 320; // Estimasi tinggi max
 
-    // Jika di bawah gak cukup ruang tapi di atas cukup, buka ke atas
-    if (spaceBelow < dropdownHeight && rect.top > dropdownHeight) {
+    let isUpwards = false;
+    // Buka ke atas jika di bawah sempit DAN di atas lebih lega
+    if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
+        isUpwards = true;
+    }
+
+    if (isUpwards) {
         dropdownStyle.value = {
             position: 'fixed',
-            bottom: `${window.innerHeight - rect.top + 8}px`, // 8px margin
+            bottom: `${window.innerHeight - rect.top + 8}px`,
             left: `${rect.left}px`,
             width: `${rect.width}px`,
+            // Batasi tinggi maksimal agar tidak tembus layar atas
+            maxHeight: `${Math.max(spaceAbove - 20, 150)}px`,
             zIndex: 999999
         };
     } else {
-        // Normalnya buka ke bawah
         dropdownStyle.value = {
             position: 'fixed',
             top: `${rect.bottom + 8}px`,
             left: `${rect.left}px`,
             width: `${rect.width}px`,
+            // Batasi tinggi maksimal agar tidak tembus layar bawah
+            maxHeight: `${Math.max(spaceBelow - 20, 150)}px`,
             zIndex: 999999
         };
     }
@@ -80,7 +88,6 @@ watch(isOpen, (val) => {
     if (val) {
         nextTick(() => {
             calculatePosition();
-            // Pakai true (capture) agar bisa mendeteksi scroll di dalam parent (tabel)
             window.addEventListener('scroll', calculatePosition, true);
             window.addEventListener('resize', calculatePosition);
         });
@@ -90,9 +97,7 @@ watch(isOpen, (val) => {
     }
 });
 
-// Close dropdown kalau klik di luar
 const handleClickOutside = (event) => {
-    // Karena dropdown kita teleport ke body, kita harus ngecek apakah kliknya di container ATAU di dalam dropdown
     const clickedInContainer = container.value && container.value.contains(event.target);
     const clickedInDropdown = dropdownRef.value && dropdownRef.value.contains(event.target);
 
@@ -101,7 +106,17 @@ const handleClickOutside = (event) => {
     }
 };
 
-onMounted(() => document.addEventListener('click', handleClickOutside));
+onMounted(() => {
+    document.addEventListener('click', handleClickOutside);
+    const modalParent = container.value?.closest('dialog, .modal');
+    if (modalParent) {
+        if (!modalParent.id) {
+            modalParent.id = 'modal-target-' + Math.random().toString(36).substr(2, 9);
+        }
+        teleportTarget.value = `#${modalParent.id}`;
+    }
+});
+
 onUnmounted(() => {
     document.removeEventListener('click', handleClickOutside);
     window.removeEventListener('scroll', calculatePosition, true);
@@ -116,7 +131,7 @@ onUnmounted(() => {
         </label>
 
         <div
-            @click="!disabled && (isOpen = !isOpen)"
+            @click.stop="!disabled && (isOpen = !isOpen)"
             :class="disabled ? 'opacity-50 cursor-not-allowed bg-base-200' : 'cursor-pointer bg-base-100 focus-within:ring-4 focus-within:ring-primary/10 focus-within:border-primary'"
             class="flex items-center justify-between w-full px-3 py-2 transition border rounded-lg shadow-sm border-base-300"
         >
@@ -128,15 +143,16 @@ onUnmounted(() => {
             </svg>
         </div>
 
-        <!-- 👇 TELEPORT KE BODY AGAR LEPAS DARI OVERFLOW TABEL 👇 -->
-        <Teleport to="body">
+        <Teleport :to="teleportTarget">
+            <!-- 👇 Ditambahkan: flex & flex-col agar layout bisa menyesuaikan maxHeight dinamis -->
             <div
                 v-if="isOpen"
                 ref="dropdownRef"
                 :style="dropdownStyle"
-                class="overflow-hidden duration-200 border rounded-lg shadow-2xl bg-base-100 border-base-300 animate-in fade-in zoom-in"
+                class="flex flex-col overflow-hidden duration-200 border rounded-lg shadow-2xl bg-base-100 border-base-300 animate-in fade-in zoom-in"
             >
-                <div class="p-2 border-b border-base-200">
+                <!-- KEPALA (Search) - Ditambah shrink-0 agar tidak menyusut -->
+                <div class="p-2 border-b border-base-200 shrink-0">
                     <input
                         v-model="search"
                         type="text"
@@ -146,7 +162,8 @@ onUnmounted(() => {
                     />
                 </div>
 
-                <ul class="py-1 overflow-y-auto max-h-60 scrollbar-hide">
+                <!-- BADAN (List Option) - Ditambah flex-1 dan hapus max-h-60 agar fleksibel -->
+                <ul class="flex-1 py-1 overflow-y-auto scrollbar-hide">
                     <li v-for="opt in filteredOptions" :key="opt[valueKey]"
                         @click="selectOption(opt)"
                         class="px-4 py-2 text-sm font-bold transition-colors cursor-pointer text-base-content/70 hover:bg-primary hover:text-white"
@@ -159,7 +176,8 @@ onUnmounted(() => {
                     </li>
                 </ul>
 
-                <div v-if="addOption" @click="handleCreate" class="p-2 border-t cursor-pointer bg-base-200 border-base-300">
+                <!-- KAKI (Tombol Tambah) - Ditambah shrink-0 agar tidak menyusut -->
+                <div v-if="addOption" @click="handleCreate" class="p-2 border-t cursor-pointer bg-base-200 border-base-300 shrink-0">
                     <button type="button" class="flex items-center justify-center w-full gap-2 py-2 text-xs font-black transition-all rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
                         TAMBAH {{ label?.toUpperCase() || 'DATA' }} BARU
