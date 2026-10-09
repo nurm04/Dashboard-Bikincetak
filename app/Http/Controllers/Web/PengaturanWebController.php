@@ -191,10 +191,22 @@ class PengaturanWebController extends Controller
 
     public function pengaturanUmum()
     {
-        $pengaturan = PengaturanWeb::all()->keyBy('kunci');
+        $pengaturanRaw = PengaturanWeb::all();
+
+        $pengaturan = $pengaturanRaw->where('grup', 'general')->keyBy('kunci');
+
+        $kurirRajaongkir = $pengaturanRaw->where('grup', 'kurir_rajaongkir')->mapWithKeys(function ($item) {
+            return [$item->kunci => json_decode($item->nilai, true)];
+        });
+
+        $kurirLainnya = $pengaturanRaw->where('grup', 'kurir_lainnya')->mapWithKeys(function ($item) {
+            return [$item->kunci => json_decode($item->nilai, true)];
+        });
 
         return Inertia::render('Settings/TampilanWeb/PengaturanUmum', [
-            'pengaturan' => $pengaturan
+            'pengaturan' => $pengaturan,
+            'kurir_rajaongkir' => $kurirRajaongkir,
+            'kurir_lainnya' => $kurirLainnya,
         ]);
     }
 
@@ -205,16 +217,87 @@ class PengaturanWebController extends Controller
         DB::beginTransaction();
         try {
             foreach ($data as $key => $value) {
+
+                // =======================================================
+                // 1. PENANGANAN KHUSUS UNTUK KURIR (Tiap kurir 1 baris DB)
+                // =======================================================
+                if (in_array($key, ['kurir_rajaongkir', 'kurir_lainnya'])) {
+                    $submittedKeys = [];
+
+                    if (is_array($value)) {
+                        foreach ($value as $index => $kurir) {
+                            $kunciKurir = $kurir['kunci'] ?? null;
+                            if (!$kunciKurir) continue;
+
+                            $submittedKeys[] = $kunciKurir;
+
+                            // Cari kurir di DB, kalau tidak ada buat baris baru (fitur Add Data Kurir Lokal)
+                            $settingKurir = PengaturanWeb::firstOrNew([
+                                'kunci' => $kunciKurir
+                            ]);
+
+                            $settingKurir->grup = $key; // 'kurir_rajaongkir' atau 'kurir_lainnya'
+                            $settingKurir->tipe_data = 'json';
+
+                            // Ambil data JSON lama (untuk keperluan hapus gambar lama)
+                            $oldData = $settingKurir->exists && $settingKurir->nilai ? json_decode($settingKurir->nilai, true) : [];
+
+                            $imageUrl = $kurir['image_url'] ?? $oldData['image'] ?? null;
+
+                            // Cek jika ada upload file gambar kurir baru
+                            if ($request->hasFile("{$key}.{$index}.image_file")) {
+                                // Hapus gambar lama jika ada
+                                if (!empty($oldData['image']) && Storage::disk('public')->exists($oldData['image'])) {
+                                    Storage::disk('public')->delete($oldData['image']);
+                                }
+
+                                $file = $request->file("{$key}.{$index}.image_file");
+                                $imageUrl = $file->store('img_web/couriers', 'public');
+                            }
+
+                            // Set Nilai JSON Kurir
+                            $nilaiKurir = [
+                                'nama' => $kurir['nama'] ?? '',
+                                'image' => $imageUrl,
+                                'is_active' => filter_var($kurir['is_active'] ?? true, FILTER_VALIDATE_BOOLEAN)
+                            ];
+
+                            $settingKurir->nilai = json_encode($nilaiKurir);
+                            $settingKurir->save();
+                        }
+                    }
+
+                    // Hapus kurir lokal dari database JIKA dihapus / di-remove dari tabel Vue
+                    if ($key === 'kurir_lainnya') {
+                        if (count($submittedKeys) > 0) {
+                            PengaturanWeb::where('grup', 'kurir_lainnya')
+                                ->whereNotIn('kunci', $submittedKeys)
+                                ->delete();
+                        } else {
+                            // Jika semua kurir lokal dihapus dari tampilan Vue, bersihkan semuanya
+                            PengaturanWeb::where('grup', 'kurir_lainnya')->delete();
+                        }
+                    }
+
+                    continue; // Skip pengecekan general di bawah untuk key kurir
+                }
+
+
+                // =======================================================
+                // 2. PENANGANAN PENGATURAN GENERAL (1 baris DB per $key)
+                // =======================================================
                 $setting = PengaturanWeb::where('kunci', $key)->first();
 
                 if ($setting) {
                     if ($request->hasFile($key)) {
+                        // Hapus file tunggal lama (seperti logo_utama)
                         if ($setting->nilai && Storage::disk('public')->exists($setting->nilai)) {
                             Storage::disk('public')->delete($setting->nilai);
                         }
                         $setting->nilai = $request->file($key)->store('img_web', 'public');
                     }
                     else if (is_array($value)) {
+                        // Penanganan untuk daftar/array yang digabung jadi 1 baris (metode_pembayaran, daftar_whatsapp, dll)
                         $arrayData = $value;
 
                         foreach ($arrayData as $index => &$item) {
@@ -235,6 +318,7 @@ class PengaturanWebController extends Controller
                         $setting->nilai = json_encode($arrayData);
                     }
                     else {
+                        // Teks, angka, text-area biasa
                         $setting->nilai = $value;
                     }
 

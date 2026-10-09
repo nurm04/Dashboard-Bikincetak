@@ -51,6 +51,9 @@ class PengaturanWebController extends Controller
             $pengaturan = PengaturanWeb::all();
 
             $formattedSettings = [];
+            $kurirRajaOngkir = [];
+            $kurirLainnya = [];
+
             foreach ($pengaturan as $item) {
                 // Ambil nilai yang sudah di-decode dari Model
                 $val = $item->nilai_parsed;
@@ -81,8 +84,19 @@ class PengaturanWebController extends Controller
                     }
                 }
 
-                $formattedSettings[$item->kunci] = $val;
+                // 4. PENGELOMPOKAN DATA KURIR BERDASARKAN GRUP
+                if ($item->grup === 'kurir_rajaongkir') {
+                    $kurirRajaOngkir[$item->kunci] = $val;
+                } elseif ($item->grup === 'kurir_lainnya') {
+                    $kurirLainnya[$item->kunci] = $val;
+                } else {
+                    // Masukkan ke pengaturan umum jika bukan kurir
+                    $formattedSettings[$item->kunci] = $val;
+                }
             }
+
+            $formattedSettings['kurir_rajaongkir'] = $kurirRajaOngkir;
+            $formattedSettings['kurir_lainnya'] = $kurirLainnya;
 
             return response()->json([
                 'success' => true,

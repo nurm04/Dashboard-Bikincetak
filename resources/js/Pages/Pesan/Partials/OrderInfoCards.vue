@@ -14,6 +14,8 @@ const props = defineProps({
     total_tagihan: Number,
     total_dibayar: Number,
     enumPembayaran: Array,
+    kurirRajaOngkir: { type: Object, default: () => ({}) },
+    kurirLainnya: { type: Object, default: () => ({}) }
 });
 
 const emit = defineEmits(['openResiModal']);
@@ -89,38 +91,54 @@ const resetModalBayar = () => {
     showBayarSebagianModal.value = false;
 };
 
-// --- LOGIKA GANTI ALAMAT & ONGKIR ---
-const ekspedisiOptions = [
-    { id: 'Ambil di Toko', nama: 'Ambil di Toko (Rp 0)' },
-    { id: 'Kurir Toko', nama: 'Kurir Lokal / Instan' },
-    { id: 'jne', nama: 'JNE (Jalur Nugraha Ekakurir)' },
-    { id: 'pos', nama: 'POS Indonesia' },
-    { id: 'tiki', nama: 'TIKI' },
-    { id: 'sicepat', nama: 'SiCepat Ekspres' },
-    { id: 'jnt', nama: 'J&T Express' },
-    { id: 'ninja', nama: 'Ninja Xpress' },
-    { id: 'anteraja', nama: 'AnterAja' },
-    { id: 'lion', nama: 'Lion Parcel' },
-    { id: 'wahana', nama: 'Wahana Prestasi Logistik' },
-    { id: 'rpx', nama: 'RPX Holding' },
-    { id: 'sap', nama: 'SAP Express' },
-    { id: 'ide', nama: 'ID Express' },
-    { id: 'ncs', nama: 'NCS Express' },
-    { id: 'rex', nama: 'REX Express' },
-    { id: 'sentral', nama: 'Sentral Cargo' },
-    { id: 'indah', nama: 'Indah Logistik' }
-];
+const ekspedisiOptions = computed(() => {
+    const options = [
+        { id: 'Ambil di Toko', nama: 'Ambil di Toko (Rp 0)' },
+        { id: 'Kurir Toko', nama: 'Kurir Lokal / Instan' }
+    ];
 
-const manualLayananOptions = ref([
-    { id: 'Gojek / Grab - Bayar Langsung', nama: 'Gojek / Grab - Bayar Langsung' },
-    { id: 'Gojek / Grab - COD (Bayar di Tempat)', nama: 'Gojek / Grab - COD (Bayar di Tempat)' },
-    { id: 'Lalamove / Deliveree - Bayar Langsung', nama: 'Lalamove / Deliveree - Bayar Langsung' },
-    { id: 'Lalamove / Deliveree - COD (Bayar di Tempat)', nama: 'Lalamove / Deliveree - COD (Bayar di Tempat)' },
-    { id: 'Kurir Toko - Bayar Langsung', nama: 'Kurir Toko - Bayar Langsung' },
-    { id: 'Kurir Toko - COD (Bayar di Tempat)', nama: 'Kurir Toko - COD (Bayar di Tempat)' },
-    { id: 'J&T Cargo - Bayar Langsung', nama: 'J&T Cargo - Bayar Langsung' },
-    { id: 'J&T Cargo - COD (Bayar di Tempat)', nama: 'J&T Cargo - COD (Bayar di Tempat)' },
-]);
+    if (props.kurirRajaOngkir) {
+        Object.keys(props.kurirRajaOngkir).forEach(key => {
+            const item = props.kurirRajaOngkir[key];
+            const isActive = item?.is_active ?? true;
+
+            if (isActive) {
+                options.push({
+                    id: key,
+                    nama: item?.nama || key.toUpperCase()
+                });
+            }
+        });
+    }
+
+    return options;
+});
+
+// State pendukung untuk opsi manual baru (jika diketik sendiri oleh staf)
+const customLayananLokal = ref([]);
+
+// 2. Filter Layanan Kurir Lokal / Lainnya
+const manualLayananOptions = computed(() => {
+    const options = [
+        { id: 'Kurir Toko - Bayar Langsung', nama: 'Kurir Toko - Bayar Langsung' },
+        { id: 'Kurir Toko - COD (Bayar di Tempat)', nama: 'Kurir Toko - COD (Bayar di Tempat)' }
+    ];
+
+    if (props.kurirLainnya && Object.keys(props.kurirLainnya).length > 0) {
+        Object.keys(props.kurirLainnya).forEach(key => {
+            const item = props.kurirLainnya[key];
+            const isActive = item?.is_active ?? true;
+
+            if (isActive && item?.nama) {
+                options.push({ id: `${item.nama} - Bayar Langsung`, nama: `${item.nama} - Bayar Langsung` });
+                options.push({ id: `${item.nama} - COD (Bayar di Tempat)`, nama: `${item.nama} - COD (Bayar di Tempat)` });
+            }
+        });
+    }
+
+    // Gabungkan dengan opsi tambahan jika staf mengetik kurir custom sendiri
+    return [...options, ...customLayananLokal.value];
+});
 
 const handleCreateLayananBaru = (keyword) => {
     if (!keyword || !keyword.trim()) return;
@@ -132,7 +150,7 @@ const handleCreateLayananBaru = (keyword) => {
     );
 
     if (!exists) {
-        manualLayananOptions.value.push({
+        customLayananLokal.value.push({ // Menggunakan ref pendukung
             id: newName,
             nama: newName
         });
@@ -272,7 +290,8 @@ const submitAlamat = () => {
     let finalEkspedisiNama = formAlamat.ekspedisi_nama;
 
     if (!isManualEkspedisi.value) {
-        const found = ekspedisiOptions.find(e => e.id === formAlamat.ekspedisi_nama);
+        // PERBAIKAN: tambahkan .value saat memanggil fungsi find di computed property
+        const found = ekspedisiOptions.value.find(e => e.id === formAlamat.ekspedisi_nama);
         const namaEkspedisiAsli = found ? found.nama : formAlamat.ekspedisi_nama;
         finalEkspedisiNama = namaEkspedisiAsli.toUpperCase();
     }

@@ -151,6 +151,18 @@ class PesanController extends Controller
         preg_match('/^enum\((.*)\)$/', $typeOperasional, $matchesOperasional);
         $enumOperasional = array_map(fn($value) => trim($value, "'"), explode(',', $matchesOperasional[1]));
 
+        $kurirRajaOngkir = PengaturanWeb::where('grup', 'kurir_rajaongkir')
+            ->get()
+            ->mapWithKeys(function ($item) {
+                return [$item->kunci => json_decode($item->nilai, true)];
+            });
+
+        $kurirLainnya = PengaturanWeb::where('grup', 'kurir_lainnya')
+            ->get()
+            ->mapWithKeys(function ($item) {
+                return [$item->kunci => json_decode($item->nilai, true)];
+            });
+
         return Inertia::render('Pesan/Detail', [
             'pesanan'         => $pesanan,
             'total_tagihan'   => $rincian['subtotal'],
@@ -160,6 +172,8 @@ class PesanController extends Controller
             'sisa_tagihan'    => $rincian['sisa_tagihan'],
             'enumPembayaran'  => $enumPembayaran,
             'enumOperasional' => $enumOperasional,
+            'kurirRajaOngkir' => $kurirRajaOngkir,
+            'kurirLainnya'    => $kurirLainnya,
         ]);
     }
 
@@ -172,7 +186,7 @@ class PesanController extends Controller
             ->where('berlaku_sampai', '>=', now())
             ->where(function($query) {
                 $query->whereNull('kuota_penggunaan')
-                      ->orWhere('kuota_penggunaan', '>', 0);
+                    ->orWhere('kuota_penggunaan', '>', 0);
             })
             ->get();
 
@@ -180,10 +194,26 @@ class PesanController extends Controller
         preg_match('/^enum\((.*)\)$/', $typePembayaran, $matchesPembayaran);
         $enumPembayaran = array_map(function($value){ return trim($value, "'"); }, explode(',', $matchesPembayaran[1]));
 
+        // 1. Ambil Kurir RajaOngkir (Filter berdasarkan GRUP)
+        $kurirRajaOngkir = PengaturanWeb::where('grup', 'kurir_rajaongkir')
+            ->get()
+            ->mapWithKeys(function ($item) {
+                return [$item->kunci => json_decode($item->nilai, true)];
+            });
+
+        // 2. Ambil Kurir Lokal / Lainnya (Filter berdasarkan GRUP juga)
+        $kurirLainnya = PengaturanWeb::where('grup', 'kurir_lainnya')
+            ->get()
+            ->mapWithKeys(function ($item) {
+                return [$item->kunci => json_decode($item->nilai, true)];
+            });
+
         return Inertia::render('Pesan/PosKasir', [
             'customers' => $customers,
             'vouchers' => $vouchers,
             'enumPembayaran' => $enumPembayaran,
+            'kurirRajaOngkir' => $kurirRajaOngkir,
+            'kurirLainnya' => $kurirLainnya,
         ]);
     }
 

@@ -8,6 +8,7 @@ use App\Models\Komposisi;
 use App\Models\Penawaran;
 use App\Models\PenawaranItem;
 use App\Models\PenawaranItemFinishing;
+use App\Models\PengaturanWeb;
 use App\Models\Pesan;
 use App\Models\PesananItem;
 use App\Models\PesananItemFinishing;
@@ -58,9 +59,22 @@ class PenawaranController extends Controller
     {
         // Cukup tarik Customer aja lengkap dengan rolenya
         $customers = Customer::with(['user', 'alamat', 'roleCustomer'])->get();
+        $kurirRajaOngkir = PengaturanWeb::where('grup', 'kurir_rajaongkir')
+            ->get()
+            ->mapWithKeys(function ($item) {
+                return [$item->kunci => json_decode($item->nilai, true)];
+            });
+
+        $kurirLainnya = PengaturanWeb::where('grup', 'kurir_lainnya')
+            ->get()
+            ->mapWithKeys(function ($item) {
+                return [$item->kunci => json_decode($item->nilai, true)];
+            });
 
         return Inertia::render('Penawaran/Create', [
-            'customers' => $customers
+            'customers' => $customers,
+            'kurirRajaOngkir' => $kurirRajaOngkir,
+            'kurirLainnya'    => $kurirLainnya,
         ]);
     }
 

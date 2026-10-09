@@ -7,16 +7,38 @@ import CustomInput from '@/Components/Form/CustomInput.vue';
 import CustomTextarea from '@/Components/Form/CustomTextarea.vue';
 import CustomTableForm from '@/Components/CustomTableForm.vue';
 import CustomInputFile from '@/Components/Form/CustomInputFile.vue';
-import { ArrowLeft, Save, Globe, Phone, CreditCard, Image as ImageIcon } from 'lucide-vue-next';
+// 👇 Tambahkan icon Truck untuk tab Kurir
+import { ArrowLeft, Save, Globe, Phone, CreditCard, Image as ImageIcon, Truck } from 'lucide-vue-next';
 import { alertStore } from '@/Utils/alertStore';
 
 const props = defineProps({
-    pengaturan: Object
+    pengaturan: Object,
+    kurir_rajaongkir: {
+        type: Object,
+        default: () => ({})
+    },
+    kurir_lainnya: {
+        type: Object,
+        default: () => ({})
+    }
 });
 
 const getVal = (key, defaultVal) => {
     if (!props.pengaturan || !props.pengaturan[key]) return defaultVal;
     return props.pengaturan[key].nilai_parsed ?? props.pengaturan[key].nilai ?? defaultVal;
+};
+
+// Fungsi untuk mengubah Object Kurir dari Backend menjadi Array Form
+const formatKurirToArray = (kurirObj) => {
+    if (!kurirObj) return [];
+    return Object.keys(kurirObj).map(key => ({
+        kunci: key,
+        nama: kurirObj[key].nama || '',
+        image_url: kurirObj[key].image || '',
+        image_file: null,
+        image_preview: null,
+        is_active: kurirObj[key].is_active ?? true // Toggle aktif/nonaktif
+    }));
 };
 
 // Form State
@@ -41,6 +63,10 @@ const form = useForm({
     // Tab 3: Pembayaran
     teks_info_pembayaran: getVal('teks_info_pembayaran', ''),
     metode_pembayaran: getVal('metode_pembayaran', []),
+
+    // 👇 TAB 4: Kurir & Pengiriman
+    kurir_rajaongkir: formatKurirToArray(props.kurir_rajaongkir),
+    kurir_lainnya: formatKurirToArray(props.kurir_lainnya),
 });
 
 const activeTab = ref('identitas');
@@ -56,12 +82,21 @@ const logoPreviewUrl = computed(() => {
     return null;
 });
 
-// 👇 FUNGSI BARU: Upload Logo Pembayaran di dalam Tabel Array 👇
+// Fungsi Upload Icon Pembayaran
 const handlePaymentIconUpload = (e, row) => {
     const file = e.target.files[0];
     if (file) {
-        row.icon_file = file; // Simpan file asli buat dikirim ke Laravel
-        row.icon_preview = URL.createObjectURL(file); // Buat URL lokal untuk preview mata
+        row.icon_file = file;
+        row.icon_preview = URL.createObjectURL(file);
+    }
+};
+
+// 👇 Fungsi Baru: Upload Logo Kurir
+const handleKurirIconUpload = (e, row) => {
+    const file = e.target.files[0];
+    if (file) {
+        row.image_file = file;
+        row.image_preview = URL.createObjectURL(file);
     }
 };
 
@@ -76,7 +111,7 @@ const submit = () => {
             delete payload.logo_utama;
         }
 
-        // Inertia otomatis ngurusin nested file di metode_pembayaran kalau ada isinya.
+        // Inertia otomatis menangani File Array (metode_pembayaran & kurir)
         return payload;
     }).post(route('tampilan-web.pengaturan.update'), {
         preserveScroll: true,
@@ -96,7 +131,7 @@ const submit = () => {
                     </Link>
                     <div>
                         <h2 class="text-xl font-semibold leading-tight text-base-content">Pengaturan Umum Web</h2>
-                        <p class="mt-1 text-sm text-base-content/60">Atur Identitas, SEO, Kontak, dan Metode Pembayaran website.</p>
+                        <p class="mt-1 text-sm text-base-content/60">Atur Identitas, SEO, Kontak, Pembayaran, dan Kurir.</p>
                     </div>
                 </div>
             </div>
@@ -111,6 +146,9 @@ const submit = () => {
                         <button @click="activeTab = 'identitas'" :class="['flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-sm transition-all whitespace-nowrap', activeTab === 'identitas' ? 'bg-primary text-primary-content shadow-md' : 'text-base-content/60 hover:bg-base-200']"><Globe class="w-4 h-4" /> Identitas & SEO</button>
                         <button @click="activeTab = 'kontak'" :class="['flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-sm transition-all whitespace-nowrap', activeTab === 'kontak' ? 'bg-primary text-primary-content shadow-md' : 'text-base-content/60 hover:bg-base-200']"><Phone class="w-4 h-4" /> Kontak & Sosmed</button>
                         <button @click="activeTab = 'pembayaran'" :class="['flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-sm transition-all whitespace-nowrap', activeTab === 'pembayaran' ? 'bg-primary text-primary-content shadow-md' : 'text-base-content/60 hover:bg-base-200']"><CreditCard class="w-4 h-4" /> Pembayaran</button>
+
+                        <!-- 👇 TAB BARU: KURIR 👇 -->
+                        <button @click="activeTab = 'kurir'" :class="['flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-sm transition-all whitespace-nowrap', activeTab === 'kurir' ? 'bg-primary text-primary-content shadow-md' : 'text-base-content/60 hover:bg-base-200']"><Truck class="w-4 h-4" /> Kurir Pengiriman</button>
                     </div>
                 </div>
 
@@ -126,8 +164,8 @@ const submit = () => {
                                 </h3>
 
                                 <div class="grid grid-cols-1 gap-6">
-                                    <CustomInput v-model="form.nama_website" label="Nama Website (Title SEO)" placeholder="BikinCetak - Platform..." required />
-                                    <CustomTextarea v-model="form.deskripsi_singkat" label="Deskripsi Singkat (Meta Description)" placeholder="Tulis deksripsi web untuk muncul di Google..." rows="3" required />
+                                    <CustomInput v-model="form.nama_website" label="Nama Website (Title SEO)" placeholder="BikinCetak - Platform..." />
+                                    <CustomTextarea v-model="form.deskripsi_singkat" label="Deskripsi Singkat (Meta Description)" placeholder="Tulis deksripsi web untuk muncul di Google..." rows="3" />
                                     <CustomInput v-model="form.keyword_seo" label="Kata Kunci SEO (Keywords)" placeholder="percetakan online, digital printing..." />
                                 </div>
 
@@ -201,35 +239,93 @@ const submit = () => {
 
                                 <CustomTableForm
                                     v-model="form.metode_pembayaran"
-                                    :headers="['Nama Metode / Bank', 'No Rekening', 'Atas Nama', 'Upload Icon / Logo']"
+                                    :headers="['Nama Metode', 'No Rekening', 'Atas Nama', 'Upload Logo']"
                                     label="Daftar Metode Pembayaran"
                                     @add="form.metode_pembayaran.push({ id: Date.now(), nama_metode: '', no_rekening: '', atas_nama: '', icon_url: '', icon_file: null, icon_preview: null, is_active: true })"
                                 >
                                     <template #row="{ row }">
-                                        <td class="px-2 py-2 w-[20%]"><input v-model="row.nama_metode" type="text" class="w-full text-xs font-bold bg-transparent" placeholder="Bank BCA"/></td>
+                                        <td class="px-2 py-2 w-[25%]"><input v-model="row.nama_metode" type="text" class="w-full text-xs font-bold bg-transparent" placeholder="Bank BCA"/></td>
                                         <td class="px-2 py-2 w-[20%]"><input v-model="row.no_rekening" type="text" class="w-full text-xs bg-transparent" placeholder="123456... / -"/></td>
                                         <td class="px-2 py-2 w-[20%]"><input v-model="row.atas_nama" type="text" class="w-full text-xs bg-transparent" placeholder="A.N Perusahaan"/></td>
 
-                                        <!-- 👇 UBAH INPUT TEKS JADI KOMPONEN UPLOAD + PREVIEW 👇 -->
-                                        <td class="px-2 py-2 w-[40%]">
+                                        <td class="px-2 py-2 w-[35%]">
                                             <div class="flex items-center gap-3">
-                                                <!-- Kotak Preview Kecil -->
                                                 <div class="flex items-center justify-center w-8 h-8 p-1 overflow-hidden bg-white border rounded-lg shrink-0 border-base-300">
                                                     <img v-if="row.icon_preview" :src="row.icon_preview" class="object-contain w-full h-full" alt="Baru"/>
                                                     <img v-else-if="row.icon_url" :src="row.icon_url.startsWith('/') || row.icon_url.startsWith('http') ? row.icon_url : '/storage/' + row.icon_url" class="object-contain w-full h-full" alt="Lama" />
                                                     <ImageIcon v-else class="w-4 h-4 text-base-content/30" />
                                                 </div>
-
-                                                <!-- Input File -->
                                                 <div class="flex-1 min-w-0">
-                                                    <input
-                                                        type="file"
-                                                        @change="(e) => handlePaymentIconUpload(e, row)"
-                                                        accept="image/png, image/jpeg, image/jpg, image/webp"
-                                                        class="w-full text-[10px] file-input file-input-bordered file-input-xs file-input-primary bg-base-200"
-                                                    />
+                                                    <input type="file" @change="(e) => handlePaymentIconUpload(e, row)" accept="image/png, image/jpeg, image/jpg, image/webp" class="w-full text-[10px] file-input file-input-bordered file-input-xs file-input-primary bg-base-200" />
                                                 </div>
                                             </div>
+                                        </td>
+                                    </template>
+                                </CustomTableForm>
+                            </div>
+
+                            <!-- 👇 TAB 4: KURIR & PENGIRIMAN 👇 -->
+                            <div v-show="activeTab === 'kurir'" class="space-y-8 animate-fade-in">
+                                <h3 class="flex items-center gap-2 pb-2 text-sm font-black tracking-widest uppercase border-b border-base-300 text-primary">
+                                    <Truck class="w-4 h-4" /> Pengaturan Kurir & Pengiriman
+                                </h3>
+
+                                <!-- Kurir RajaOngkir (Otomatis) -->
+                                <!-- Tidak memakai @add karena list ini sudah fixed dari Seeder / API -->
+                                <CustomTableForm
+                                    v-model="form.kurir_rajaongkir"
+                                    :headers="['Kode API', 'Nama Kurir', 'Logo Kurir', 'Aktif']"
+                                    label="Kurir RajaOngkir (Otomatis)"
+                                >
+                                    <template #row="{ row }">
+                                        <td class="px-2 py-2 w-[15%]"><input v-model="row.kunci" type="text" class="w-full text-xs font-bold bg-transparent opacity-50" readonly title="Kode API tidak bisa diubah"/></td>
+                                        <td class="px-2 py-2 w-[30%]"><input v-model="row.nama" type="text" class="w-full text-xs font-bold bg-transparent" placeholder="JNE Express"/></td>
+
+                                        <td class="px-2 py-2 w-[40%]">
+                                            <div class="flex items-center gap-3">
+                                                <div class="flex items-center justify-center w-10 h-8 p-1 bg-white border rounded-lg shrink-0 border-base-300">
+                                                    <img v-if="row.image_preview" :src="row.image_preview" class="object-contain w-full h-full"/>
+                                                    <img v-else-if="row.image_url" :src="row.image_url.startsWith('/') || row.image_url.startsWith('http') ? row.image_url : '/storage/' + row.image_url" class="object-contain w-full h-full"/>
+                                                    <ImageIcon v-else class="w-4 h-4 text-base-content/30" />
+                                                </div>
+                                                <div class="flex-1 min-w-0">
+                                                    <input type="file" @change="(e) => handleKurirIconUpload(e, row)" accept="image/png, image/jpeg, image/webp" class="w-full text-[10px] file-input file-input-bordered file-input-xs file-input-primary bg-base-200" />
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        <td class="px-2 py-2 w-[15%] text-center">
+                                            <input type="checkbox" v-model="row.is_active" class="toggle toggle-sm toggle-primary" />
+                                        </td>
+                                    </template>
+                                </CustomTableForm>
+
+                                <!-- Kurir Lainnya (Manual / Custom) -->
+                                <CustomTableForm
+                                    v-model="form.kurir_lainnya"
+                                    :headers="['Kode (Slug)', 'Nama Kurir', 'Logo Kurir', 'Aktif']"
+                                    label="Kurir Lokal / Custom (Manual)"
+                                    @add="form.kurir_lainnya.push({ kunci: 'kurir_' + Date.now(), nama: '', image_url: '', image_file: null, image_preview: null, is_active: true })"
+                                >
+                                    <template #row="{ row }">
+                                        <td class="px-2 py-2 w-[15%]"><input v-model="row.kunci" type="text" class="w-full text-xs font-bold bg-transparent" placeholder="gojek"/></td>
+                                        <td class="px-2 py-2 w-[30%]"><input v-model="row.nama" type="text" class="w-full text-xs font-bold bg-transparent" placeholder="GoSend"/></td>
+
+                                        <td class="px-2 py-2 w-[40%]">
+                                            <div class="flex items-center gap-3">
+                                                <div class="flex items-center justify-center w-10 h-8 p-1 bg-white border rounded-lg shrink-0 border-base-300">
+                                                    <img v-if="row.image_preview" :src="row.image_preview" class="object-contain w-full h-full"/>
+                                                    <img v-else-if="row.image_url" :src="row.image_url.startsWith('/') || row.image_url.startsWith('http') ? row.image_url : '/storage/' + row.image_url" class="object-contain w-full h-full"/>
+                                                    <ImageIcon v-else class="w-4 h-4 text-base-content/30" />
+                                                </div>
+                                                <div class="flex-1 min-w-0">
+                                                    <input type="file" @change="(e) => handleKurirIconUpload(e, row)" accept="image/png, image/jpeg, image/webp" class="w-full text-[10px] file-input file-input-bordered file-input-xs file-input-primary bg-base-200" />
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        <td class="px-2 py-2 w-[15%] text-center">
+                                            <input type="checkbox" v-model="row.is_active" class="toggle toggle-sm toggle-primary" />
                                         </td>
                                     </template>
                                 </CustomTableForm>

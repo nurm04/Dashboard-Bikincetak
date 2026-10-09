@@ -19,6 +19,14 @@ import { ArrowLeft } from 'lucide-vue-next';
 
 const props = defineProps({
     customers: Array,
+    kurirRajaOngkir: {
+        type: [Object, Array],
+        default: () => ({})
+    },
+    kurirLainnya: {
+        type: [Object, Array],
+        default: () => ({})
+    }
 });
 
 // ==========================================
@@ -186,38 +194,54 @@ watch(() => form.id_customer, (newId, oldId) => {
 }, { immediate: true });
 
 // ==========================================
-// 3. LOGIKA PENGIRIMAN & ONGKIR
+// 4. LOGIKA PENGIRIMAN & ONGKIR
 // ==========================================
-const ekspedisiOptions = [
-    { id: 'Belum Termasuk Biaya Kirim', nama: 'Belum Termasuk Biaya Kirim (Rp 0)' },
-    { id: 'Ambil di Toko', nama: 'Ambil di Toko (Rp 0)' },
-    { id: 'Kurir Toko', nama: 'Kurir Lokal / Instan' },
-    { id: 'jne', nama: 'JNE (Jalur Nugraha Ekakurir)' },
-    { id: 'pos', nama: 'POS Indonesia' },
-    { id: 'tiki', nama: 'TIKI' },
-    { id: 'sicepat', nama: 'SiCepat Ekspres' },
-    { id: 'jnt', nama: 'J&T Express' },
-    { id: 'ninja', nama: 'Ninja Xpress' },
-    { id: 'anteraja', nama: 'AnterAja' },
-    { id: 'lion', nama: 'Lion Parcel' },
-    { id: 'wahana', nama: 'Wahana Prestasi Logistik' },
-    { id: 'rpx', nama: 'RPX Holding' },
-    { id: 'sap', nama: 'SAP Express' },
-    { id: 'ide', nama: 'ID Express' },
-    { id: 'ncs', nama: 'NCS Express' },
-    { id: 'rex', nama: 'REX Express' },
-    { id: 'sentral', nama: 'Sentral Cargo' },
-    { id: 'indah', nama: 'Indah Logistik' }
-];
+const ekspedisiOptions = computed(() => {
+    const options = [
+        { id: 'Belum Termasuk Biaya Kirim', nama: 'Belum Termasuk Biaya Kirim (Rp 0)' },
+        { id: 'Ambil di Toko', nama: 'Ambil di Toko (Rp 0)' },
+        { id: 'Kurir Toko', nama: 'Kurir Lokal / Instan' }
+    ];
 
-const manualLayananOptions = ref([
-    { id: 'Gojek / Grab (Instan)', nama: 'Gojek / Grab (Instan)' },
-    { id: 'Lalamove / Deliveree', nama: 'Lalamove / Deliveree' },
-    { id: 'Kurir Toko (Motor)', nama: 'Kurir Toko (Motor)' },
-    { id: 'Kurir Toko (Mobil)', nama: 'Kurir Toko (Mobil)' },
-    { id: 'Titip Travel', nama: 'Titip Travel' },
-    { id: 'Lainnya', nama: 'Lainnya' },
-]);
+    if (props.kurirRajaOngkir) {
+        Object.keys(props.kurirRajaOngkir).forEach(key => {
+            const item = props.kurirRajaOngkir[key];
+            const isActive = item?.is_active ?? true;
+
+            if (isActive) {
+                options.push({
+                    id: key,
+                    nama: item?.nama || key.toUpperCase()
+                });
+            }
+        });
+    }
+
+    return options;
+});
+
+const customLayananLokal = ref([]);
+
+const manualLayananOptions = computed(() => {
+    const options = [
+        { id: 'Kurir Toko - Bayar Langsung', nama: 'Kurir Toko - Bayar Langsung' },
+        { id: 'Kurir Toko - COD (Bayar di Tempat)', nama: 'Kurir Toko - COD (Bayar di Tempat)' }
+    ];
+
+    if (props.kurirLainnya && Object.keys(props.kurirLainnya).length > 0) {
+        Object.keys(props.kurirLainnya).forEach(key => {
+            const item = props.kurirLainnya[key];
+            const isActive = item?.is_active ?? true;
+
+            if (isActive && item?.nama) {
+                options.push({ id: `${item.nama} - Bayar Langsung`, nama: `${item.nama} - Bayar Langsung` });
+                options.push({ id: `${item.nama} - COD (Bayar di Tempat)`, nama: `${item.nama} - COD (Bayar di Tempat)` });
+            }
+        });
+    }
+
+    return [...options, ...customLayananLokal.value];
+});
 
 const handleCreateLayananLokal = (newValue) => {
     if (!newValue || newValue.trim() === '') return;
@@ -227,7 +251,7 @@ const handleCreateLayananLokal = (newValue) => {
     );
 
     if (!exists) {
-        manualLayananOptions.value.push({
+        customLayananLokal.value.push({
             id: newValue,
             nama: newValue
         });
@@ -390,7 +414,7 @@ const submitPenawaran = async () => {
     formData.append('catatan_penawaran', form.catatan_penawaran || '');
 
     // Kirim data ekspedisi
-    const namaEkspedisiAsli = ekspedisiOptions.find(e => e.id === form.ekspedisi_nama)?.nama || form.ekspedisi_nama;
+    const namaEkspedisiAsli = ekspedisiOptions.value.find(e => e.id === form.ekspedisi_nama)?.nama || form.ekspedisi_nama;
     formData.append('ekspedisi_nama', isManualEkspedisi.value ? form.ekspedisi_nama : namaEkspedisiAsli.toUpperCase());
     formData.append('ekspedisi_layanan', form.ekspedisi_nama === 'Ambil di Toko' ? 'Ambil Sendiri' : form.ekspedisi_layanan);
     formData.append('harga_ongkir', form.ekspedisi_nama === 'Ambil di Toko' || form.ekspedisi_nama === 'Belum Termasuk Biaya Kirim' ? 0 : form.harga_ongkir);

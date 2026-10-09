@@ -22,6 +22,8 @@ const props = defineProps({
     sisa_tagihan: Number,
     enumPembayaran: Array,
     enumOperasional: Array,
+    kurirRajaOngkir: { type: Object, default: () => ({}) },
+    kurirLainnya: { type: Object, default: () => ({}) }
 });
 const showOrderForm = ref(false);
 const itemToEdit = ref(null);
@@ -271,7 +273,7 @@ const goBack = () => {
         <template #header>
             <div class="flex items-center justify-between w-full">
                 <div class="flex items-center gap-4">
-                    <button @click.prevent="goBack" class="btn btn-sm btn-circle btn-ghost ring-1 ring-base-300 transition-colors hover:bg-base-200">
+                    <button @click.prevent="goBack" class="transition-colors btn btn-sm btn-circle btn-ghost ring-1 ring-base-300 hover:bg-base-200">
                         <ArrowLeft class="w-4 h-4" />
                     </button>
                     <h2 class="text-xl font-semibold leading-tight text-base-content">
@@ -297,6 +299,8 @@ const goBack = () => {
                 :total_dibayar="total_dibayar"
                 :enumPembayaran="enumPembayaran"
                 :enumOperasional="enumOperasional"
+                :kurirRajaOngkir="kurirRajaOngkir"
+                :kurirLainnya="kurirLainnya"
                 @openResiModal="openModalResi"
             />
 
