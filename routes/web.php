@@ -214,6 +214,8 @@ Route::middleware('auth')->group(function () {
             Route::patch('/{id}/status', [PenawaranController::class, 'updateStatus'])->middleware('akses:penawaran,ubah')->name('update-status');
             Route::get('/{id}/cetak', [PenawaranController::class, 'cetak'])->name('cetak');
             Route::post('/{id}/convert-to-so', [PenawaranController::class, 'convertToSO'])->name('convert-to-so');
+            Route::post('/{id}/kirim-email', [PenawaranController::class, 'kirimEmail'])->name('kirim-email');
+            Route::post('/{id}/kirim-wa', [PenawaranController::class, 'kirimWa'])->name('kirim-wa');
         });
         Route::middleware('akses:pesan')->group(function () {
             Route::get('pesan', [PesanController::class, 'index'])->name('pesan.index');

@@ -276,6 +276,8 @@ const submit = () => {
                                     v-model="form.kurir_rajaongkir"
                                     :headers="['Kode API', 'Nama Kurir', 'Logo Kurir', 'Aktif']"
                                     label="Kurir RajaOngkir (Otomatis)"
+                                    :can-add="false"
+                                    :can-delete="false"
                                 >
                                     <template #row="{ row }">
                                         <td class="px-2 py-2 w-[15%]"><input v-model="row.kunci" type="text" class="w-full text-xs font-bold bg-transparent opacity-50" readonly title="Kode API tidak bisa diubah"/></td>

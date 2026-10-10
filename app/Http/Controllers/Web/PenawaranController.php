@@ -12,6 +12,7 @@ use App\Models\PengaturanWeb;
 use App\Models\Pesan;
 use App\Models\PesananItem;
 use App\Models\PesananItemFinishing;
+use App\Services\PenawaranService;
 use App\Services\PesanService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -253,9 +254,39 @@ class PenawaranController extends Controller
 
         return back()->with('success', 'Status penawaran berhasil diubah.');
     }
-    /**
-     * Halaman Cetak Surat Penawaran A4
-     */
+
+    public function kirimEmail($id)
+    {
+        $penawaran = Penawaran::with([
+            'customer.user',
+            'alamat',
+            'penawaranItem.penawaranItemFinishing'
+        ])->findOrFail($id);
+
+        $sukses = PenawaranService::kirimEmailPenawaran($penawaran);
+
+        if ($sukses) {
+            return back()->with('success', 'Email Penawaran beserta lampiran PDF berhasil dikirim!');
+        }
+
+        return back()->with('error', 'Gagal mengirim email, silakan cek log sistem.');
+    }
+
+    public function kirimWa($id)
+    {
+        $penawaran = Penawaran::with([
+            'customer.user'
+        ])->findOrFail($id);
+
+        $sukses = PenawaranService::kirimWaPenawaran($penawaran);
+
+        if ($sukses) {
+            return back()->with('success', 'Notifikasi WhatsApp Penawaran berhasil dikirim!');
+        }
+
+        return back()->with('error', 'Gagal mengirim WhatsApp, silakan cek log sistem.');
+    }
+
     public function cetak($id)
     {
         $penawaran = Penawaran::with([

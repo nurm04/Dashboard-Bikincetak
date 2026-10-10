@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import { alertStore } from '@/Utils/alertStore';
 import StafLayout from '@/Layouts/StafLayout.vue';
-import { ArrowLeft, Printer, CheckCircle2, FileText, Package, User, MapPin, Truck } from 'lucide-vue-next';
+import { Mail, MessageCircle, ArrowLeft, Printer, CheckCircle2, FileText, Package, User, MapPin, Truck } from 'lucide-vue-next';
 import CustomAlertConfirm from '@/Components/CustomAlertConfirm.vue';
 
 const props = defineProps({
@@ -157,6 +157,32 @@ const grandTotal = computed(() => {
     return subtotalProduk.value + ongkir;
 });
 
+const handleKirimEmail = () => {
+    alertStore.show('Sedang mengirim email, mohon tunggu...', 'info');
+
+    // 👇 Gunakan penawaran.kirim-email 👇
+    router.post(route('penawaran.kirim-email', props.penawaran.id_penawaran), {}, {
+        preserveScroll: true,
+        onSuccess: (page) => {
+            if(page.props.flash.success) alertStore.show(page.props.flash.success, 'success');
+        },
+        onError: () => alertStore.show('Gagal mengirim email.', 'error')
+    });
+};
+
+const handleKirimWa = () => {
+    alertStore.show('Sedang mengirim WA...', 'info');
+
+    // 👇 Gunakan penawaran.kirim-wa 👇
+    router.post(route('penawaran.kirim-wa', props.penawaran.id_penawaran), {}, {
+        preserveScroll: true,
+        onSuccess: (page) => {
+            if(page.props.flash.success) alertStore.show(page.props.flash.success, 'success');
+        },
+        onError: () => alertStore.show('Gagal mengirim WhatsApp.', 'error')
+    });
+};
+
 </script>
 
 <template>
@@ -178,6 +204,15 @@ const grandTotal = computed(() => {
 
                 <!-- TOMBOL CETAK, BUAT SO & SELECT DROPDOWN UBAH STATUS -->
                 <div class="flex items-center gap-3">
+
+                    <button @click="handleKirimWa" class="btn btn-sm btn-outline text-[#25D366] hover:bg-[#25D366] hover:text-white hover:border-[#25D366]">
+                        <MessageCircle class="w-4 h-4" /> WA
+                    </button>
+
+                    <!-- Tombol Email -->
+                    <button @click="handleKirimEmail" class="btn btn-sm btn-outline text-error hover:bg-error hover:text-white hover:border-error">
+                        <Mail class="w-4 h-4" /> Email
+                    </button>
 
                     <!-- 👇 TOMBOL BUAT SO (UDAH DIRAPIHIN) 👇 -->
                     <button
