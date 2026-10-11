@@ -14,24 +14,40 @@ use Carbon\Carbon;
 class AbsensiController extends Controller
 {
     // 👇 GANTI DENGAN KOORDINAT KANTOR/RUMAH LU (Ambil dari Google Maps)
-    // private $officeLat = -7.127083;
-    // private $officeLong = 112.721294;
-    private $officeLat = -7.304226;
-    private $officeLong = 112.756378;
+    private $officeLat = -7.127083;
+    private $officeLong = 112.721294;
+    // private $officeLat = -7.304226;
+    // private $officeLong = 112.756378;
     private $maxRadius = 100; // Jarak maksimal dalam meter
 
     public function index()
     {
         $user = Auth::user();
         $staf = Staf::where('user_id', $user->id)->firstOrFail();
-        $hariIni = Carbon::now()->toDateString();
 
-        $absensiHariIni = Absensi::where('id_staf', $staf->id_staf)
-                                 ->where('tanggal', $hariIni)
-                                 ->first();
+        $sekarang = Carbon::now();
+        $hariIni = $sekarang->toDateString();
+        $tanggalPencarian = $hariIni;
+
+        // Cek shift malam dari kemarin yang belum di-checkout (maksimal sebelum jam 07:00 pagi)
+        if ($sekarang->hour < 7) {
+            $kemarin = $sekarang->copy()->subDay()->toDateString();
+            $cekGantung = Absensi::where('id_staf', $staf->id_staf)
+                ->where('tanggal', $kemarin)
+                ->whereNotNull('jam_masuk')
+                ->whereNull('jam_keluar')
+                ->exists();
+
+            if ($cekGantung) $tanggalPencarian = $kemarin;
+        }
+
+        // Ambil data secara terpisah berdasarkan Tipe Absen
+        $absensiReguler = Absensi::where('id_staf', $staf->id_staf)->where('tanggal', $tanggalPencarian)->where('tipe_absen', 'Reguler')->first();
+        $absensiLembur = Absensi::where('id_staf', $staf->id_staf)->where('tanggal', $tanggalPencarian)->where('tipe_absen', 'Lembur')->first();
 
         return Inertia::render('Staf/Absensi/Index', [
-            'absensi' => $absensiHariIni,
+            'absensi_reguler' => $absensiReguler,
+            'absensi_lembur' => $absensiLembur,
             'office_lat' => $this->officeLat,
             'office_long' => $this->officeLong,
             'max_radius' => $this->maxRadius,
@@ -40,21 +56,17 @@ class AbsensiController extends Controller
 
     public function rekap(Request $request)
     {
-        // 1. Pastikan cuma Admin yang bisa akses (Security Check)
         $user = Auth::user();
         $staf = Staf::with('roleStaf')->where('user_id', $user->id)->firstOrFail();
 
-        // Sesuaikan dengan logic pengecekan role lu
         if ($staf->id_role_staf !== 'ROLE-STAF-ADMIN' && $user->role !== 'admin') {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 
-        // 2. Ambil parameter pencarian dan filter bulan
         $search = $request->input('search');
         $bulan = $request->input('bulan', Carbon::now()->format('m'));
         $tahun = $request->input('tahun', Carbon::now()->format('Y'));
 
-        // 3. Query Data Absensi dengan Relasi Staf & User
         $absensis = Absensi::with(['staf.user', 'staf.roleStaf'])
             ->whereMonth('tanggal', $bulan)
             ->whereYear('tanggal', $tahun)
@@ -63,9 +75,11 @@ class AbsensiController extends Controller
                     $q->where('name', 'like', "%{$search}%");
                 });
             })
+            // Urutkan Tanggal dulu, lalu Reguler di atas Lembur, lalu berdasarkan ID Staf
             ->orderBy('tanggal', 'desc')
+            ->orderBy('tipe_absen', 'desc')
             ->orderBy('id_staf', 'asc')
-            ->paginate(15) // Kita pakai pagination biar tabel gak berat
+            ->paginate(15)
             ->withQueryString();
 
         return Inertia::render('Staf/Absensi/Rekap', [
@@ -81,7 +95,7 @@ class AbsensiController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'tipe' => 'required|in:masuk,keluar',
+            'tipe' => 'required|in:masuk,keluar,masuk_lembur,keluar_lembur',
             'foto' => 'required|string',
             'lat' => 'required|numeric',
             'long' => 'required|numeric',
@@ -96,37 +110,120 @@ class AbsensiController extends Controller
             return redirect()->back()->with('error', "Anda berada di luar area kantor! Jarak Anda: " . round($jarak) . " meter.");
         }
 
-        $pathFoto = $this->simpanFotoBase64($request->foto, $staf->id_staf, $request->tipe);
+        $isMinggu = $sekarang->isSunday();
+        $tipeAbsen = in_array($request->tipe, ['masuk_lembur', 'keluar_lembur']) ? 'Lembur' : 'Reguler';
+
+        // ATURAN 1: Absen di hari Minggu otomatis dianggap Lembur
+        if ($isMinggu) {
+            $tipeAbsen = 'Lembur';
+            if ($request->tipe === 'masuk') $request->merge(['tipe' => 'masuk_lembur']);
+            if ($request->tipe === 'keluar') $request->merge(['tipe' => 'keluar_lembur']);
+        }
+
+        // Auto-correct: Jika klik 'Absen Masuk' di luar jam kerja (bukan hari Minggu), alihkan jadi 'masuk_lembur'
+        if (!$isMinggu && $request->tipe === 'masuk' && ($sekarang->hour >= 17 || $sekarang->hour < 7)) {
+            $tipeAbsen = 'Lembur';
+            $request->merge(['tipe' => 'masuk_lembur']);
+        }
+
+        $tanggalRecord = $sekarang->toDateString();
+
+        // Deteksi Shift Malam (checkout untuk shift kemarin maksimal jam 07:00)
+        // Jika lewat jam 07:00 dan tidak absen keluar, maka data gantung dan tidak digenerate data keluar/lemburnya.
+        if ($sekarang->hour < 7 && in_array($request->tipe, ['keluar', 'keluar_lembur'])) {
+            $kemarin = $sekarang->copy()->subDay()->toDateString();
+            $cekGantung = Absensi::where('id_staf', $staf->id_staf)
+                ->where('tanggal', $kemarin)
+                ->where('tipe_absen', $tipeAbsen)
+                ->whereNotNull('jam_masuk')
+                ->whereNull('jam_keluar')
+                ->exists();
+
+            if ($cekGantung) $tanggalRecord = $kemarin;
+        }
 
         $absensi = Absensi::firstOrNew([
             'id_staf' => $staf->id_staf,
-            'tanggal' => $sekarang->toDateString()
+            'tanggal' => $tanggalRecord,
+            'tipe_absen' => $tipeAbsen
         ]);
 
-        if ($request->tipe === 'masuk') {
-            if ($absensi->jam_masuk) return redirect()->back()->with('error', 'Anda sudah absen masuk hari ini.');
+        $pathFoto = $this->simpanFotoBase64($request->foto, $staf->id_staf, $request->tipe);
+
+        if (in_array($request->tipe, ['masuk', 'masuk_lembur'])) {
+            if ($absensi->jam_masuk) return redirect()->back()->with('error', "Anda sudah absen masuk {$tipeAbsen} hari ini.");
 
             $absensi->jam_masuk = $sekarang->toTimeString();
             $absensi->foto_masuk = $pathFoto;
             $absensi->lat_masuk = $request->lat;
             $absensi->long_masuk = $request->long;
 
-            $batasJamMasuk = Carbon::today()->setHour(7)->setMinute(0)->setSecond(0);
-            $absensi->status = $sekarang->lessThanOrEqualTo($batasJamMasuk) ? 'Tepat Waktu' : 'Terlambat';
-            $absensi->keterangan = '';
-        } else {
-            if (!$absensi->jam_masuk) return redirect()->back()->with('error', 'Anda belum absen masuk!');
-            if ($absensi->jam_keluar) return redirect()->back()->with('error', 'Anda sudah absen pulang.');
+            if ($tipeAbsen === 'Reguler') {
+                $batasJamMasuk = Carbon::today()->setHour(7)->setMinute(0)->setSecond(0);
+                $absensi->status = $sekarang->lessThanOrEqualTo($batasJamMasuk) ? 'Tepat Waktu' : 'Terlambat';
+            } else {
+                $absensi->status = 'Tepat Waktu';
+                // ATURAN 2: Lupa absen keluar lembur
+                // Set default keterangan "Lembur tidak jelas" saat absen masuk. Akan diubah jika nanti melakukan absen keluar.
+                $absensi->keterangan = 'Lembur tidak jelas (Lupa absen keluar)';
+            }
+            $absensi->save();
 
+        } else {
+            if (!$absensi->jam_masuk) return redirect()->back()->with('error', "Anda belum absen masuk {$tipeAbsen}!");
+            if ($absensi->jam_keluar) return redirect()->back()->with('error', "Anda sudah absen pulang {$tipeAbsen}.");
+
+            // ATURAN 3: Absen keluar reguler nyatu dengan lembur (Melewati jam 17:00)
+            // Men-trigger data lembur otomatis JIKA MEREKA BENAR-BENAR ABSEN KELUAR. (Jika bablas tidak absen, otomatis tidak tergenerate karena logika ini di dalam kondisi klik keluar).
+            if ($tipeAbsen === 'Reguler' && ($sekarang->hour >= 17 || $sekarang->hour < 7)) {
+
+                // Potong jam keluar reguler persis di 17:00
+                $absensi->jam_keluar = '17:00:00';
+                $absensi->foto_keluar = $pathFoto;
+                $absensi->lat_keluar = $request->lat;
+                $absensi->long_keluar = $request->long;
+                $absensi->save();
+
+                // Buat baris baru khusus Lembur
+                $lemburOtomatis = Absensi::firstOrNew([
+                    'id_staf' => $staf->id_staf,
+                    'tanggal' => $tanggalRecord,
+                    'tipe_absen' => 'Lembur'
+                ]);
+
+                if (!$lemburOtomatis->exists) {
+                    $lemburOtomatis->jam_masuk = '17:00:00';
+                    $lemburOtomatis->foto_masuk = $absensi->foto_masuk; // Pakai foto masuk pagi, atau biarkan kosong
+                    $lemburOtomatis->lat_masuk = $absensi->lat_masuk;
+                    $lemburOtomatis->long_masuk = $absensi->long_masuk;
+                }
+
+                $lemburOtomatis->jam_keluar = $sekarang->toTimeString();
+                $lemburOtomatis->foto_keluar = $pathFoto;
+                $lemburOtomatis->lat_keluar = $request->lat;
+                $lemburOtomatis->long_keluar = $request->long;
+                $lemburOtomatis->status = 'Tepat Waktu';
+                $lemburOtomatis->keterangan = 'Lembur reguler otomatis (Selesai)';
+                $lemburOtomatis->save();
+
+                return redirect()->back()->with('success', 'Absen Keluar dan Lembur Otomatis berhasil dicatat!');
+            }
+
+            // Normal pulang (Entah itu pulang reguler jam < 17:00, atau akhiri lembur pisah)
             $absensi->jam_keluar = $sekarang->toTimeString();
             $absensi->foto_keluar = $pathFoto;
             $absensi->lat_keluar = $request->lat;
             $absensi->long_keluar = $request->long;
+
+            // Hapus status 'tidak jelas' karena user melakukan checkout
+            if ($tipeAbsen === 'Lembur') {
+                $absensi->keterangan = 'Lembur Selesai';
+            }
+
+            $absensi->save();
         }
 
-        $absensi->save();
-
-        return redirect()->back()->with('success', 'Absen ' . ucfirst($request->tipe) . ' berhasil dicatat!');
+        return redirect()->back()->with('success', 'Absen berhasil dicatat!');
     }
 
     public function create()
@@ -180,6 +277,7 @@ class AbsensiController extends Controller
         $request->validate([
             'id_staf' => 'required|exists:staf,id_staf',
             'tanggal' => 'required|date',
+            'tipe_absen' => 'nullable|in:Reguler,Lembur',
             'status' => 'required|in:Tepat Waktu,Terlambat,Alpha,Izin,Sakit',
             'jam_masuk' => 'nullable|date_format:H:i',
             'jam_keluar' => 'nullable|date_format:H:i',
@@ -188,7 +286,11 @@ class AbsensiController extends Controller
 
         try {
             Absensi::updateOrCreate(
-                ['id_staf' => $request->id_staf, 'tanggal' => $request->tanggal],
+                [
+                    'id_staf' => $request->id_staf,
+                    'tanggal' => $request->tanggal,
+                    'tipe_absen' => $request->tipe_absen ?? 'Reguler'
+                ],
                 [
                     'jam_masuk' => $request->jam_masuk,
                     'jam_keluar' => $request->jam_keluar,
@@ -208,6 +310,7 @@ class AbsensiController extends Controller
         $request->validate([
             'id_staf' => 'required|exists:staf,id_staf',
             'tanggal' => 'required|date',
+            'tipe_absen' => 'nullable|in:Reguler,Lembur',
             'status' => 'required|in:Tepat Waktu,Terlambat,Alpha,Izin,Sakit',
             'jam_masuk' => 'nullable|date_format:H:i:s,H:i',
             'jam_keluar' => 'nullable|date_format:H:i:s,H:i',
@@ -219,6 +322,7 @@ class AbsensiController extends Controller
             $absensi->update([
                 'id_staf' => $request->id_staf,
                 'tanggal' => $request->tanggal,
+                'tipe_absen' => $request->tipe_absen ?? $absensi->tipe_absen,
                 'jam_masuk' => $request->jam_masuk,
                 'jam_keluar' => $request->jam_keluar,
                 'status' => $request->status,

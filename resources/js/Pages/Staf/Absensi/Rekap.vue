@@ -1,12 +1,12 @@
 <script setup>
 import { ref, watch, computed } from 'vue';
-import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import StafLayout from '@/Layouts/StafLayout.vue';
 import CustomInputSearch from '@/Components/Form/CustomInputSearch.vue';
 import CustomSelect from '@/Components/Form/CustomSelect.vue';
 import CustomTable from '@/Components/CustomTable.vue';
 import CustomButton from '@/Components/Form/CustomButton.vue';
-import { CalendarClock, MapPin, Edit, ArrowLeft } from 'lucide-vue-next';
+import { CalendarClock, MapPin, ArrowLeft, Plus, X } from 'lucide-vue-next';
 
 const debounce = (fn, delay) => {
     let timeoutId;
@@ -21,7 +21,7 @@ const props = defineProps({
     filters: Object
 });
 
-const headers = ['Tanggal', 'Staf', 'Status', 'Jam Masuk', 'Jam Keluar', 'Lokasi GPS', 'Aksi'];
+const headers = ['Tanggal', 'Staf', 'Status', 'Jam Kerja', 'Jam Lembur', 'Lokasi GPS', 'Aksi'];
 
 // State untuk Filters
 const search = ref(props.filters?.search || '');
@@ -29,11 +29,11 @@ const filterBulan = ref(props.filters?.bulan || new Date().getMonth() + 1 + '');
 const filterTahun = ref(props.filters?.tahun || new Date().getFullYear() + '');
 
 const bulanOptions = [
-    { value: '01', label: 'Januari' }, { value: '02', label: 'Februari' },
-    { value: '03', label: 'Maret' }, { value: '04', label: 'April' },
-    { value: '05', label: 'Mei' }, { value: '06', label: 'Juni' },
-    { value: '07', label: 'Juli' }, { value: '08', label: 'Agustus' },
-    { value: '09', label: 'September' }, { value: '10', label: 'Oktober' },
+    { value: '1', label: 'Januari' }, { value: '2', label: 'Februari' },
+    { value: '3', label: 'Maret' }, { value: '4', label: 'April' },
+    { value: '5', label: 'Mei' }, { value: '6', label: 'Juni' },
+    { value: '7', label: 'Juli' }, { value: '8', label: 'Agustus' },
+    { value: '9', label: 'September' }, { value: '10', label: 'Oktober' },
     { value: '11', label: 'November' }, { value: '12', label: 'Desember' }
 ];
 
@@ -67,10 +67,31 @@ const formatTanggal = (dateStr) => {
     return new Date(dateStr).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 };
 
-// Fungsi buka modal peta (Opsional, buat liat GPS)
+// Fungsi buka modal peta
 const openMap = (lat, long) => {
     if (!lat || !long) return;
     window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${long}`, '_blank');
+};
+
+// State dan Fungsi Buka Modal Foto
+const isModalOpen = ref(false);
+const modalPhotoUrl = ref('');
+const modalTitle = ref('');
+
+const openPhotoModal = (photoPath, title) => {
+    if (!photoPath) return;
+    // Sesuaikan prefix path ini jika Anda menggunakan driver selain public ('/storage/')
+    modalPhotoUrl.value = photoPath.startsWith('http') ? photoPath : `/storage/${photoPath}`;
+    modalTitle.value = title;
+    isModalOpen.value = true;
+};
+
+const closePhotoModal = () => {
+    isModalOpen.value = false;
+    setTimeout(() => {
+        modalPhotoUrl.value = '';
+        modalTitle.value = '';
+    }, 300);
 };
 </script>
 
@@ -81,7 +102,7 @@ const openMap = (lat, long) => {
         <template #header>
             <div class="flex items-center justify-between w-full">
                 <div class="flex items-center gap-4">
-                    <Link :href="route('staf.index')" class="btn btn-sm btn-circle btn-ghost ring-1 ring-base-300">
+                    <Link :href="route('staf.index')" class="transition-colors btn btn-sm btn-circle btn-ghost ring-1 ring-base-300 hover:bg-base-200">
                         <ArrowLeft class="w-4 h-4" />
                     </Link>
                     <h2 class="text-xl font-semibold leading-tight text-base-content">
@@ -112,10 +133,10 @@ const openMap = (lat, long) => {
                         </div>
                     </div>
 
-                    <!-- 👇 TAMBAHAN TOMBOL INPUT MANUAL 👇 -->
+                    <!-- Tombol Input Manual -->
                     <CustomButton type="link" :href="route('absensi.create')" variant="primary" size="md" class="shadow-md shrink-0 rounded-xl">
                         <template #icon>
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
+                            <Plus class="w-4 h-4 mr-1" />
                         </template>
                         Input Manual / Izin
                     </CustomButton>
@@ -151,22 +172,68 @@ const openMap = (lat, long) => {
                                 </span>
                             </td>
 
-                            <!-- Jam & Foto Masuk -->
+                            <!-- Kolom Jam Kerja -->
                             <td class="px-6 py-4">
-                                <div v-if="absen.jam_masuk" class="flex flex-col">
-                                    <span class="font-bold text-base-content/80">{{ absen.jam_masuk }}</span>
-                                    <a v-if="absen.foto_masuk" :href="`/storage/${absen.foto_masuk}`" target="_blank" class="text-[10px] text-primary hover:underline font-bold mt-1">Lihat Foto</a>
+                                <div class="flex flex-col text-sm min-w-25">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <button
+                                            type="button"
+                                            @click="absen.tipe_absen === 'Reguler' && absen.foto_masuk ? openPhotoModal(absen.foto_masuk, 'Selfie Masuk (Reguler)') : null"
+                                            :disabled="absen.tipe_absen !== 'Reguler' || !absen.foto_masuk"
+                                            class="text-[10px] font-bold px-1.5 py-0.5 rounded transition-all"
+                                            :class="(absen.tipe_absen === 'Reguler' && absen.foto_masuk) ? 'bg-success/20 text-success hover:bg-success hover:text-white cursor-pointer shadow-sm' : 'bg-success/10 text-success/50 cursor-not-allowed'"
+                                            title="Lihat Foto"
+                                        >IN</button>
+                                        <span class="font-bold text-base-content/80">
+                                            {{ absen.tipe_absen === 'Reguler' ? (absen.jam_masuk || '-') : '-' }}
+                                        </span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            @click="absen.tipe_absen === 'Reguler' && absen.foto_keluar ? openPhotoModal(absen.foto_keluar, 'Selfie Keluar (Reguler)') : null"
+                                            :disabled="absen.tipe_absen !== 'Reguler' || !absen.foto_keluar"
+                                            class="text-[10px] font-bold px-1.5 py-0.5 rounded transition-all"
+                                            :class="(absen.tipe_absen === 'Reguler' && absen.foto_keluar) ? 'bg-error/20 text-error hover:bg-error hover:text-white cursor-pointer shadow-sm' : 'bg-error/10 text-error/50 cursor-not-allowed'"
+                                            title="Lihat Foto"
+                                        >OUT</button>
+                                        <span class="font-bold text-base-content/80">
+                                            {{ absen.tipe_absen === 'Reguler' ? (absen.jam_keluar || '-') : '-' }}
+                                        </span>
+                                    </div>
                                 </div>
-                                <span v-else class="text-xs italic opacity-40">-</span>
                             </td>
 
-                            <!-- Jam & Foto Keluar -->
+                            <!-- Kolom Jam Lembur -->
                             <td class="px-6 py-4">
-                                <div v-if="absen.jam_keluar" class="flex flex-col">
-                                    <span class="font-bold text-base-content/80">{{ absen.jam_keluar }}</span>
-                                    <a v-if="absen.foto_keluar" :href="`/storage/${absen.foto_keluar}`" target="_blank" class="text-[10px] text-primary hover:underline font-bold mt-1">Lihat Foto</a>
+                                <div class="flex flex-col text-sm min-w-25">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <button
+                                            type="button"
+                                            @click="absen.tipe_absen === 'Lembur' && absen.foto_masuk ? openPhotoModal(absen.foto_masuk, 'Selfie Masuk (Lembur)') : null"
+                                            :disabled="absen.tipe_absen !== 'Lembur' || !absen.foto_masuk"
+                                            class="text-[10px] font-bold px-1.5 py-0.5 rounded transition-all"
+                                            :class="(absen.tipe_absen === 'Lembur' && absen.foto_masuk) ? 'bg-info/20 text-info hover:bg-info hover:text-white cursor-pointer shadow-sm' : 'bg-info/10 text-info/50 cursor-not-allowed'"
+                                            title="Lihat Foto"
+                                        >IN</button>
+                                        <span class="font-bold text-base-content/80">
+                                            {{ absen.tipe_absen === 'Lembur' ? (absen.jam_masuk || '-') : '-' }}
+                                        </span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            @click="absen.tipe_absen === 'Lembur' && absen.foto_keluar ? openPhotoModal(absen.foto_keluar, 'Selfie Keluar (Lembur)') : null"
+                                            :disabled="absen.tipe_absen !== 'Lembur' || !absen.foto_keluar"
+                                            class="text-[10px] font-bold px-1.5 py-0.5 rounded transition-all"
+                                            :class="(absen.tipe_absen === 'Lembur' && absen.foto_keluar) ? 'bg-warning/20 text-warning hover:bg-warning hover:text-white cursor-pointer shadow-sm' : 'bg-warning/10 text-warning/50 cursor-not-allowed'"
+                                            title="Lihat Foto"
+                                        >OUT</button>
+                                        <span class="font-bold text-base-content/80">
+                                            {{ absen.tipe_absen === 'Lembur' ? (absen.jam_keluar || '-') : '-' }}
+                                        </span>
+                                    </div>
                                 </div>
-                                <span v-else class="text-xs italic opacity-40">-</span>
                             </td>
 
                             <!-- Lokasi GPS -->
@@ -177,6 +244,7 @@ const openMap = (lat, long) => {
                                 <span v-else class="text-xs italic opacity-40">-</span>
                             </td>
 
+                            <!-- Aksi -->
                             <td class="px-6 py-4">
                                 <CustomButton type="link" :href="route('absensi.edit', absen.id)" size="sm">
                                     Edit
@@ -186,7 +254,7 @@ const openMap = (lat, long) => {
 
                         <!-- Empty State -->
                         <tr v-if="absensis.data.length === 0">
-                            <td colspan="6" class="px-6 py-20 text-center">
+                            <td colspan="7" class="px-6 py-20 text-center">
                                 <div class="flex flex-col items-center opacity-30">
                                     <CalendarClock class="w-12 h-12 mb-2" />
                                     <p class="text-sm font-bold tracking-widest uppercase">
@@ -198,11 +266,10 @@ const openMap = (lat, long) => {
                     </CustomTable>
 
                     <!-- Pagination Component -->
-                    <!-- Kalau lu punya komponen pagination standar, taruh di sini -->
                     <div v-if="absensis.links && absensis.links.length > 3" class="flex justify-center p-4 border-t border-base-200 bg-base-50">
                         <div class="join">
                             <component
-                                :is="link.url ? 'a' : 'span'"
+                                :is="link.url ? Link : 'span'"
                                 v-for="(link, idx) in absensis.links"
                                 :key="idx"
                                 :href="link.url"
@@ -216,5 +283,28 @@ const openMap = (lat, long) => {
 
             </div>
         </div>
+
+        <!-- Modal Lihat Foto -->
+        <dialog class="modal modal-bottom sm:modal-middle backdrop-blur-sm" :class="{ 'modal-open': isModalOpen }">
+            <div class="modal-box relative">
+                <!-- Tombol Close Modal -->
+                <button @click="closePhotoModal" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+                    <X class="w-5 h-5"/>
+                </button>
+                <h3 class="font-bold text-lg mb-4">{{ modalTitle }}</h3>
+                <div class="w-full flex items-center justify-center p-2 bg-base-200 rounded-xl min-h-75">
+                    <img v-if="modalPhotoUrl" :src="modalPhotoUrl" class="w-full max-h-[60vh] object-contain rounded-lg shadow-sm" alt="Foto Absen" />
+                    <span v-else class="text-sm font-semibold opacity-50 italic">Gambar tidak ditemukan</span>
+                </div>
+                <div class="modal-action">
+                    <button class="btn btn-primary" @click="closePhotoModal">Tutup</button>
+                </div>
+            </div>
+            <!-- Klik backdrop untuk close -->
+            <form method="dialog" class="modal-backdrop" @click="closePhotoModal">
+                <button>close</button>
+            </form>
+        </dialog>
+
     </StafLayout>
 </template>

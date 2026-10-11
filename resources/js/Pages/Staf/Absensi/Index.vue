@@ -1,13 +1,14 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, useForm, router } from '@inertiajs/vue3';
 import StafLayout from '@/Layouts/StafLayout.vue';
 import CustomButton from '@/Components/Form/CustomButton.vue';
 import { alertStore } from '@/Utils/alertStore';
 import { Clock, MapPin, Camera, ArrowLeft } from 'lucide-vue-next';
 
 const props = defineProps({
-    absensi: Object,
+    absensi_reguler: Object,
+    absensi_lembur: Object,
     office_lat: Number,
     office_long: Number,
     max_radius: Number,
@@ -29,9 +30,9 @@ const form = useForm({
     long: '',
 });
 
-// Hitung jarak (Haversine di JS untuk indikator UI)
+// Hitung jarak (Haversine)
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 6371e3; // Radius bumi dalam meter
+    const R = 6371e3;
     const p1 = lat1 * Math.PI / 180;
     const p2 = lat2 * Math.PI / 180;
     const dp = (lat2 - lat1) * Math.PI / 180;
@@ -42,7 +43,6 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
     return R * c;
 };
 
-// Start Kamera
 const startCamera = async () => {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
@@ -54,7 +54,6 @@ const startCamera = async () => {
     }
 };
 
-// Start GPS
 const getLocation = () => {
     if (!navigator.geolocation) {
         location.value.error = "Browser tidak support GPS.";
@@ -72,7 +71,6 @@ const getLocation = () => {
     );
 };
 
-// Jepret Foto & Submit
 const takePhotoAndSubmit = (tipeAbsen) => {
     if (distance.value > props.max_radius) {
         alertStore.show(`Anda di luar jangkauan kantor! Jarak: ${Math.round(distance.value)}m`, "error");
@@ -148,7 +146,7 @@ const goBack = () => {
                 </div>
 
                 <!-- INDIKATOR LOKASI -->
-                <div :class="['w-full p-4 rounded-2xl mb-6 border flex items-center justify-center gap-2 font-bold text-sm', distance <= max_radius ? 'bg-success/10 text-success border-success/20' : 'bg-error/10 text-error border-error/20']">
+                <div :class="['w-full p-4 rounded-2xl mb-6 border flex items-center justify-center gap-2 font-bold text-sm', distance !== null && distance <= max_radius ? 'bg-success/10 text-success border-success/20' : 'bg-error/10 text-error border-error/20']">
                     <MapPin size="18" />
                     <span v-if="location.error">{{ location.error }}</span>
                     <span v-else-if="distance !== null">
@@ -160,7 +158,7 @@ const goBack = () => {
 
                 <!-- LIVE CAMERA FEED -->
                 <div class="relative w-full max-w-sm mb-8 overflow-hidden border-4 shadow-inner aspect-3/4 bg-base-300 rounded-3xl border-base-200">
-                    <video ref="videoRef" autoplay playsinline class="w-full h-full object-cover transform scale-x-[-1]"></video>
+                    <video ref="videoRef" autoplay playsinline class="object-cover w-full h-full transform scale-x-[-1]"></video>
                     <canvas ref="canvasRef" class="hidden"></canvas>
 
                     <div v-if="!isCameraReady" class="absolute inset-0 flex flex-col items-center justify-center opacity-50">
@@ -173,9 +171,11 @@ const goBack = () => {
                 </div>
 
                 <!-- TOMBOL AKSI -->
-                <div class="flex flex-col w-full max-w-sm gap-4 sm:flex-row">
+                <div class="flex flex-col w-full max-w-sm gap-4">
+
+                    <!-- STATE 1: Belum ada absen masuk reguler & lembur -->
                     <CustomButton
-                        v-if="!absensi?.jam_masuk"
+                        v-if="!absensi_reguler?.jam_masuk && !absensi_lembur?.jam_masuk"
                         variant="primary"
                         class="w-full py-4 font-black tracking-widest uppercase rounded-2xl"
                         :disabled="!isCameraReady || distance > max_radius || form.processing"
@@ -185,8 +185,9 @@ const goBack = () => {
                         <span v-else>Absen Masuk</span>
                     </CustomButton>
 
+                    <!-- STATE 2: Sudah absen masuk reguler, tapi belum pulang -->
                     <CustomButton
-                        v-if="absensi?.jam_masuk && !absensi?.jam_keluar"
+                        v-if="absensi_reguler?.jam_masuk && !absensi_reguler?.jam_keluar"
                         variant="warning"
                         class="w-full py-4 font-black tracking-widest text-white uppercase rounded-2xl"
                         :disabled="!isCameraReady || distance > max_radius || form.processing"
@@ -196,21 +197,69 @@ const goBack = () => {
                         <span v-else>Absen Pulang</span>
                     </CustomButton>
 
-                    <div v-if="absensi?.jam_masuk && absensi?.jam_keluar" class="w-full p-4 font-black tracking-widest text-center uppercase shadow-lg bg-success text-success-content rounded-2xl">
-                        ✅ Anda Sudah Selesai Absen Hari Ini
+                    <!-- STATE 3: Sudah Pulang Reguler Tepat Waktu, tapi belum masuk lembur -->
+                    <div v-if="absensi_reguler?.jam_keluar && !absensi_lembur?.jam_masuk" class="flex flex-col gap-3">
+                        <div class="w-full p-4 font-black tracking-widest text-center uppercase shadow-lg bg-success text-success-content rounded-2xl">
+                            ✅ Absen Reguler Selesai
+                        </div>
+                        <CustomButton
+                            variant="secondary"
+                            class="w-full py-4 font-black tracking-widest uppercase rounded-2xl"
+                            :disabled="!isCameraReady || distance > max_radius || form.processing"
+                            @click="takePhotoAndSubmit('masuk_lembur')"
+                        >
+                            <span v-if="form.processing" class="loading loading-spinner"></span>
+                            <span v-else>Mulai Lembur</span>
+                        </CustomButton>
+                    </div>
+
+                    <!-- STATE 4: Sedang Shift Lembur (Belum Akhiri Lembur) -->
+                    <CustomButton
+                        v-if="absensi_lembur?.jam_masuk && !absensi_lembur?.jam_keluar"
+                        variant="error"
+                        class="w-full py-4 font-black tracking-widest text-white uppercase rounded-2xl"
+                        :disabled="!isCameraReady || distance > max_radius || form.processing"
+                        @click="takePhotoAndSubmit('keluar_lembur')"
+                    >
+                        <span v-if="form.processing" class="loading loading-spinner"></span>
+                        <span v-else>Akhiri Lembur</span>
+                    </CustomButton>
+
+                    <!-- STATE 5: Tuntas (Shift Lembur Selesai) -->
+                    <div v-if="absensi_lembur?.jam_keluar" class="w-full p-4 font-black tracking-widest text-center uppercase shadow-lg bg-success text-success-content rounded-2xl">
+                        ✅ Absen & Lembur Selesai
                     </div>
                 </div>
 
                 <!-- RIWAYAT HARI INI -->
-                <div v-if="absensi" class="w-full max-w-sm p-4 mt-8 border bg-base-200/50 rounded-2xl border-base-300">
+                <div v-if="absensi_reguler || absensi_lembur" class="w-full max-w-sm p-4 mt-8 border bg-base-200/50 rounded-2xl border-base-300">
                     <h3 class="pb-2 mb-3 text-xs font-black tracking-widest uppercase border-b opacity-50 border-base-content/10">Catatan Hari Ini</h3>
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="flex items-center gap-2 text-sm font-bold opacity-80"><Clock size="14"/> Jam Masuk:</span>
-                        <span class="text-sm font-black text-primary">{{ absensi.jam_masuk || '--:--' }}</span>
+
+                    <div v-if="absensi_reguler">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="flex items-center gap-2 text-sm font-bold opacity-80"><Clock size="14"/> Jam Masuk:</span>
+                            <span class="text-sm font-black text-primary">{{ absensi_reguler.jam_masuk || '--:--' }}</span>
+                        </div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="flex items-center gap-2 text-sm font-bold opacity-80"><Clock size="14"/> Jam Keluar:</span>
+                            <span class="text-sm font-black text-warning">{{ absensi_reguler.jam_keluar || '--:--' }}</span>
+                        </div>
                     </div>
-                    <div class="flex items-center justify-between">
-                        <span class="flex items-center gap-2 text-sm font-bold opacity-80"><Clock size="14"/> Jam Keluar:</span>
-                        <span class="text-sm font-black text-warning">{{ absensi.jam_keluar || '--:--' }}</span>
+
+                    <div v-if="absensi_lembur" class="pt-2 mt-2 border-t border-base-content/10">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="flex items-center gap-2 text-sm font-bold opacity-80"><Clock size="14"/> Mulai Lembur:</span>
+                            <span class="text-sm font-black text-secondary">{{ absensi_lembur.jam_masuk || '--:--' }}</span>
+                        </div>
+                        <div class="flex flex-col mb-2">
+                            <div class="flex items-center justify-between">
+                                <span class="flex items-center gap-2 text-sm font-bold opacity-80"><Clock size="14"/> Selesai Lembur:</span>
+                                <span class="text-sm font-black text-error">{{ absensi_lembur.jam_keluar || '--:--' }}</span>
+                            </div>
+                            <span v-if="!absensi_lembur.jam_keluar && absensi_lembur.keterangan" class="text-[10px] text-error font-semibold mt-1 text-right">
+                                * {{ absensi_lembur.keterangan }}
+                            </span>
+                        </div>
                     </div>
                 </div>
 
