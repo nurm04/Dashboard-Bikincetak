@@ -14,10 +14,10 @@ use Carbon\Carbon;
 class AbsensiController extends Controller
 {
     // 👇 GANTI DENGAN KOORDINAT KANTOR/RUMAH LU (Ambil dari Google Maps)
-    private $officeLat = -7.127083;
-    private $officeLong = 112.721294;
-    // private $officeLat = -7.304226;
-    // private $officeLong = 112.756378;
+    // private $officeLat = -7.127083;
+    // private $officeLong = 112.721294;
+    private $officeLat = -7.304226;
+    private $officeLong = 112.756378;
     private $maxRadius = 100; // Jarak maksimal dalam meter
 
     public function index()
