@@ -193,7 +193,7 @@ class PengaturanWebController extends Controller
     {
         $pengaturanRaw = PengaturanWeb::all();
 
-        $pengaturan = $pengaturanRaw->where('grup', 'general')->keyBy('kunci');
+        $pengaturan = $pengaturanRaw->keyBy('kunci');
 
         $kurirRajaongkir = $pengaturanRaw->where('grup', 'kurir_rajaongkir')->mapWithKeys(function ($item) {
             return [$item->kunci => json_decode($item->nilai, true)];

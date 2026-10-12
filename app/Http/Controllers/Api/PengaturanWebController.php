@@ -55,42 +55,28 @@ class PengaturanWebController extends Controller
             $kurirLainnya = [];
 
             foreach ($pengaturan as $item) {
-                // Ambil nilai yang sudah di-decode dari Model
                 $val = $item->nilai_parsed;
 
-                // 1. Format URL Gambar untuk Tipe Data Image (Logo Utama, Favicon, dll)
                 if ($item->tipe_data === 'image' && !empty($val)) {
-                    // Cek biar nggak dobel kalau udah ada http/https
                     if (!str_starts_with($val, 'http')) {
                         $val = url('storage/' . ltrim($val, '/'));
                     }
                 }
 
-                // 2. Format URL Gambar untuk JSON Array (Contoh: Metode Pembayaran)
                 if ($item->kunci === 'metode_pembayaran' && is_array($val)) {
                     foreach ($val as &$metode) {
-                        // Ubah icon_url jadi absolute URL
                         if (!empty($metode['icon_url']) && !str_starts_with($metode['icon_url'], 'http')) {
                             $metode['icon_url'] = url('storage/' . ltrim($metode['icon_url'], '/'));
                         }
                     }
-                    unset($metode); // Bersihkan reference
+                    unset($metode);
                 }
 
-                // 3. Format URL Gambar untuk JSON Object (Contoh: Data QRIS)
-                if ($item->kunci === 'data_qris' && is_array($val)) {
-                    if (!empty($val['gambar_url']) && !str_starts_with($val['gambar_url'], 'http')) {
-                        $val['gambar_url'] = url('storage/' . ltrim($val['gambar_url'], '/'));
-                    }
-                }
-
-                // 4. PENGELOMPOKAN DATA KURIR BERDASARKAN GRUP
                 if ($item->grup === 'kurir_rajaongkir') {
                     $kurirRajaOngkir[$item->kunci] = $val;
                 } elseif ($item->grup === 'kurir_lainnya') {
                     $kurirLainnya[$item->kunci] = $val;
                 } else {
-                    // Masukkan ke pengaturan umum jika bukan kurir
                     $formattedSettings[$item->kunci] = $val;
                 }
             }

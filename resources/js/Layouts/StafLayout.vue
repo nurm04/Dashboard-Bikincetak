@@ -113,7 +113,7 @@ onMounted(() => {
         try {
             while (true) {
                 const payload = await onMessageListener();
-                console.log("Notif FCM masuk (Foreground):", payload);
+                // console.log("Notif FCM masuk (Foreground):", payload);
 
                 const judul = payload.notification?.title || 'Notifikasi Baru';
                 const pesan = payload.notification?.body || '';
