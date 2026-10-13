@@ -175,7 +175,7 @@ const goBack = () => {
 
                     <!-- STATE 1: Belum ada absen masuk reguler & lembur -->
                     <CustomButton
-                        v-if="!absensi_reguler?.jam_masuk && !absensi_lembur?.jam_masuk"
+                        v-if="!absensi_reguler?.jam_masuk"
                         variant="primary"
                         class="w-full py-4 font-black tracking-widest uppercase rounded-2xl"
                         :disabled="!isCameraReady || distance > max_radius || form.processing"

@@ -111,25 +111,19 @@ class AbsensiController extends Controller
         }
 
         $isMinggu = $sekarang->isSunday();
+
+        // Tentukan tipe absen murni berdasarkan tombol yang diklik user, kecuali hari Minggu otomatis lembur
         $tipeAbsen = in_array($request->tipe, ['masuk_lembur', 'keluar_lembur']) ? 'Lembur' : 'Reguler';
 
-        // ATURAN 1: Absen di hari Minggu otomatis dianggap Lembur
         if ($isMinggu) {
             $tipeAbsen = 'Lembur';
             if ($request->tipe === 'masuk') $request->merge(['tipe' => 'masuk_lembur']);
             if ($request->tipe === 'keluar') $request->merge(['tipe' => 'keluar_lembur']);
         }
 
-        // Auto-correct: Jika klik 'Absen Masuk' di luar jam kerja (bukan hari Minggu), alihkan jadi 'masuk_lembur'
-        if (!$isMinggu && $request->tipe === 'masuk' && ($sekarang->hour >= 17 || $sekarang->hour < 7)) {
-            $tipeAbsen = 'Lembur';
-            $request->merge(['tipe' => 'masuk_lembur']);
-        }
-
         $tanggalRecord = $sekarang->toDateString();
 
         // Deteksi Shift Malam (checkout untuk shift kemarin maksimal jam 07:00)
-        // Jika lewat jam 07:00 dan tidak absen keluar, maka data gantung dan tidak digenerate data keluar/lemburnya.
         if ($sekarang->hour < 7 && in_array($request->tipe, ['keluar', 'keluar_lembur'])) {
             $kemarin = $sekarang->copy()->subDay()->toDateString();
             $cekGantung = Absensi::where('id_staf', $staf->id_staf)
@@ -163,9 +157,7 @@ class AbsensiController extends Controller
                 $absensi->status = $sekarang->lessThanOrEqualTo($batasJamMasuk) ? 'Tepat Waktu' : 'Terlambat';
             } else {
                 $absensi->status = 'Tepat Waktu';
-                // ATURAN 2: Lupa absen keluar lembur
-                // Set default keterangan "Lembur tidak jelas" saat absen masuk. Akan diubah jika nanti melakukan absen keluar.
-                $absensi->keterangan = 'Lembur tidak jelas (Lupa absen keluar)';
+                $absensi->keterangan = 'Lembur (Belum selesai)';
             }
             $absensi->save();
 
@@ -173,49 +165,11 @@ class AbsensiController extends Controller
             if (!$absensi->jam_masuk) return redirect()->back()->with('error', "Anda belum absen masuk {$tipeAbsen}!");
             if ($absensi->jam_keluar) return redirect()->back()->with('error', "Anda sudah absen pulang {$tipeAbsen}.");
 
-            // ATURAN 3: Absen keluar reguler nyatu dengan lembur (Melewati jam 17:00)
-            // Men-trigger data lembur otomatis JIKA MEREKA BENAR-BENAR ABSEN KELUAR. (Jika bablas tidak absen, otomatis tidak tergenerate karena logika ini di dalam kondisi klik keluar).
-            if ($tipeAbsen === 'Reguler' && ($sekarang->hour >= 17 || $sekarang->hour < 7)) {
-
-                // Potong jam keluar reguler persis di 17:00
-                $absensi->jam_keluar = '17:00:00';
-                $absensi->foto_keluar = $pathFoto;
-                $absensi->lat_keluar = $request->lat;
-                $absensi->long_keluar = $request->long;
-                $absensi->save();
-
-                // Buat baris baru khusus Lembur
-                $lemburOtomatis = Absensi::firstOrNew([
-                    'id_staf' => $staf->id_staf,
-                    'tanggal' => $tanggalRecord,
-                    'tipe_absen' => 'Lembur'
-                ]);
-
-                if (!$lemburOtomatis->exists) {
-                    $lemburOtomatis->jam_masuk = '17:00:00';
-                    $lemburOtomatis->foto_masuk = $absensi->foto_masuk; // Pakai foto masuk pagi, atau biarkan kosong
-                    $lemburOtomatis->lat_masuk = $absensi->lat_masuk;
-                    $lemburOtomatis->long_masuk = $absensi->long_masuk;
-                }
-
-                $lemburOtomatis->jam_keluar = $sekarang->toTimeString();
-                $lemburOtomatis->foto_keluar = $pathFoto;
-                $lemburOtomatis->lat_keluar = $request->lat;
-                $lemburOtomatis->long_keluar = $request->long;
-                $lemburOtomatis->status = 'Tepat Waktu';
-                $lemburOtomatis->keterangan = 'Lembur reguler otomatis (Selesai)';
-                $lemburOtomatis->save();
-
-                return redirect()->back()->with('success', 'Absen Keluar dan Lembur Otomatis berhasil dicatat!');
-            }
-
-            // Normal pulang (Entah itu pulang reguler jam < 17:00, atau akhiri lembur pisah)
             $absensi->jam_keluar = $sekarang->toTimeString();
             $absensi->foto_keluar = $pathFoto;
             $absensi->lat_keluar = $request->lat;
             $absensi->long_keluar = $request->long;
 
-            // Hapus status 'tidak jelas' karena user melakukan checkout
             if ($tipeAbsen === 'Lembur') {
                 $absensi->keterangan = 'Lembur Selesai';
             }
