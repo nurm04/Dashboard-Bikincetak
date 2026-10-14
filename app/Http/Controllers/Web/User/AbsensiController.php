@@ -155,6 +155,7 @@ class AbsensiController extends Controller
             if ($tipeAbsen === 'Reguler') {
                 $batasJamMasuk = Carbon::today()->setHour(7)->setMinute(0)->setSecond(0);
                 $absensi->status = $sekarang->lessThanOrEqualTo($batasJamMasuk) ? 'Tepat Waktu' : 'Terlambat';
+                $absensi->keterangan = '-';
             } else {
                 $absensi->status = 'Tepat Waktu';
                 $absensi->keterangan = 'Lembur (Belum selesai)';
