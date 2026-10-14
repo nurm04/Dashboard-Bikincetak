@@ -155,13 +155,12 @@ class AbsensiController extends Controller
             if ($tipeAbsen === 'Reguler') {
                 $batasJamMasuk = Carbon::today()->setHour(7)->setMinute(0)->setSecond(0);
                 $absensi->status = $sekarang->lessThanOrEqualTo($batasJamMasuk) ? 'Tepat Waktu' : 'Terlambat';
-                $absensi->keterangan = '-';
+                $absensi->keterangan = '-'; // <--- PASTIKAN BARIS INI ADA
             } else {
                 $absensi->status = 'Tepat Waktu';
                 $absensi->keterangan = 'Lembur (Belum selesai)';
             }
             $absensi->save();
-
         } else {
             if (!$absensi->jam_masuk) return redirect()->back()->with('error', "Anda belum absen masuk {$tipeAbsen}!");
             if ($absensi->jam_keluar) return redirect()->back()->with('error', "Anda sudah absen pulang {$tipeAbsen}.");
