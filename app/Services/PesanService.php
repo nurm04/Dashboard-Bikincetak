@@ -594,7 +594,9 @@ Terima kasih.",
         $message .= "No. Rek: {$rekening['nomor']}\n";
         $message .= "a.n: {$rekening['atas_nama']}\n\n";
         $message .= "2. *QRIS:*\n";
-        $domainFrontend = env('APP_URL_NEXTJS_VPS') === "production" ? env('APP_URL_NEXTJS_VPS') : env('APP_URL_NEXTJS');
+        $domainFrontend = app()->environment('production')
+            ? env('APP_URL_NEXTJS_VPS')
+            : env('APP_URL_NEXTJS');
         $linkPembayaran = rtrim($domainFrontend, '/') . "/pesan/status/{$pesan->kode_transaksi}";
         $message .= "Silakan klik link di bawah ini untuk melihat detail tagihan Anda secara real-time dan melakukan pembayaran otomatis melalui QRIS:\n\n";
         $message .= "👉 {$linkPembayaran}\n\n";
