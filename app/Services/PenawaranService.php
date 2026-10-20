@@ -2,12 +2,13 @@
 
 namespace App\Services;
 
-use App\Models\Penawaran;
 use App\Mail\PenawaranMail;
+use App\Models\Penawaran;
+use App\Services\PesanService;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 
 class PenawaranService
 {
@@ -42,38 +43,44 @@ class PenawaranService
     }
 
     /**
-     * Kirim WA Penawaran (Pesan Teks Saja - Tanpa Lampiran File)
+     * Kirim WA Penawaran (Dengan Lampiran File PDF Langsung)
      */
     public static function kirimWaPenawaran(Penawaran $penawaran): bool
     {
         try {
             $noHp = $penawaran->customer->no_hp ?? null;
-            if (!$noHp) return false;
-
-            $noHp = preg_replace('/[^0-9]/', '', $noHp);
-            if (str_starts_with($noHp, '0')) {
-                $noHp = '62' . substr($noHp, 1);
+            if (!$noHp) {
+                Log::warning('BalesOtomatis Warning: Nomor HP customer kosong untuk penawaran ID: ' . $penawaran->id_penawaran);
+                return false;
             }
 
             $nama = $penawaran->customer->user->name ?? 'Bapak/Ibu';
             $tglValid = \Carbon\Carbon::parse($penawaran->berlaku_sampai)->translatedFormat('d F Y');
 
+            // 1. Generate PDF dan Simpan ke Storage Public
+            $pdf = Pdf::loadView('pdf.penawaran', ['penawaran' => $penawaran])
+                    ->setPaper('a4', 'portrait');
+
+            $fileName = 'Penawaran_' . preg_replace('/[^A-Za-z0-9\-]/', '_', $penawaran->id_penawaran) . '.pdf';
+            $relativePath = 'pdf/penawaran/' . $fileName;
+
+            // Simpan PDF ke disk public (storage/app/public/pdf/penawaran/...)
+            Storage::disk('public')->put($relativePath, $pdf->output());
+
+            // Dapatkan URL Publik PDF
+            $pdfUrl = asset('storage/' . $relativePath);
+
+            // 2. Susun Pesan Teks Pengantar
             $pesan = "📄 *SURAT PENAWARAN (QUOTATION)*\n\n";
             $pesan .= "Halo {$nama},\n\n";
             $pesan .= "Terima kasih atas ketertarikan Anda pada layanan Bikin Cetak. Berikut rincian Surat Penawaran resmi Anda:\n\n";
             $pesan .= "▪ *No. Penawaran:* {$penawaran->id_penawaran}\n";
             $pesan .= "▪ *Berlaku Sampai:* {$tglValid}\n\n";
-            $pesan .= "Dokumen resmi penawaran harga telah kami kirimkan ke alamat Email Anda.\n\n";
+            $pesan .= "Dokumen PDF surat penawaran resmi telah kami lampirkan bersama pesan ini.\n\n";
             $pesan .= "Jika ada pertanyaan lebih lanjut, Anda dapat membalas pesan ini.\n\nTerima Kasih 🙏";
 
-            $response = Http::withHeaders([
-                'Authorization' => env('FONNTE_TOKEN')
-            ])->post('https://api.fonnte.com/send', [
-                'target' => $noHp,
-                'message' => $pesan,
-            ]);
-
-            return $response->successful();
+            // 3. Kirim ke WA dengan Lampiran URL PDF
+            return PesanService::sendWhatsapp($noHp, $pesan, $pdfUrl);
 
         } catch (\Throwable $e) {
             Log::error('Gagal kirim WA penawaran: ' . $e->getMessage());

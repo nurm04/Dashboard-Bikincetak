@@ -463,28 +463,53 @@ Terima kasih.",
     public static function sendWhatsapp(string $nomor, string $pesan, ?string $file = null): bool
     {
         try {
+            // Formatting nomor ke format 62
             $nomor = preg_replace('/[^0-9]/', '', $nomor);
-
             if (str_starts_with($nomor, '0')) {
                 $nomor = '62' . substr($nomor, 1);
             }
 
-            $payload = [
-                'api_key'    => env('BALESOTOMATIS_API_KEY'),
-                'number_id'  => env('BALESOTOMATIS_NUMBER_ID'),
-                'phone_no'   => $nomor,
-                'message'    => $pesan,
-            ];
+            $apiKey   = env('BALESOTOMATIS_API_KEY');
+            $numberId = env('BALESOTOMATIS_NUMBER_ID');
 
-            if ($file) {
-                $payload['media_url'] = $file;
+            if (!$apiKey || !$numberId) {
+                Log::error('BalesOtomatis Error: API Key atau Number ID belum terkonfigurasi di .env');
+                return false;
             }
 
-            $response = Http::post('https://api.balesotomatis.com/public/v1/send_personal_message', $payload);
+            // Tentukan endpoint & payload berdasarkan ada tidaknya lampiran file
+            if ($file) {
+                // Endpoint & Payload Khusus Kirim File / Dokumen PDF
+                $endpoint = 'https://api.balesotomatis.com/public/v1/send_personal_file';
+                $payload  = [
+                    'api_key'   => $apiKey,
+                    'number_id' => $numberId,
+                    'phone_no'  => $nomor,
+                    'file_url'  => $file,   // URL file PDF publik
+                    'message'   => $pesan,  // Teks pengantar dokumen
+                ];
+            } else {
+                // Endpoint & Payload Teks Biasa
+                $endpoint = 'https://api.balesotomatis.com/public/v1/send_personal_message';
+                $payload  = [
+                    'api_key'   => $apiKey,
+                    'number_id' => $numberId,
+                    'phone_no'  => $nomor,
+                    'message'   => $pesan,
+                ];
+            }
 
-            Log::info('BalesOtomatis Response', [
-                'status' => $response->status(),
-                'body' => $response->body(),
+            // Tembak API BalesOtomatis
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+                'Accept'       => 'application/json',
+            ])->post($endpoint, $payload);
+
+            Log::info('BalesOtomatis API Response', [
+                'type'       => $file ? 'document' : 'text',
+                'target'     => $nomor,
+                'status'     => $response->status(),
+                'body'       => $response->json() ?? $response->body(),
             ]);
 
             return $response->successful();
