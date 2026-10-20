@@ -470,20 +470,19 @@ Terima kasih.",
             }
 
             $payload = [
-                'target' => $nomor,
-                'message' => $pesan,
+                'api_key'    => env('BALESOTOMATIS_API_KEY'),
+                'number_id'  => env('BALESOTOMATIS_NUMBER_ID'),
+                'phone_no'   => $nomor,
+                'message'    => $pesan,
             ];
 
-            if ($file) $payload['file'] = $file;
+            if ($file) {
+                $payload['media_url'] = $file;
+            }
 
-            $response = Http::withHeaders([
-                'Authorization' => env('FONNTE_TOKEN')
-            ])->post(
-                'https://api.fonnte.com/send',
-                $payload
-            );
+            $response = Http::post('https://api.balesotomatis.com/public/v1/send_personal_message', $payload);
 
-            Log::info('Fonnte Response', [
+            Log::info('BalesOtomatis Response', [
                 'status' => $response->status(),
                 'body' => $response->body(),
             ]);
@@ -491,7 +490,7 @@ Terima kasih.",
             return $response->successful();
 
         } catch (\Throwable $e) {
-            Log::error('WhatsApp Error: ' . $e->getMessage());
+            Log::error('WhatsApp Error (BalesOtomatis): ' . $e->getMessage());
             return false;
         }
     }
