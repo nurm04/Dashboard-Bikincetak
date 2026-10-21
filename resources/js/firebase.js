@@ -30,7 +30,7 @@ export const requestFirebaseNotificationPermission = async () => {
             });
 
             if (token) {
-                console.log('FCM Token didapat:', token);
+                // console.log('FCM Token didapat:', token);
                 // Tembak tokennya ke backend Laravel via Axios
                 await axios.post('/simpan-fcm-token', { token: token });
                 console.log('Token berhasil disimpan di database!');
