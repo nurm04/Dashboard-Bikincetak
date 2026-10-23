@@ -16,8 +16,7 @@ class RajaOngkirService
         $this->baseUrl = rtrim(config('rajaongkir.base_url'), '/');
         $this->apiKey = config('rajaongkir.api_key');
 
-        $isProduction = env('APP_ENV') === 'production';
-        $this->komerceV2Url = $isProduction ? config('rajaongkir.komerce_v2_live') : config('rajaongkir.komerce_v2_sandbox');
+        $this->komerceV2Url = app()->environment('production') ? config('rajaongkir.komerce_v2_live') : config('rajaongkir.komerce_v2_sandbox');
     }
 
     public function getProvinces()

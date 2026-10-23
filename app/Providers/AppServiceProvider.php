@@ -26,7 +26,7 @@ class AppServiceProvider extends ServiceProvider
         ResetPassword::createUrlUsing(function (object $notifiable, string $token) {
             
             if ($notifiable->role === 'customer') {
-                $frontendUrl = env('APP_URL_NEXTJS', 'http://localhost:3000');
+                $frontendUrl = env('APP_URL_NEXTJS_VPS', 'http://localhost:3000');
                 return "{$frontendUrl}/reset-password/{$token}?email={$notifiable->getEmailForPasswordReset()}";
             }
 
