@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 <script setup>
 import { ref, computed } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
@@ -7,8 +8,8 @@ import CustomInput from '@/Components/Form/CustomInput.vue';
 import CustomTextarea from '@/Components/Form/CustomTextarea.vue';
 import CustomTableForm from '@/Components/CustomTableForm.vue';
 import CustomInputFile from '@/Components/Form/CustomInputFile.vue';
-// 👇 Tambahkan icon Truck untuk tab Kurir
-import { ArrowLeft, Save, Globe, Phone, CreditCard, Image as ImageIcon, Truck } from 'lucide-vue-next';
+// 👇 Tambahkan icon FileText atau Search untuk tab SEO
+import { ArrowLeft, Save, Globe, Phone, CreditCard, Image as ImageIcon, Truck, FileText } from 'lucide-vue-next';
 import { alertStore } from '@/Utils/alertStore';
 
 const props = defineProps({
@@ -20,6 +21,11 @@ const props = defineProps({
     kurir_lainnya: {
         type: Object,
         default: () => ({})
+    },
+    // 👇 Props tambahan untuk menampung data Halaman SEO dari Backend (jika ada)
+    halaman_seo: {
+        type: Array,
+        default: () => []
     }
 });
 
@@ -37,7 +43,7 @@ const formatKurirToArray = (kurirObj) => {
         image_url: kurirObj[key].image || '',
         image_file: null,
         image_preview: null,
-        is_active: kurirObj[key].is_active ?? true // Toggle aktif/nonaktif
+        is_active: kurirObj[key].is_active ?? true
     }));
 };
 
@@ -64,9 +70,15 @@ const form = useForm({
     teks_info_pembayaran: getVal('teks_info_pembayaran', ''),
     metode_pembayaran: getVal('metode_pembayaran', []),
 
-    // 👇 TAB 4: Kurir & Pengiriman
+    // Tab 4: Kurir & Pengiriman
     kurir_rajaongkir: formatKurirToArray(props.kurir_rajaongkir),
     kurir_lainnya: formatKurirToArray(props.kurir_lainnya),
+
+    // 👇 TAB 5: Halaman SEO Dinamis (Programmatic SEO Templates)
+    halaman_seo: props.halaman_seo.length > 0 ? props.halaman_seo : [
+        { id: 1, tipe: 'Utama', nama_halaman: 'SEO Halaman Utama', meta_title: '', meta_description: '', meta_keywords: '' },
+        { id: 2, tipe: 'Produk', nama_halaman: 'SEO Programmatic Produk & Kota', meta_title: 'Cetak {{ produk }} di {{ kota }} Murah & Cepat', meta_description: 'Cari tempat cetak {{ produk }} terdekat di {{ kota }}? Pesan online sekarang.', meta_keywords: 'cetak {{ produk }} {{ kota }}' }
+    ]
 });
 
 const activeTab = ref('identitas');
@@ -91,7 +103,7 @@ const handlePaymentIconUpload = (e, row) => {
     }
 };
 
-// 👇 Fungsi Baru: Upload Logo Kurir
+// Fungsi Upload Logo Kurir
 const handleKurirIconUpload = (e, row) => {
     const file = e.target.files[0];
     if (file) {
@@ -111,17 +123,16 @@ const submit = () => {
             delete payload.logo_utama;
         }
 
-        // Inertia otomatis menangani File Array (metode_pembayaran & kurir)
         return payload;
     }).post(route('tampilan-web.pengaturan.update'), {
         preserveScroll: true,
-        onSuccess: () => alertStore.show('Pengaturan Umum berhasil diperbarui!', 'success')
+        onSuccess: () => alertStore.show('Pengaturan Umum & Halaman SEO berhasil diperbarui!', 'success')
     });
 };
 </script>
 
 <template>
-    <Head title="Pengaturan Umum Web" />
+    <Head title="Pengaturan Umum Web & SEO" />
     <StafLayout>
         <template #header>
             <div class="flex items-center justify-between w-full">
@@ -130,14 +141,14 @@ const submit = () => {
                         <ArrowLeft class="w-4 h-4" />
                     </Link>
                     <div>
-                        <h2 class="text-xl font-semibold leading-tight text-base-content">Pengaturan Umum Web</h2>
-                        <p class="mt-1 text-sm text-base-content/60">Atur Identitas, SEO, Kontak, Pembayaran, dan Kurir.</p>
+                        <h2 className="text-xl font-semibold leading-tight text-base-content">Pengaturan Umum & Halaman SEO</h2>
+                        <p className="mt-1 text-sm text-base-content/60">Atur Identitas, SEO Utama, Programmatic SEO Produk, Kontak, & Kurir.</p>
                     </div>
                 </div>
             </div>
         </template>
 
-        <div class="max-w-6xl px-4 py-8 mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-7xl px-4 py-8 mx-auto sm:px-6 lg:px-8">
             <div class="flex flex-col gap-6 lg:flex-row">
 
                 <!-- SIDEBAR TABS -->
@@ -146,9 +157,10 @@ const submit = () => {
                         <button @click="activeTab = 'identitas'" :class="['flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-sm transition-all whitespace-nowrap', activeTab === 'identitas' ? 'bg-primary text-primary-content shadow-md' : 'text-base-content/60 hover:bg-base-200']"><Globe class="w-4 h-4" /> Identitas & SEO</button>
                         <button @click="activeTab = 'kontak'" :class="['flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-sm transition-all whitespace-nowrap', activeTab === 'kontak' ? 'bg-primary text-primary-content shadow-md' : 'text-base-content/60 hover:bg-base-200']"><Phone class="w-4 h-4" /> Kontak & Sosmed</button>
                         <button @click="activeTab = 'pembayaran'" :class="['flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-sm transition-all whitespace-nowrap', activeTab === 'pembayaran' ? 'bg-primary text-primary-content shadow-md' : 'text-base-content/60 hover:bg-base-200']"><CreditCard class="w-4 h-4" /> Pembayaran</button>
-
-                        <!-- 👇 TAB BARU: KURIR 👇 -->
                         <button @click="activeTab = 'kurir'" :class="['flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-sm transition-all whitespace-nowrap', activeTab === 'kurir' ? 'bg-primary text-primary-content shadow-md' : 'text-base-content/60 hover:bg-base-200']"><Truck class="w-4 h-4" /> Kurir Pengiriman</button>
+
+                        <!-- 👇 TAB BARU: HALAMAN SEO DINAMIS 👇 -->
+                        <button @click="activeTab = 'seo'" :class="['flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-sm transition-all whitespace-nowrap', activeTab === 'seo' ? 'bg-primary text-primary-content shadow-md' : 'text-base-content/60 hover:bg-base-200']"><FileText class="w-4 h-4" /> Halaman SEO</button>
                     </div>
                 </div>
 
@@ -264,14 +276,12 @@ const submit = () => {
                                 </CustomTableForm>
                             </div>
 
-                            <!-- 👇 TAB 4: KURIR & PENGIRIMAN 👇 -->
+                            <!-- TAB 4: KURIR & PENGIRIMAN -->
                             <div v-show="activeTab === 'kurir'" class="space-y-8 animate-fade-in">
                                 <h3 class="flex items-center gap-2 pb-2 text-sm font-black tracking-widest uppercase border-b border-base-300 text-primary">
                                     <Truck class="w-4 h-4" /> Pengaturan Kurir & Pengiriman
                                 </h3>
 
-                                <!-- Kurir RajaOngkir (Otomatis) -->
-                                <!-- Tidak memakai @add karena list ini sudah fixed dari Seeder / API -->
                                 <CustomTableForm
                                     v-model="form.kurir_rajaongkir"
                                     :headers="['Kode API', 'Nama Kurir', 'Logo Kurir', 'Aktif']"
@@ -302,7 +312,6 @@ const submit = () => {
                                     </template>
                                 </CustomTableForm>
 
-                                <!-- Kurir Lainnya (Manual / Custom) -->
                                 <CustomTableForm
                                     v-model="form.kurir_lainnya"
                                     :headers="['Kode (Slug)', 'Nama Kurir', 'Logo Kurir', 'Aktif']"
@@ -329,6 +338,40 @@ const submit = () => {
                                         <td class="px-2 py-2 w-[15%] text-center">
                                             <input type="checkbox" v-model="row.is_active" class="toggle toggle-sm toggle-primary" />
                                         </td>
+                                    </template>
+                                </CustomTableForm>
+                            </div>
+
+                            <!-- 👇 TAB 5: HALAMAN SEO DINAMIS 👇 -->
+                            <div v-show="activeTab === 'seo'" class="space-y-8 animate-fade-in">
+                                <div>
+                                    <h3 class="flex items-center gap-2 pb-2 text-sm font-black tracking-widest uppercase border-b border-base-300 text-primary">
+                                        <FileText class="w-4 h-4" /> Pengaturan Template Halaman SEO
+                                    </h3>
+                                    <p class="text-xs text-base-content/60 mt-2">
+                                        Kelola template meta SEO untuk halaman utama, produk, kota, dll. Anda dapat menggunakan variabel dinamis seperti <code class="bg-base-200 text-primary px-1 rounded font-bold">&#123;&#123; produk &#125;&#125;</code> dan <code class="bg-base-200 text-primary px-1 rounded font-bold">&#123;&#123; kota &#125;&#125;</code>.
+                                    </p>
+                                </div>
+
+                                <CustomTableForm
+                                    v-model="form.halaman_seo"
+                                    :headers="['Tipe SEO', 'Nama Halaman', 'Meta Title Template', 'Meta Description Template', 'Keywords']"
+                                    label="Daftar Template Halaman SEO"
+                                    @add="form.halaman_seo.push({ id: Date.now(), tipe: 'Produk', nama_halaman: '', meta_title: '', meta_description: '', meta_keywords: '' })"
+                                >
+                                    <template #row="{ row }">
+                                        <td class="px-2 py-2 w-[15%]">
+                                            <select v-model="row.tipe" class="w-full text-xs font-bold bg-transparent select select-bordered select-xs">
+                                                <option value="Utama">Utama</option>
+                                                <option value="Produk">Produk & Kota</option>
+                                                <option value="Kategori">Kategori</option>
+                                                <option value="Lainnya">Lainnya</option>
+                                            </select>
+                                        </td>
+                                        <td class="px-2 py-2 w-[20%]"><input v-model="row.nama_halaman" type="text" class="w-full text-xs font-bold bg-transparent" placeholder="Contoh: SEO Produk Kota"/></td>
+                                        <td class="px-2 py-2 w-[25%]"><input v-model="row.meta_title" type="text" class="w-full text-xs bg-transparent" placeholder="Cetak {{ produk }} di {{ kota }}"/></td>
+                                        <td class="px-2 py-2 w-[25%]"><input v-model="row.meta_description" type="text" class="w-full text-xs bg-transparent" placeholder="Deskripsi SEO..."/></td>
+                                        <td class="px-2 py-2 w-[15%]"><input v-model="row.meta_keywords" type="text" class="w-full text-xs bg-transparent" placeholder="keyword1, keyword2"/></td>
                                     </template>
                                 </CustomTableForm>
                             </div>
