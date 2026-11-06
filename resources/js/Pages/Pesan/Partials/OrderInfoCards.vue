@@ -56,13 +56,18 @@ const showBayarSebagianModal = ref(false);
 const sudahAdaPembayaran = computed(() => (props.total_dibayar ?? 0) > 0);
 const sudahLunas = computed(() => (props.total_dibayar ?? 0) >= (props.total_tagihan ?? 0));
 
-const updatePembayaran = (value) => {
+const updatePembayaran = (event) => {
+    const value = event.target.value;
     if (sudahLunas.value) return;
 
-    if (value === 'dibayar_sebagian') {
+    // Jika staf memilih opsi tambahan untuk input cicilan baru
+    if (value === 'tambah_cicilan') {
         formPembayaran.reset();
         formPembayaran.status_pembayaran = 'dibayar_sebagian';
         showBayarSebagianModal.value = true;
+
+        // Kembalikan tampilan nilai select ke status pembayaran asli pesanan
+        event.target.value = props.pesanan.status_pembayaran;
         return;
     }
 
@@ -418,7 +423,7 @@ const statusPembayaranClass = (status) => {
                         class="w-full select select-bordered select-sm text-[10px] font-black uppercase tracking-wider outline-none focus:outline-none"
                         :class="statusPembayaranClass(pesanan.status_pembayaran)"
                         :value="pesanan.status_pembayaran"
-                        @change="updatePembayaran($event.target.value)"
+                        @change="updatePembayaran($event)"
                         :disabled="formPembayaran.processing || sudahLunas || pesanan.status_operasional === 'batal'"
                     >
                         <option
@@ -428,6 +433,14 @@ const statusPembayaranClass = (status) => {
                             :disabled="(status === 'belum_lunas' && sudahAdaPembayaran) || (status === 'dibayar_sebagian' && sudahLunas)"
                         >
                             {{ status.replace(/_/g, ' ').toUpperCase() }}
+                        </option>
+
+                        <!-- Opsi Tambahan Langsung untuk Trigger Modal Tambah Cicilan -->
+                        <option
+                            v-if="sudahAdaPembayaran && !sudahLunas"
+                            value="tambah_cicilan"
+                        >
+                            + TAMBAH CICILAN
                         </option>
                     </select>
                 </div>

@@ -163,23 +163,28 @@ const resetModal = () => {
     showBayarSebagianModal.value = false;
 };
 
-const updatePembayaran = (pesan, value) => {
+const updatePembayaran = (pesan, event) => {
+    const value = event.target.value;
     if (sudahLunas(pesan)) return;
 
-    if (value === 'dibayar_sebagian') {
+    // Jika opsi tambah cicilan yang dipilih
+    if (value === 'tambah_cicilan') {
         selectedPesan.value = pesan;
         selectedPesanId.value = pesan.id_pesan;
         formPembayaran.reset();
-        formPembayaran.status_pembayaran ='dibayar_sebagian';
+        formPembayaran.status_pembayaran = 'dibayar_sebagian';
         showBayarSebagianModal.value = true;
+
+        // Kembalikan tampilan select ke status awal pesanan
+        event.target.value = pesan.status_pembayaran;
         return;
     }
 
     formPembayaran.status_pembayaran = value;
     formPembayaran.put(route('pesan.updatePembayaran', pesan.id_pesan), {
         preserveScroll: true,
-        onSuccess: () => alertStore.show('Status Pembayaran berhasil diperbarui!','success'),
-        onError: () => alertStore.show('Gagal memperbarui status pembayaran!','error')
+        onSuccess: () => alertStore.show('Status Pembayaran berhasil diperbarui!', 'success'),
+        onError: () => alertStore.show('Gagal memperbarui status pembayaran!', 'error')
     });
 };
 
@@ -325,16 +330,27 @@ const formatEnum = (text) => {
                                 : p.status_pembayaran === 'dibayar_sebagian' ? 'text-warning border-warning/30 bg-warning/5' : 'text-error border-error/30 bg-error/5'
                             "
                             :value="p.status_pembayaran"
-                            @change="updatePembayaran(p, $event.target.value)"
+                            @change="updatePembayaran(p, $event)"
                             :disabled="formPembayaran.processing || sudahLunas(p) || p.status_operasional === 'batal'"
                         >
                             <option
                                 v-for="status in enumPembayaran"
                                 :key="status"
                                 :value="status"
-                                :disabled="(status === 'belum_lunas' && sudahAdaPembayaran(p)) || (status === 'dibayar_sebagian' && sudahLunas(p))"
+                                :disabled="
+                                    (status === 'belum_lunas' && sudahAdaPembayaran(p)) ||
+                                    (status === 'dibayar_sebagian' && sudahLunas(p))
+                                "
                             >
                                 {{ status.replace(/_/g, ' ').toUpperCase() }}
+                            </option>
+
+                            <!-- Opsi Tambahan Langsung di Select untuk Trigger Modal, Status Tetap Dibayar Sebagian -->
+                            <option
+                                v-if="sudahAdaPembayaran(p) && !sudahLunas(p)"
+                                value="tambah_cicilan"
+                            >
+                                + TAMBAH CICILAN
                             </option>
                         </select>
                     </td>
@@ -404,7 +420,7 @@ const formatEnum = (text) => {
         <!-- MODAL BAYAR SEBAGIAN -->
         <dialog class="modal" :class="{ 'modal-open': showBayarSebagianModal }">
             <div class="w-11/12 max-w-lg modal-box">
-                <h3 class="text-lg font-black">Pembayaran Sebagian</h3>
+                <h3 class="text-lg font-black">Tambah Cicilan / Pembayaran Sebagian</h3>
 
                 <div v-if="selectedPesan" class="mt-4 space-y-4">
                     <div>
@@ -417,26 +433,29 @@ const formatEnum = (text) => {
                     <div>
                         <CustomInputNumber
                             v-model="formPembayaran.nominal_bayar"
-                            label="Nominal Bayar"
+                            label="Nominal Bayar / Cicilan Baru"
                             type="number"
                             placeholder="Masukkan nominal pembayaran"
                             :error="formPembayaran.errors.nominal_bayar"
                             :max="selectedPesan.total_tagihan_real - (selectedPesan.total_dibayar ?? 0)"
                         />
                     </div>
-                    <div class="p-3 text-xs rounded-lg bg-base-200">
+                    <div class="p-3 space-y-1 text-xs rounded-lg bg-base-200">
                         <div>
-                            Sudah Dibayar: <b>{{formatRupiah(selectedPesan.total_dibayar ?? 0)}}</b>
+                            Total Tagihan: <b>{{ formatRupiah(selectedPesan.total_tagihan_real) }}</b>
                         </div>
                         <div>
-                            Sisa Tagihan: <b>{{formatRupiah(selectedPesan.total_tagihan_real - (selectedPesan.total_dibayar ?? 0))}}</b>
+                            Sudah Dibayar (Akumulasi): <b class="text-success">{{ formatRupiah(selectedPesan.total_dibayar ?? 0) }}</b>
+                        </div>
+                        <div class="font-bold text-primary">
+                            Sisa Tagihan Saat Ini: <b>{{ formatRupiah(selectedPesan.total_tagihan_real - (selectedPesan.total_dibayar ?? 0)) }}</b>
                         </div>
                     </div>
                 </div>
 
                 <div class="justify-end mt-6 modal-action">
                     <CustomButton variant="secondary" @click="resetModal">Batal</CustomButton>
-                    <CustomButton variant="primary" :disabled="!formPembayaran.nominal_bayar || formPembayaran.processing" @click="submitBayarSebagian">Simpan Pembayaran</CustomButton>
+                    <CustomButton variant="primary" :disabled="!formPembayaran.nominal_bayar || formPembayaran.processing" @click="submitBayarSebagian">Simpan Cicilan</CustomButton>
                 </div>
             </div>
         </dialog>
