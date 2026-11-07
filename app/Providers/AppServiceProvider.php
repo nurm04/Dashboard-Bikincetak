@@ -28,6 +28,9 @@ class AppServiceProvider extends ServiceProvider
             if ($notifiable->role === 'customer') {
                 $frontendUrl = env('APP_URL_NEXTJS_VPS', 'http://localhost:3000');
                 return "{$frontendUrl}/reset-password/{$token}?email={$notifiable->getEmailForPasswordReset()}";
+            } elseif ($notifiable->role === 'staf') {
+                $frontendUrl = env('APP_URL', 'http://localhost:8000');
+                return "{$frontendUrl}/reset-password/{$token}?email={$notifiable->getEmailForPasswordReset()}";
             }
 
             return url(route('password.reset', [
