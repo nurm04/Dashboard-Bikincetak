@@ -167,7 +167,7 @@ const updatePembayaran = (pesan, event) => {
     const value = event.target.value;
     if (sudahLunas(pesan)) return;
 
-    // Jika opsi tambah cicilan yang dipilih
+    // Jika staf memilih opsi tambahan "+ TAMBAH CICILAN"
     if (value === 'tambah_cicilan') {
         selectedPesan.value = pesan;
         selectedPesanId.value = pesan.id_pesan;
@@ -175,11 +175,25 @@ const updatePembayaran = (pesan, event) => {
         formPembayaran.status_pembayaran = 'dibayar_sebagian';
         showBayarSebagianModal.value = true;
 
-        // Kembalikan tampilan select ke status awal pesanan
+        // Kembalikan tampilan select ke status awal pesanan agar tidak nyangkut
         event.target.value = pesan.status_pembayaran;
         return;
     }
 
+    // Jika staf memilih status reguler "dibayar_sebagian" untuk pertama kalinya
+    if (value === 'dibayar_sebagian') {
+        selectedPesan.value = pesan;
+        selectedPesanId.value = pesan.id_pesan;
+        formPembayaran.reset();
+        formPembayaran.status_pembayaran = 'dibayar_sebagian';
+        showBayarSebagianModal.value = true;
+
+        // Kembalikan sementara ke status awal sampai modal disimpan
+        event.target.value = pesan.status_pembayaran;
+        return;
+    }
+
+    // Untuk status reguler lain (misal: 'lunas' atau 'belum_lunas')
     formPembayaran.status_pembayaran = value;
     formPembayaran.put(route('pesan.updatePembayaran', pesan.id_pesan), {
         preserveScroll: true,
@@ -189,13 +203,15 @@ const updatePembayaran = (pesan, event) => {
 };
 
 const submitBayarSebagian = () => {
-    formPembayaran.put(route('pesan.updatePembayaran',selectedPesanId.value), {
+    if (!selectedPesanId.value) return;
+
+    formPembayaran.put(route('pesan.updatePembayaran', selectedPesanId.value), {
         preserveScroll: true,
         onSuccess: () => {
             resetModal();
-            alertStore.show('Pembayaran berhasil dicatat!','success');
+            alertStore.show('Pembayaran berhasil dicatat!', 'success');
         },
-        onError: () => alertStore.show('Gagal mencatat pembayaran!','error')
+        onError: () => alertStore.show('Gagal mencatat pembayaran!', 'error')
     });
 };
 
