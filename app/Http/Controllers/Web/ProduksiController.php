@@ -86,6 +86,7 @@ class ProduksiController extends Controller
             'alokasi' => 'required|array|min:1',
             'alokasi.*.id_pesanan_item' => 'required|exists:pesanan_item,id',
             'alokasi.*.skema' => 'required|array|min:1',
+            'alokasi.*.skema.*.kategori_produksi' => 'required|in:digital,offset,indoor,outdoor,sablon',
             'alokasi.*.skema.*.tipe_pengerjaan' => 'required|in:sendiri,vendor',
             'alokasi.*.skema.*.id_vendor' => 'nullable|required_if:alokasi.*.skema.*.tipe_pengerjaan,vendor|exists:vendor,id_vendor',
             'alokasi.*.skema.*.id_staf_pelaksana' => 'nullable|required_if:alokasi.*.skema.*.tipe_pengerjaan,sendiri|exists:staf,id_staf',
@@ -113,6 +114,7 @@ class ProduksiController extends Controller
                 foreach ($itemAlokasi['skema'] as $skema) {
                     PesananItemProduksi::create([
                         'id_pesanan_item' => $item->id,
+                        'kategori_produksi' => $skema['kategori_produksi'],
                         'tipe_pengerjaan' => $skema['tipe_pengerjaan'],
                         'id_vendor' => $skema['tipe_pengerjaan'] === 'vendor' ? $skema['id_vendor'] : null,
                         'id_staf_pelaksana' => $skema['tipe_pengerjaan'] === 'sendiri' ? $skema['id_staf_pelaksana'] : null,

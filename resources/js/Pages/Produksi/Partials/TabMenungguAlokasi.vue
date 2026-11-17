@@ -82,6 +82,7 @@ const openAlokasiModal = (pesanan) => {
         total_qty: item.jumlah,
         is_desain: item.id_sku?.startsWith('PRD-0002') || false,
         skema: [{
+            kategori_produksi: '',
             tipe_pengerjaan: 'sendiri',
             id_vendor: null,
             id_staf_pelaksana: getCurrentStafId(),
@@ -111,7 +112,14 @@ const addSkema = (itemIndex) => {
     const item = alokasiForm.alokasi[itemIndex];
     const sisa = getSisaQty(item);
     if (sisa > 0) {
-        item.skema.push({ tipe_pengerjaan: 'vendor', id_vendor: null, id_staf_pelaksana: null, qty_dikerjakan: sisa, instruksi_pengerjaan: '' });
+        item.skema.push({
+            kategori_produksi: '',
+            tipe_pengerjaan: 'vendor',
+            id_vendor: null,
+            id_staf_pelaksana: null,
+            qty_dikerjakan: sisa,
+            instruksi_pengerjaan: ''
+        });
     } else {
         alertStore.show('Seluruh Qty pesanan sudah dialokasikan! Kurangi Qty pelaksana lain terlebih dahulu.', 'warning');
     }
@@ -277,11 +285,11 @@ const submitAlokasi = () => {
 
         <!-- 👇 MODAL ALOKASI PENGERJAAN 👇 -->
         <dialog class="modal" :class="{'modal-open': isAlokasiModalOpen}">
-            <div class="max-w-4xl p-0 modal-box rounded-2xl">
+            <div class="max-w-5xl p-0 modal-box rounded-2xl">
                 <div class="flex items-center justify-between p-4 border-b sm:p-5 border-base-200">
                     <div>
                         <h3 class="text-base font-bold text-base-content">Alokasi Pengerjaan</h3>
-                        <p class="text-[11px] sm:text-sm font-medium text-base-content/50 mt-0.5">Tentukan pelaksana (In-house/Vendor) untuk pesanan <span class="font-bold">{{ selectedOrderAlokasi?.id_pesan }}</span></p>
+                        <p class="text-[11px] sm:text-sm font-medium text-base-content/50 mt-0.5">Tentukan kategori & pelaksana (In-house/Vendor) untuk pesanan <span class="font-bold">{{ selectedOrderAlokasi?.id_pesan }}</span></p>
                     </div>
                     <button @click="closeAlokasiModal" class="btn btn-sm btn-circle btn-ghost text-base-content/40 hover:text-error">✕</button>
                 </div>
@@ -306,8 +314,21 @@ const submitAlokasi = () => {
                                 <div class="space-y-4 sm:space-y-3">
                                     <div v-for="(skema, skemaIndex) in item.skema" :key="skemaIndex" class="flex flex-col items-start gap-3 p-3 border sm:p-0 sm:border-none rounded-xl border-base-200 bg-base-50/50 sm:bg-transparent sm:flex-row sm:items-end">
 
+                                        <!-- KATEGORI PRODUKSI -->
+                                        <div class="w-full sm:w-1/5">
+                                            <label class="block mb-1 text-[11px] font-black uppercase tracking-widest text-base-content/50">Kategori</label>
+                                            <select v-model="skema.kategori_produksi" required class="w-full font-bold select select-sm select-bordered rounded-xl">
+                                                <option value="" disabled>Pilih Kategori...</option>
+                                                <option value="digital">Digital</option>
+                                                <option value="offset">Offset</option>
+                                                <option value="indoor">Indoor</option>
+                                                <option value="outdoor">Outdoor</option>
+                                                <option value="sablon">Sablon</option>
+                                            </select>
+                                        </div>
+
                                         <!-- JENIS PELAKSANA -->
-                                        <div class="w-full sm:w-1/4">
+                                        <div class="w-full sm:w-1/5">
                                             <label class="block mb-1 text-[11px] font-black uppercase tracking-widest text-base-content/50">Tipe Pelaksana</label>
                                             <select
                                                 v-model="skema.tipe_pengerjaan"
@@ -323,7 +344,7 @@ const submitAlokasi = () => {
                                         </div>
 
                                         <!-- JIKA TIPE: VENDOR -->
-                                        <div v-if="skema.tipe_pengerjaan === 'vendor'" class="w-full sm:w-1/4">
+                                        <div v-if="skema.tipe_pengerjaan === 'vendor'" class="w-full sm:w-1/5">
                                             <label class="block mb-1 text-[11px] font-black uppercase tracking-widest text-base-content/50">Pilih Vendor</label>
                                             <select v-model="skema.id_vendor" required class="w-full font-bold select select-sm select-bordered rounded-xl">
                                                 <option :value="null" disabled>Pilih Vendor...</option>
@@ -331,7 +352,7 @@ const submitAlokasi = () => {
                                             </select>
                                         </div>
 
-                                        <div class="w-full sm:w-24">
+                                        <div class="w-full sm:w-20">
                                             <label class="block mb-1 text-[11px] font-black uppercase tracking-widest text-base-content/50">Qty <span class="text-[9px] normal-case tracking-normal opacity-70">(Maks: {{ getMaxQty(item, skemaIndex) }})</span></label>
                                             <input
                                                 type="number"

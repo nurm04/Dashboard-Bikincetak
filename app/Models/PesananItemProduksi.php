@@ -15,6 +15,7 @@ class PesananItemProduksi extends Model
     protected $fillable = [
         'id_pesanan_item',
         'tipe_pengerjaan',
+        'kategori_produksi',
         'id_vendor',
         'id_staf_pelaksana',
         'id_tagihan_vendor',

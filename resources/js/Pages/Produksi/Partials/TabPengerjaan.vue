@@ -236,9 +236,16 @@ const submitUpdate = () => {
 
                         <!-- Bagian Progress Pekerjaan (Bawah) -->
                         <div class="p-0 overflow-x-auto sm:p-2 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:bg-base-300 [&::-webkit-scrollbar-thumb]:rounded-full pb-2">
-                            <div class="min-w-150">
+                            <div class="min-w-180">
                                 <CustomTable :headers="headersProses" class="bg-transparent border-none shadow-none">
                                     <tr v-for="schedule in item.pesanan_item_produksi" :key="schedule.id" class="border-b border-base-200/50 hover:bg-base-200/30">
+                                        <!-- Kolom Kategori Produksi -->
+                                        <td class="px-4 py-3 text-xs whitespace-nowrap">
+                                            <span class="px-2 py-0.5 font-bold uppercase text-[10px] bg-base-200 rounded-md border border-base-300">
+                                                {{ schedule.kategori_produksi || '-' }}
+                                            </span>
+                                        </td>
+
                                         <td class="px-4 py-3 text-xs font-medium whitespace-nowrap">
                                             {{ schedule.tipe_pengerjaan === 'sendiri' ? 'In-House' : (schedule.vendor?.nama_vendor || 'Vendor') }}
                                             <div v-if="schedule.file_revisi" class="mt-1">
