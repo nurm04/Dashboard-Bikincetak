@@ -4,7 +4,7 @@
 </style>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { alertStore } from '@/Utils/alertStore';
 import { Clock, CheckCircle, Paperclip, UploadCloud, Printer, Inbox } from 'lucide-vue-next';
@@ -21,7 +21,52 @@ const props = defineProps({
 });
 
 const headers = ['ID Pesanan', 'Customer', 'Deadline', 'Status', 'Aksi'];
-const headersProses = ['Pelaksana', 'Instruksi / Keterangan', 'Qty', 'Status', 'Aksi'];
+const headersProses = ['Kategori', 'Pelaksana', 'Instruksi / Keterangan', 'Qty', 'Status', 'Aksi'];
+
+// State untuk Sub-Tab Kategori Produksi
+const activeSubTab = ref('SEMUA');
+const subTabs = [
+    { key: 'SEMUA', label: 'SEMUA' },
+    { key: 'DIGITAL', label: 'DIGITAL' },
+    { key: 'OFFSET', label: 'OFFSET' },
+    { key: 'INDOOR', label: 'INDOOR' },
+    { key: 'OUTDOOR', label: 'OUTDOOR' },
+    { key: 'SABLON', label: 'SABLON' },
+];
+
+const filteredPesananList = computed(() => {
+    if (!props.pesananList) return [];
+    if (activeSubTab.value === 'SEMUA') {
+        return props.pesananList;
+    }
+    return props.pesananList.filter(pesanan => {
+        if (!pesanan.pesanan_item) return false;
+        return pesanan.pesanan_item.some(item => {
+            if (!item.pesanan_item_produksi) return false;
+            return item.pesanan_item_produksi.some(prod =>
+                prod.kategori_produksi && prod.kategori_produksi.toUpperCase() === activeSubTab.value
+            );
+        });
+    });
+});
+
+const getCategoryCount = (catKey) => {
+    if (!props.pesananList) return 0;
+    if (catKey === 'SEMUA') {
+        return props.pesananList.length;
+    }
+    let count = 0;
+    props.pesananList.forEach(pesanan => {
+        pesanan.pesanan_item?.forEach(item => {
+            item.pesanan_item_produksi?.forEach(prod => {
+                if (prod.kategori_produksi && prod.kategori_produksi.toUpperCase() === catKey) {
+                    count++;
+                }
+            });
+        });
+    });
+    return count;
+};
 
 const formatTanggal = (tgl) => {
     if (!tgl) return '-';
@@ -104,9 +149,28 @@ const submitUpdate = () => {
 <template>
     <div class="space-y-6">
 
+        <!-- 👇 SUB-TAB KATEGORI PRODUKSI (TERMASUK SEMUA) 👇 -->
+        <div class="flex flex-wrap items-center gap-2 pb-2 border-b border-base-200">
+            <button
+                v-for="tab in subTabs"
+                :key="tab.key"
+                @click="activeSubTab = tab.key"
+                class="flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase transition-all rounded-xl border"
+                :class="activeSubTab === tab.key ? 'bg-primary text-primary-content border-primary shadow-sm' : 'bg-base-100 text-base-content/70 border-base-300 hover:bg-base-200'"
+            >
+                <span>{{ tab.label }}</span>
+                <span
+                    class="px-1.5 py-0.5 text-[10px] font-black rounded-full"
+                    :class="activeSubTab === tab.key ? 'bg-primary-content text-primary' : 'bg-base-200 text-base-content/60'"
+                >
+                    {{ getCategoryCount(tab.key) }}
+                </span>
+            </button>
+        </div>
+
         <!-- 👇 TABEL LIST PESANAN 👇 -->
         <CustomTable :headers="headers" :pagination="false">
-            <tr v-for="pesanan in pesananList" :key="pesanan.id_pesan" class="transition-colors hover:bg-base-200/50">
+            <tr v-for="pesanan in filteredPesananList" :key="pesanan.id_pesan" class="transition-colors hover:bg-base-200/50">
                 <!-- 1. ID Pesanan -->
                 <td class="px-4 py-4 font-mono text-xs font-bold whitespace-nowrap text-primary">
                     {{ pesanan.id_pesan }}
@@ -167,12 +231,12 @@ const submitUpdate = () => {
             </tr>
 
             <!-- Jika Data Kosong -->
-            <tr v-if="pesananList.length === 0">
+            <tr v-if="filteredPesananList.length === 0">
                 <td colspan="5" class="px-6 py-20 text-center">
                     <div class="flex flex-col items-center justify-center opacity-30">
                         <Inbox class="w-12 h-12 mb-4" />
                         <h3 class="text-base font-semibold text-base-content">Tidak Ada Pekerjaan</h3>
-                        <p class="mt-1 text-sm text-base-content/50">Belum ada pesanan yang sedang diproses saat ini.</p>
+                        <p class="mt-1 text-sm text-base-content/50">Belum ada pesanan untuk kategori {{ activeSubTab }} saat ini.</p>
                     </div>
                 </td>
             </tr>
@@ -239,13 +303,11 @@ const submitUpdate = () => {
                             <div class="min-w-180">
                                 <CustomTable :headers="headersProses" class="bg-transparent border-none shadow-none">
                                     <tr v-for="schedule in item.pesanan_item_produksi" :key="schedule.id" class="border-b border-base-200/50 hover:bg-base-200/30">
-                                        <!-- Kolom Kategori Produksi -->
                                         <td class="px-4 py-3 text-xs whitespace-nowrap">
                                             <span class="px-2 py-0.5 font-bold uppercase text-[10px] bg-base-200 rounded-md border border-base-300">
                                                 {{ schedule.kategori_produksi || '-' }}
                                             </span>
                                         </td>
-
                                         <td class="px-4 py-3 text-xs font-medium whitespace-nowrap">
                                             {{ schedule.tipe_pengerjaan === 'sendiri' ? 'In-House' : (schedule.vendor?.nama_vendor || 'Vendor') }}
                                             <div v-if="schedule.file_revisi" class="mt-1">
@@ -360,7 +422,6 @@ const submitUpdate = () => {
                     </div>
                 </form>
             </div>
-            <!-- Z-index tinggi agar overlay nutupin modal pertama -->
             <form method="dialog" class="modal-backdrop bg-base-content/50 z-90"><button @click="closeUpdateModal">close</button></form>
         </dialog>
 
