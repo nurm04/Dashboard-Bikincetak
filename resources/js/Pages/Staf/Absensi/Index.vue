@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import StafLayout from '@/Layouts/StafLayout.vue';
 import CustomButton from '@/Components/Form/CustomButton.vue';
@@ -71,7 +71,59 @@ const getLocation = () => {
     );
 };
 
-const takePhotoAndSubmit = (tipeAbsen) => {
+// Menentukan tipe absen secara otomatis berdasarkan kondisi data dan waktu saat ini
+const determineAbsenType = () => {
+    // 1. Belum absen masuk sama sekali -> 'masuk'
+    if (!props.absensi_reguler?.jam_masuk) {
+        return 'masuk';
+    }
+
+    // 2. Sudah absen masuk reguler, tapi belum ada jam keluar reguler
+    if (props.absensi_reguler?.jam_masuk && !props.absensi_reguler?.jam_keluar) {
+        const now = new Date();
+        const hours = now.getHours();
+        // Jika jam sekarang sudah >= 17:00 (atau sebelum jam 07:00 pagi berikutnya),
+        // maka klik tombol ini otomatis dianggap mengakhiri reguler / mulai lembur (keluar reguler)
+        return 'keluar';
+    }
+
+    // 3. Reguler sudah selesai, tapi lembur belum mulai (jam masuk lembur kosong)
+    if (props.absensi_reguler?.jam_keluar && !props.absensi_lembur?.jam_masuk) {
+        return 'masuk_lembur';
+    }
+
+    // 4. Sedang dalam sesi lembur, belum diakhiri -> akhiri lembur
+    if (props.absensi_lembur?.jam_masuk && !props.absensi_lembur?.jam_keluar) {
+        return 'keluar_lembur';
+    }
+
+    return null;
+};
+
+const activeActionType = computed(() => {
+    return determineAbsenType();
+});
+
+const getActionButtonConfig = computed(() => {
+    const type = activeActionType.value;
+    switch (type) {
+        case 'masuk':
+            return { label: 'Absen Masuk', variant: 'primary', textClass: 'text-white' };
+        case 'keluar':
+            return { label: 'Absen Pulang / Selesai Kerja', variant: 'warning', textClass: 'text-white' };
+        case 'masuk_lembur':
+            return { label: 'Mulai Lembur', variant: 'secondary', textClass: 'text-white' };
+        case 'keluar_lembur':
+            return { label: 'Akhiri Lembur', variant: 'error', textClass: 'text-white' };
+        default:
+            return null;
+    }
+});
+
+const takePhotoAndSubmit = () => {
+    const tipeAbsen = activeActionType.value;
+    if (!tipeAbsen) return;
+
     if (distance.value > props.max_radius) {
         alertStore.show(`Anda di luar jangkauan kantor! Jarak: ${Math.round(distance.value)}m`, "error");
         return;
@@ -170,64 +222,23 @@ const goBack = () => {
                     <div class="absolute inset-0 pointer-events-none border-[1.5px] border-dashed border-white/40 rounded-[100%] m-8 opacity-50"></div>
                 </div>
 
-                <!-- TOMBOL AKSI -->
+                <!-- TOMBOL AKSI OTOMATIS -->
                 <div class="flex flex-col w-full max-w-sm gap-4">
-
-                    <!-- STATE 1: Belum ada absen masuk reguler & lembur -->
-                    <CustomButton
-                        v-if="!absensi_reguler?.jam_masuk"
-                        variant="primary"
-                        class="w-full py-4 font-black tracking-widest uppercase rounded-2xl"
-                        :disabled="!isCameraReady || distance > max_radius || form.processing"
-                        @click="takePhotoAndSubmit('masuk')"
-                    >
-                        <span v-if="form.processing" class="loading loading-spinner"></span>
-                        <span v-else>Absen Masuk</span>
-                    </CustomButton>
-
-                    <!-- STATE 2: Sudah absen masuk reguler, tapi belum pulang -->
-                    <CustomButton
-                        v-if="absensi_reguler?.jam_masuk && !absensi_reguler?.jam_keluar"
-                        variant="warning"
-                        class="w-full py-4 font-black tracking-widest text-white uppercase rounded-2xl"
-                        :disabled="!isCameraReady || distance > max_radius || form.processing"
-                        @click="takePhotoAndSubmit('keluar')"
-                    >
-                        <span v-if="form.processing" class="loading loading-spinner"></span>
-                        <span v-else>Absen Pulang</span>
-                    </CustomButton>
-
-                    <!-- STATE 3: Sudah Pulang Reguler Tepat Waktu, tapi belum masuk lembur -->
-                    <div v-if="absensi_reguler?.jam_keluar && !absensi_lembur?.jam_masuk" class="flex flex-col gap-3">
-                        <div class="w-full p-4 font-black tracking-widest text-center uppercase shadow-lg bg-success text-success-content rounded-2xl">
-                            ✅ Absen Reguler Selesai
-                        </div>
+                    <template v-if="getActionButtonConfig">
                         <CustomButton
-                            variant="secondary"
-                            class="w-full py-4 font-black tracking-widest uppercase rounded-2xl"
+                            :variant="getActionButtonConfig.variant"
+                            :class="['w-full py-4 font-black tracking-widest uppercase rounded-2xl', getActionButtonConfig.textClass]"
                             :disabled="!isCameraReady || distance > max_radius || form.processing"
-                            @click="takePhotoAndSubmit('masuk_lembur')"
+                            @click="takePhotoAndSubmit"
                         >
                             <span v-if="form.processing" class="loading loading-spinner"></span>
-                            <span v-else>Mulai Lembur</span>
+                            <span v-else>{{ getActionButtonConfig.label }}</span>
                         </CustomButton>
-                    </div>
+                    </template>
 
-                    <!-- STATE 4: Sedang Shift Lembur (Belum Akhiri Lembur) -->
-                    <CustomButton
-                        v-if="absensi_lembur?.jam_masuk && !absensi_lembur?.jam_keluar"
-                        variant="error"
-                        class="w-full py-4 font-black tracking-widest text-white uppercase rounded-2xl"
-                        :disabled="!isCameraReady || distance > max_radius || form.processing"
-                        @click="takePhotoAndSubmit('keluar_lembur')"
-                    >
-                        <span v-if="form.processing" class="loading loading-spinner"></span>
-                        <span v-else>Akhiri Lembur</span>
-                    </CustomButton>
-
-                    <!-- STATE 5: Tuntas (Shift Lembur Selesai) -->
-                    <div v-if="absensi_lembur?.jam_keluar" class="w-full p-4 font-black tracking-widest text-center uppercase shadow-lg bg-success text-success-content rounded-2xl">
-                        ✅ Absen & Lembur Selesai
+                    <!-- STATE: Tuntas (Shift Lembur Selesai) -->
+                    <div v-else class="w-full p-4 font-black tracking-widest text-center uppercase shadow-lg bg-success text-success-content rounded-2xl">
+                        ✅ Absen & Lembur Selesai Hari Ini
                     </div>
                 </div>
 

@@ -86,7 +86,7 @@ class ProduksiController extends Controller
             'alokasi' => 'required|array|min:1',
             'alokasi.*.id_pesanan_item' => 'required|exists:pesanan_item,id',
             'alokasi.*.skema' => 'required|array|min:1',
-            'alokasi.*.skema.*.kategori_produksi' => 'required|in:digital,offset,indoor,outdoor,sablon',
+            'alokasi.*.skema.*.kategori_produksi' => 'required|in:digital,offset,indoor,outdoor,sablon,desain',
             'alokasi.*.skema.*.tipe_pengerjaan' => 'required|in:sendiri,vendor',
             'alokasi.*.skema.*.id_vendor' => 'nullable|required_if:alokasi.*.skema.*.tipe_pengerjaan,vendor|exists:vendor,id_vendor',
             'alokasi.*.skema.*.id_staf_pelaksana' => 'nullable|required_if:alokasi.*.skema.*.tipe_pengerjaan,sendiri|exists:staf,id_staf',

@@ -28,7 +28,8 @@ class PesananItem extends Model
         'harga_pengerjaan_snapshot',
         'total_berat_snapshot',
         'hpp_satuan_snapshot',
-        'file_desain'
+        'file_desain',
+        'catatan'
     ];
 
     protected $casts = [

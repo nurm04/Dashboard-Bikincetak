@@ -32,6 +32,7 @@ const subTabs = [
     { key: 'INDOOR', label: 'INDOOR' },
     { key: 'OUTDOOR', label: 'OUTDOOR' },
     { key: 'SABLON', label: 'SABLON' },
+    { key: 'DESAIN', label: 'DESAIN' },
 ];
 
 const filteredPesananList = computed(() => {

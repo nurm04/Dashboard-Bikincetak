@@ -324,6 +324,7 @@ const submitAlokasi = () => {
                                                 <option value="indoor">Indoor</option>
                                                 <option value="outdoor">Outdoor</option>
                                                 <option value="sablon">Sablon</option>
+                                                <option value="desain">Desain</option>
                                             </select>
                                         </div>
 
