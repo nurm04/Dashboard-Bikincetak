@@ -114,24 +114,35 @@
             <p style="font-size: 18px; color: #d9534f;"><strong>Total Bayar: Rp {{ number_format($totalTransfer, 0, ',', '.') }}</strong></p>
         </div>
 
-        <h3>Informasi Pembayaran</h3>
         <h3 style="color: #0056b3; border-bottom: 2px solid #eee; padding-bottom: 8px;">💳 Informasi & Opsi Pembayaran</h3>
         <p>Silakan lakukan pembayaran sesuai dengan <strong>Total Bayar</strong> (termasuk kode unik) melalui salah satu opsi berikut:</p>
 
         <div style="margin-bottom: 20px;">
             <p style="font-weight: bold; margin-bottom: 5px;">1. Transfer Bank Manual:</p>
-            <ul style="margin-top: 0; background-color: #f8f9fa; padding: 15px 15px 15px 35px; border-radius: 5px;">
-                <li><strong>Bank:</strong> {{ $rekening['bank'] ?? '-' }}</li>
-                <li><strong>No. Rekening:</strong> {{ $rekening['nomor'] ?? '-' }}</li>
-                <li><strong>a.n:</strong> {{ $rekening['atas_nama'] ?? '-' }}</li>
-            </ul>
+            @if(!empty($rekeningList))
+                @foreach($rekeningList as $rek)
+                    <ul style="margin-top: 0; margin-bottom: 10px; background-color: #f8f9fa; padding: 12px 15px 12px 35px; border-radius: 5px;">
+                        <li><strong>Bank:</strong> {{ $rek['bank'] ?? '-' }}</li>
+                        <li><strong>No. Rekening:</strong> {{ $rek['nomor'] ?? '-' }}</li>
+                        <li><strong>a.n:</strong> {{ $rek['atas_nama'] ?? '-' }}</li>
+                    </ul>
+                @endforeach
+            @else
+                <ul style="margin-top: 0; background-color: #f8f9fa; padding: 12px 15px 12px 35px; border-radius: 5px;">
+                    <li><strong>Bank:</strong> {{ $rekening['bank'] ?? '-' }}</li>
+                    <li><strong>No. Rekening:</strong> {{ $rekening['nomor'] ?? '-' }}</li>
+                    <li><strong>a.n:</strong> {{ $rekening['atas_nama'] ?? '-' }}</li>
+                </ul>
+            @endif
         </div>
 
         <div style="margin-bottom: 20px;">
             <p style="font-weight: bold; margin-bottom: 5px;">2. Bayar via QRIS / E-Wallet:</p>
             @php
-                $domainFrontend = env('APP_URL_NEXTJS_VPS') === "production" ? env('APP_URL_NEXTJS_VPS') : env('APP_URL_NEXTJS');
-                $linkPembayaran = rtrim($domainFrontend, '/') . '/pesan/status/' . $pesan->kode_transaksi;
+                $domainFrontend = app()->environment('production')
+                    ? env('APP_URL_NEXTJS_VPS')
+                    : env('APP_URL_NEXTJS');
+                $linkPembayaran = rtrim((string) $domainFrontend, '/') . '/pesan/status/' . $pesan->kode_transaksi;
             @endphp
             <p style="margin-top: 0;">Silakan klik tombol di bawah ini untuk melihat detail tagihan Anda secara <i>real-time</i> dan melakukan pembayaran otomatis melalui QRIS.</p>
 
@@ -141,16 +152,6 @@
         </div>
 
         <p>Setelah pembayaran terverifikasi, pesanan Anda akan otomatis masuk ke antrean produksi.</p>
-
-        <p>Salam hangat,<br>
-        <strong>Tim Bikin Cetak</strong></p>
-        <p>Silakan lakukan pembayaran sesuai dengan <strong>Total Bayar</strong> (termasuk kode unik) ke rekening berikut:</p>
-
-        <ul>
-            <li><strong>{{ $rekening['bank'] }}</strong> - {{ $rekening['nomor'] }} a/n {{ $rekening['atas_nama'] }}</li>
-        </ul>
-
-        <p>Setelah pembayaran terverifikasi, pesanan Anda akan segera masuk ke antrean produksi.</p>
 
         <p>Salam hangat,<br>
         <strong>Tim Bikin Cetak</strong></p>

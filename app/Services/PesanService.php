@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Mail\CheckoutSuccessMail;
 use App\Models\Komposisi;
+use App\Models\PengaturanWeb;
 use App\Models\Pesan;
 use App\Models\PesananLog;
 use Illuminate\Support\Carbon;
@@ -520,10 +521,34 @@ Terima kasih.",
         }
     }
 
-    public static function buildCheckoutMessage(Pesan $pesan, int $totalPesanan, int $kodeUnik, array $rekening): string
+    public static function buildCheckoutMessage(Pesan $pesan, int $totalPesanan, int $kodeUnik, array $rekening = []): string
     {
         $nama = $pesan->customer->user->name ?? 'Pelanggan';
         $totalTransfer = $totalPesanan + $kodeUnik;
+
+        // 1. Ambil daftar metode pembayaran aktif dari PengaturanWeb
+        $pengaturanPembayaran = PengaturanWeb::where('kunci', 'metode_pembayaran')->first();
+        $metodeList = [];
+
+        if ($pengaturanPembayaran && !empty($pengaturanPembayaran->nilai)) {
+            $decoded = is_string($pengaturanPembayaran->nilai)
+                ? json_decode($pengaturanPembayaran->nilai, true)
+                : $pengaturanPembayaran->nilai;
+
+            if (is_array($decoded)) {
+                $metodeList = array_values(array_filter($decoded, function ($item) {
+                    $isActive = $item['is_active'] ?? true;
+                    $noRek = trim((string) ($item['no_rekening'] ?? ''));
+                    $namaMetode = strtolower(trim((string) ($item['nama_metode'] ?? '')));
+
+                    // Ambil metode aktif yang punya nomor rekening asli (bukan kosong/'-' dan bukan baris QRIS saja)
+                    return (bool) $isActive
+                        && $noRek !== ''
+                        && $noRek !== '-'
+                        && !str_contains($namaMetode, 'qris');
+                }));
+            }
+        }
 
         $rincianItems = "";
         foreach ($pesan->pesananItem as $item) {
@@ -537,7 +562,8 @@ Terima kasih.",
             foreach ($item->pesananItemFinishing as $f) {
                 $namaFin = strtolower($f->nama_finishing_snapshot ?? '');
                 if (str_contains($namaFin, 'dua sisi') || str_contains($namaFin, '2 sisi') || str_contains($namaFin, 'bolak')) {
-                    $sisi = 2; break;
+                    $sisi = 2;
+                    break;
                 }
             }
 
@@ -590,14 +616,33 @@ Terima kasih.",
 
         $message .= "💳 *Opsi Pembayaran:*\n";
         $message .= "1. *Transfer Bank:*\n";
-        $message .= "Bank: {$rekening['bank']}\n";
-        $message .= "No. Rek: {$rekening['nomor']}\n";
-        $message .= "a.n: {$rekening['atas_nama']}\n\n";
+
+        if (!empty($metodeList)) {
+            foreach ($metodeList as $rek) {
+                $bank = $rek['nama_metode'] ?? '-';
+                $nomor = $rek['no_rekening'] ?? '-';
+                $atasNama = $rek['atas_nama'] ?? '-';
+
+                $message .= "Bank: {$bank}\n";
+                $message .= "No. Rek: {$nomor}\n";
+                $message .= "a.n: {$atasNama}\n\n";
+            }
+        } else {
+            // Fallback ke parameter $rekening jika PengaturanWeb kosong
+            $bank = $rekening['bank'] ?? '-';
+            $nomor = $rekening['nomor'] ?? '-';
+            $atasNama = $rekening['atas_nama'] ?? '-';
+
+            $message .= "Bank: {$bank}\n";
+            $message .= "No. Rek: {$nomor}\n";
+            $message .= "a.n: {$atasNama}\n\n";
+        }
+
         $message .= "2. *QRIS:*\n";
         $domainFrontend = app()->environment('production')
             ? env('APP_URL_NEXTJS_VPS')
             : env('APP_URL_NEXTJS');
-        $linkPembayaran = rtrim($domainFrontend, '/') . "/pesan/status/{$pesan->kode_transaksi}";
+        $linkPembayaran = rtrim((string) $domainFrontend, '/') . "/pesan/status/{$pesan->kode_transaksi}";
         $message .= "Silakan klik link di bawah ini untuk melihat detail tagihan Anda secara real-time dan melakukan pembayaran otomatis melalui QRIS:\n\n";
         $message .= "👉 {$linkPembayaran}\n\n";
         $message .= "Anda dapat memilih untuk membayar lunas atau membayar sebagian (DP) melalui link tersebut.\n\n";
