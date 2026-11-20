@@ -140,8 +140,9 @@
             <p style="font-weight: bold; margin-bottom: 5px;">2. Bayar via QRIS / E-Wallet:</p>
             @php
                 $domainFrontend = app()->environment('production')
-                    ? env('APP_URL_NEXTJS_VPS')
-                    : env('APP_URL_NEXTJS');
+                    ? (config('services.nextjs.vps_url') ?: 'https://bikincetak.co.id')
+                    : (config('services.nextjs.url') ?: 'http://localhost:3000');
+
                 $linkPembayaran = rtrim((string) $domainFrontend, '/') . '/pesan/status/' . $pesan->kode_transaksi;
             @endphp
             <p style="margin-top: 0;">Silakan klik tombol di bawah ini untuk melihat detail tagihan Anda secara <i>real-time</i> dan melakukan pembayaran otomatis melalui QRIS.</p>

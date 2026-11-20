@@ -640,8 +640,8 @@ Terima kasih.",
 
         $message .= "2. *QRIS:*\n";
         $domainFrontend = app()->environment('production')
-            ? env('APP_URL_NEXTJS_VPS')
-            : env('APP_URL_NEXTJS');
+                ? (config('services.nextjs.vps_url') ?: 'https://bikincetak.co.id')
+                : (config('services.nextjs.url') ?: 'http://localhost:3000');
         $linkPembayaran = rtrim((string) $domainFrontend, '/') . "/pesan/status/{$pesan->kode_transaksi}";
         $message .= "Silakan klik link di bawah ini untuk melihat detail tagihan Anda secara real-time dan melakukan pembayaran otomatis melalui QRIS:\n\n";
         $message .= "👉 {$linkPembayaran}\n\n";

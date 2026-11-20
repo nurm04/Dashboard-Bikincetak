@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'nextjs' => [
+        'url' => env('APP_URL_NEXTJS', 'http://localhost:3000'),
+        'vps_url' => env('APP_URL_NEXTJS_VPS', 'https://bikincetak.co.id'),
+    ],
 ];
