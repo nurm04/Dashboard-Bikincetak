@@ -15,6 +15,7 @@ use App\Services\PesanService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class ProduksiController extends Controller
@@ -149,6 +150,53 @@ class ProduksiController extends Controller
             Log::error('Gagal Alokasi Produksi: ' . $e->getMessage());
             return back()->with('error', $e->getMessage());
         }
+    }
+
+    public function updateItemSpec(Request $request, $id_item)
+    {
+        $item = PesananItem::findOrFail($id_item);
+
+        $validated = $request->validate([
+            'catatan' => ['nullable', 'string'],
+            'existing_files' => ['nullable', 'array'],
+            'existing_files.*' => ['string'],
+            'new_files' => ['nullable', 'array'],
+            'new_files.*' => ['file', 'max:204800'],
+        ]);
+
+        // Ambil daftar file lama sebelum di-update untuk menghapus file yang dihapus user
+        $oldFilesRaw = $item->file_desain ?? [];
+        if (is_string($oldFilesRaw)) {
+            $oldFilesRaw = json_decode($oldFilesRaw, true) ?? [];
+        }
+        $oldFiles = is_array($oldFilesRaw) ? $oldFilesRaw : [];
+
+        $keptFiles = $validated['existing_files'] ?? [];
+
+        // Hapus file lama dari storage jika tidak lagi ada di keptFiles
+        $removedFiles = array_diff($oldFiles, $keptFiles);
+        foreach ($removedFiles as $removedPath) {
+            if (is_string($removedPath) && $removedPath !== '' && !str_starts_with($removedPath, 'http')) {
+                $cleanPath = preg_replace('#^storage/#', '', ltrim($removedPath, '/'));
+                Storage::disk('public')->delete($cleanPath);
+            }
+        }
+
+        $uploadedPaths = [];
+        if ($request->hasFile('new_files')) {
+            foreach ($request->file('new_files') as $file) {
+                $uploadedPaths[] = $file->store('desain-pesanan', 'public');
+            }
+        }
+
+        $finalFiles = array_values(array_unique(array_merge($keptFiles, $uploadedPaths)));
+
+        $item->update([
+            'file_desain' => $finalFiles,
+            'catatan' => $validated['catatan'] ?? null,
+        ]);
+
+        return back();
     }
 
     /**

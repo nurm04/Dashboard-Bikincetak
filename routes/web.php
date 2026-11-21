@@ -142,6 +142,7 @@ Route::middleware('auth')->group(function () {
         Route::post('produksi/{id_pesan}/kirim', [ProduksiController::class, 'kirimPesanan'])->middleware('akses:produksi,ubah')->name('produksi.kirim');
         Route::put('/produksi/{id_pesan}/update-berat', [ProduksiController::class, 'updateBerat'])->middleware('akses:produksi,ubah')->name('produksi.update_berat');
         Route::post('/produksi/{id_pesan}/pengantaran', [ProduksiController::class, 'prosesPengantaran'])->middleware('akses:produksi,ubah')->name('produksi.pengantaran.proses');
+        Route::post('/produksi/item/{id_item}/update-spesifikasi', [ProduksiController::class, 'updateItemSpec'])->middleware('akses:produksi,ubah')->name('produksi.item.update');
         Route::get('/buku-besar', [BukuBesarController::class, 'index'])->name('buku-besar.index');
         Route::resource('akun', AkunController::class)->middleware('akses:akun');
         Route::middleware('akses:customer')->group(function () {

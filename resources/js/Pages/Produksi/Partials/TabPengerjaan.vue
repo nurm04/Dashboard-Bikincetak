@@ -5,9 +5,9 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { useForm } from '@inertiajs/vue3';
+import { useForm, router } from '@inertiajs/vue3';
 import { alertStore } from '@/Utils/alertStore';
-import { Clock, CheckCircle, Paperclip, UploadCloud, Printer, Inbox } from 'lucide-vue-next';
+import { Clock, CheckCircle, Paperclip, UploadCloud, Printer, Inbox, Pencil, Trash2, X, FileText, Save } from 'lucide-vue-next';
 
 import CustomInput from '@/Components/Form/CustomInput.vue';
 import CustomTable from '@/Components/CustomTable.vue';
@@ -78,15 +78,37 @@ const isDeadlinePassed = (dateStr) => new Date(dateStr) < new Date();
 const cleanProductName = (name) => name ? name.replace(/^[A-Za-z]+-\d+-/, '').replace(/-/g, ' ') : '';
 const parseAtribut = (str) => { if (!str) return null; if (typeof str === 'object') return str; try { return JSON.parse(str); } catch (e) { return null; } };
 const getValidAttributes = (str) => { const p = parseAtribut(str); return (!p || typeof p !== 'object') ? [] : Object.entries(p).filter(([_, v]) => v !== null && v !== undefined && v !== '').map(([k, v]) => ({ key: k, value: v })); };
-const getFileDisplay = (item) => {
-    if (item.file_desain) {
-        let fd = typeof item.file_desain === 'string' ? JSON.parse(item.file_desain || '[]') : item.file_desain;
-        if (Array.isArray(fd) && fd.length > 0) return { tipe: 'upload', nilai: fd[0] };
-        return typeof fd === 'object' && !Array.isArray(fd) ? fd : null;
+
+const getFileList = (item) => {
+    if (!item?.file_desain) return [];
+    let fd = item.file_desain;
+    if (typeof fd === 'string') {
+        try { fd = JSON.parse(fd || '[]'); } catch (e) { fd = []; }
     }
-    if (item.tipe_file) return { tipe: item.tipe_file, nilai: item.tipe_file === 'link' ? item.link_file : (item.file?.name || 'Kosong') };
+    if (Array.isArray(fd)) {
+        return fd.filter(Boolean).map(entry => {
+            if (typeof entry === 'string') return entry;
+            return entry?.path || entry?.url || entry?.name || '';
+        }).filter(Boolean);
+    }
+    if (typeof fd === 'object' && fd !== null) {
+        const val = fd.path || fd.url || fd.nilai || fd.name;
+        return val ? [val] : [];
+    }
+    return [];
+};
+
+const getFileDisplay = (item) => {
+    const files = getFileList(item);
+    if (files.length > 0) {
+        return { tipe: 'upload', files, nilai: files[0] };
+    }
+    if (item.tipe_file) {
+        return { tipe: item.tipe_file, files: [], nilai: item.tipe_file === 'link' ? item.link_file : (item.file?.name || 'Kosong') };
+    }
     return null;
 };
+
 const checkAccess = (schedule) => {
     const role = props.currentUser?.role;
     if (role === 'vendor') return (schedule.tipe_pengerjaan === 'vendor' && schedule.id_vendor === props.currentVendorId) ? 'edit' : 'none';
@@ -94,19 +116,90 @@ const checkAccess = (schedule) => {
     return (schedule.status_pengerjaan === 'selesai' && !isAdmin) ? 'view' : 'edit';
 };
 
+const canEditItemSpec = () => {
+    const role = props.currentUser?.role;
+    return role !== 'vendor';
+};
+
 // ==========================================
-// LOGIC MODAL DETAIL & PROGRESS
+// LOGIC MODAL DETAIL & EDIT FILE / CATATAN
 // ==========================================
 const isDetailModalOpen = ref(false);
 const selectedPesananDetail = ref(null);
+const editingItemId = ref(null);
+const fileInputRef = ref(null);
+
+const itemEditForm = useForm({
+    catatan: '',
+    existing_files: [],
+    new_files: [],
+});
 
 const openDetailModal = (pesanan) => {
     selectedPesananDetail.value = pesanan;
+    editingItemId.value = null;
+    itemEditForm.reset();
     isDetailModalOpen.value = true;
 };
+
 const closeDetailModal = () => {
     isDetailModalOpen.value = false;
     selectedPesananDetail.value = null;
+    editingItemId.value = null;
+    itemEditForm.reset();
+};
+
+const startEditItem = (item) => {
+    editingItemId.value = item.id;
+    itemEditForm.clearErrors();
+    itemEditForm.catatan = item.catatan || '';
+    itemEditForm.existing_files = [...getFileList(item)];
+    itemEditForm.new_files = [];
+};
+
+const cancelEditItem = () => {
+    editingItemId.value = null;
+    itemEditForm.reset();
+    itemEditForm.clearErrors();
+};
+
+const removeExistingFile = (index) => {
+    itemEditForm.existing_files.splice(index, 1);
+};
+
+const handleMultipleFilesChange = (event) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length > 0) {
+        itemEditForm.new_files = [...itemEditForm.new_files, ...files];
+    }
+    event.target.value = '';
+};
+
+const removeNewFile = (index) => {
+    itemEditForm.new_files.splice(index, 1);
+};
+
+const saveItemSpec = (item) => {
+    itemEditForm.post(route('produksi.item.update', item.id), {
+        forceFormData: true,
+        preserveScroll: true,
+        onSuccess: (page) => {
+            // Sinkronkan data pesanan yang sedang dibuka di modal
+            const updatedPesananList = page?.props?.pesananList || props.pesananList;
+            if (selectedPesananDetail.value && Array.isArray(updatedPesananList)) {
+                const freshPesanan = updatedPesananList.find(p => p.id_pesan === selectedPesananDetail.value.id_pesan);
+                if (freshPesanan) {
+                    selectedPesananDetail.value = freshPesanan;
+                }
+            }
+            editingItemId.value = null;
+            itemEditForm.reset();
+            alertStore.show('File desain & catatan berhasil diperbarui!', 'success');
+        },
+        onError: () => {
+            alertStore.show('Gagal menyimpan file desain / catatan. Periksa kembali input Anda.', 'error');
+        },
+    });
 };
 
 // ==========================================
@@ -141,7 +234,11 @@ const closeUpdateModal = () => { isUpdateModalOpen.value = false; updateForm.res
 const submitUpdate = () => {
     updateForm.post(route('produksi.selesaikan', selectedSchedule.value.id), {
         forceFormData: true,
-        onSuccess: () => { closeUpdateModal(); alertStore.show('Progress diperbarui!', 'success'); },
+        onSuccess: () => {
+            closeUpdateModal();
+            router.reload({ only: ['pesananList'], preserveScroll: true });
+            alertStore.show('Progress diperbarui!', 'success');
+        },
         onError: () => alertStore.show('Gagal memperbarui progress. Periksa file Anda.', 'error')
     });
 };
@@ -254,7 +351,7 @@ const submitUpdate = () => {
                     <button @click="closeDetailModal" class="btn btn-sm btn-circle btn-ghost text-base-content/40 hover:text-error">✕</button>
                 </div>
 
-                <div class="p-4 sm:p-5 max-h-[70vh] overflow-y-auto custom-scrollbar space-y-6">
+                <div class="p-4 sm:p-5 max-h-[75vh] overflow-y-auto custom-scrollbar space-y-6">
                     <div v-for="item in selectedPesananDetail?.pesanan_item" :key="item.id" class="overflow-hidden border shadow-sm rounded-xl border-base-200 bg-base-100">
 
                         <!-- Bagian Detail Produk (Atas) -->
@@ -279,18 +376,139 @@ const submitUpdate = () => {
                             </div>
 
                             <div class="sm:flex-1">
-                                <span class="text-[9px] sm:text-[10px] font-black text-base-content/50 uppercase tracking-widest block mb-1.5">Spesifikasi / Catatan</span>
-                                <div v-if="getFileDisplay(item)" class="mb-2">
-                                    <template v-if="getFileDisplay(item).tipe === 'upload'">
-                                        <a v-if="item.file_desain" :href="'/storage/' + getFileDisplay(item).nilai" target="_blank" class="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 hover:underline bg-blue-50 px-2 py-0.5 rounded border border-blue-100">📁 Download File</a>
-                                        <span v-else class="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 max-w-40 truncate">📁 {{ getFileDisplay(item).nilai }}</span>
-                                    </template>
-                                    <template v-else-if="getFileDisplay(item).tipe === 'link'">
-                                        <a :href="getFileDisplay(item).nilai.startsWith('http') ? getFileDisplay(item).nilai : 'https://' + getFileDisplay(item).nilai" target="_blank" class="inline-flex items-center gap-1 text-[10px] font-bold text-purple-600 hover:underline bg-purple-50 px-2 py-0.5 rounded border border-purple-100">🔗 GDrive Link</a>
-                                    </template>
+                                <div class="flex items-center justify-between gap-2 mb-1.5">
+                                    <span class="text-[9px] sm:text-[10px] font-black text-base-content/50 uppercase tracking-widest">Spesifikasi / Catatan</span>
+                                    <button
+                                        v-if="canEditItemSpec() && editingItemId !== item.id"
+                                        type="button"
+                                        @click="startEditItem(item)"
+                                        class="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold text-primary bg-primary/10 hover:bg-primary/20 rounded-md transition-colors"
+                                    >
+                                        <Pencil class="w-3 h-3" /> Edit File & Catatan
+                                    </button>
                                 </div>
-                                <div v-else class="mb-2 inline-flex items-center gap-1 text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-100">❌ File Belum Ada</div>
-                                <p class="text-[11px] italic opacity-80 leading-tight border-l-2 border-base-300 pl-2 mt-1">"{{ item.catatan ?? "Tidak ada Catatan" }}"</p>
+
+                                <!-- Mode Tampilan Normal -->
+                                <template v-if="editingItemId !== item.id">
+                                    <div v-if="getFileDisplay(item)" class="mb-2 flex flex-wrap gap-1.5">
+                                        <template v-if="getFileDisplay(item).tipe === 'upload'">
+                                            <template v-if="item.file_desain && getFileDisplay(item).files.length > 0">
+                                                <a
+                                                    v-for="(filePath, fIdx) in getFileDisplay(item).files"
+                                                    :key="fIdx"
+                                                    :href="'/storage/' + filePath"
+                                                    target="_blank"
+                                                    class="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 hover:underline bg-blue-50 px-2 py-0.5 rounded border border-blue-100 max-w-52 truncate"
+                                                    :title="filePath"
+                                                >
+                                                    📁 {{ filePath.split('/').pop() }}
+                                                </a>
+                                            </template>
+                                            <span v-else class="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 max-w-40 truncate">
+                                                📁 {{ getFileDisplay(item).nilai }}
+                                            </span>
+                                        </template>
+                                        <template v-else-if="getFileDisplay(item).tipe === 'link'">
+                                            <a :href="getFileDisplay(item).nilai.startsWith('http') ? getFileDisplay(item).nilai : 'https://' + getFileDisplay(item).nilai" target="_blank" class="inline-flex items-center gap-1 text-[10px] font-bold text-purple-600 hover:underline bg-purple-50 px-2 py-0.5 rounded border border-purple-100">🔗 GDrive Link</a>
+                                        </template>
+                                    </div>
+                                    <div v-else class="mb-2 inline-flex items-center gap-1 text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-100">❌ File Belum Ada</div>
+                                    <p class="text-[11px] italic opacity-80 leading-tight border-l-2 border-base-300 pl-2 mt-1">"{{ item.catatan ?? "Tidak ada Catatan" }}"</p>
+                                </template>
+
+                                <!-- Mode Edit File Desain (Multi & All Format) + Catatan -->
+                                <form v-else @submit.prevent="saveItemSpec(item)" class="p-3 mt-1 space-y-3 border rounded-xl bg-base-200/50 border-base-300">
+                                    <div>
+                                        <label class="block text-[10px] font-black uppercase tracking-wider text-base-content/70 mb-1">
+                                            File Desain Saat Ini
+                                        </label>
+                                        <div v-if="itemEditForm.existing_files.length > 0" class="flex flex-wrap gap-1.5 mb-2">
+                                            <div
+                                                v-for="(exFile, idx) in itemEditForm.existing_files"
+                                                :key="idx"
+                                                class="inline-flex items-center gap-1.5 px-2 py-1 text-[10px] font-semibold bg-base-100 border border-base-300 rounded-lg max-w-full"
+                                            >
+                                                <FileText class="w-3 h-3 text-blue-600 shrink-0" />
+                                                <span class="truncate max-w-40" :title="exFile">{{ exFile.split('/').pop() }}</span>
+                                                <button
+                                                    type="button"
+                                                    @click="removeExistingFile(idx)"
+                                                    class="text-error hover:bg-error/10 rounded p-0.5"
+                                                    title="Hapus file ini"
+                                                >
+                                                    <X class="w-3 h-3" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <p v-else class="text-[10px] italic text-base-content/50 mb-2">Tidak ada file tersimpan.</p>
+
+                                        <label class="block text-[10px] font-black uppercase tracking-wider text-base-content/70 mb-1">
+                                            Tambah File Baru (Bisa Banyak & Semua Format)
+                                        </label>
+                                        <input
+                                            ref="fileInputRef"
+                                            type="file"
+                                            multiple
+                                            @change="handleMultipleFilesChange"
+                                            class="w-full text-xs file-input file-input-bordered file-input-xs"
+                                        />
+
+                                        <div v-if="itemEditForm.new_files.length > 0" class="flex flex-wrap gap-1.5 mt-2">
+                                            <div
+                                                v-for="(nf, nIdx) in itemEditForm.new_files"
+                                                :key="nIdx"
+                                                class="inline-flex items-center gap-1.5 px-2 py-1 text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg"
+                                            >
+                                                <span class="truncate max-w-40" :title="nf.name">+ {{ nf.name }}</span>
+                                                <button
+                                                    type="button"
+                                                    @click="removeNewFile(nIdx)"
+                                                    class="text-error hover:bg-error/10 rounded p-0.5"
+                                                    title="Batalkan file ini"
+                                                >
+                                                    <Trash2 class="w-3 h-3" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <p v-if="itemEditForm.errors?.new_files || itemEditForm.errors?.['new_files.0']" class="mt-1 text-[10px] font-semibold text-error">
+                                            {{ itemEditForm.errors.new_files || itemEditForm.errors['new_files.0'] }}
+                                        </p>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-[10px] font-black uppercase tracking-wider text-base-content/70 mb-1">
+                                            Catatan Produksi / Item
+                                        </label>
+                                        <textarea
+                                            v-model="itemEditForm.catatan"
+                                            rows="2"
+                                            class="w-full text-xs textarea textarea-bordered rounded-xl bg-base-100"
+                                            placeholder="Tulis catatan untuk item ini..."
+                                        ></textarea>
+                                        <p v-if="itemEditForm.errors?.catatan" class="mt-1 text-[10px] font-semibold text-error">
+                                            {{ itemEditForm.errors.catatan }}
+                                        </p>
+                                    </div>
+
+                                    <div class="flex items-center justify-end gap-2 pt-1">
+                                        <button
+                                            type="button"
+                                            @click="cancelEditItem"
+                                            :disabled="itemEditForm.processing"
+                                            class="btn btn-xs btn-ghost"
+                                        >
+                                            Batal
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            :disabled="itemEditForm.processing"
+                                            class="btn btn-xs btn-primary gap-1"
+                                        >
+                                            <Save class="w-3 h-3" />
+                                            {{ itemEditForm.processing ? 'Menyimpan...' : 'Simpan' }}
+                                        </button>
+                                    </div>
+                                </form>
                             </div>
 
                             <div class="sm:w-24 sm:text-right">

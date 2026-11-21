@@ -1,7 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { Head, usePage } from '@inertiajs/vue3';
-import { Inbox } from 'lucide-vue-next';
 import StafLayout from '@/Layouts/StafLayout.vue';
 import CustomButton from '@/Components/Form/CustomButton.vue';
 
@@ -12,6 +11,7 @@ import TabPengantaran from './Partials/TabPengantaran.vue';
 
 const page = usePage();
 const currentUser = page.props.auth?.user;
+const isVendor = computed(() => currentUser?.role === 'vendor');
 
 const props = defineProps({
     pesananProduksi: Array,
@@ -20,7 +20,7 @@ const props = defineProps({
     currentVendorId: String,
 });
 
-const activeTab = ref('alokasi');
+const activeTab = ref(isVendor.value ? 'pengerjaan' : 'alokasi');
 
 // Logic untuk mengecek apakah semua item sudah selesai
 const isReadyToShip = (pesanan) => {
@@ -83,9 +83,10 @@ const listPengantaran = computed(() =>
 
         <div class="px-4 py-8 mx-auto space-y-6 max-w-7xl sm:px-6 lg:px-8">
 
-            <!-- REVISI TAB BAR: Ditambahkan flex-nowrap dan shrink-0 pada button -->
+            <!-- REVISI TAB BAR -->
             <div class="flex gap-4 pb-px mb-2 overflow-x-auto border-b flex-nowrap border-base-300 sm:gap-6 custom-scrollbar">
                 <button
+                    v-if="!isVendor"
                     @click="activeTab = 'alokasi'"
                     :class="[
                         'pb-3 text-sm font-bold tracking-wide transition-colors border-b-2 whitespace-nowrap px-4 sm:px-0 shrink-0',
@@ -116,6 +117,7 @@ const listPengantaran = computed(() =>
                 </button>
 
                 <button
+                    v-if="!isVendor"
                     @click="activeTab = 'pengantaran'"
                     :class="[
                         'pb-3 text-sm font-bold tracking-wide transition-colors border-b-2 whitespace-nowrap px-4 sm:px-0 shrink-0',
@@ -134,7 +136,7 @@ const listPengantaran = computed(() =>
             <!-- TAB CONTENT -->
             <div class="mt-4">
                 <TabMenungguAlokasi
-                    v-if="activeTab === 'alokasi'"
+                    v-if="!isVendor && activeTab === 'alokasi'"
                     :pesananList="listAlokasi"
                     :vendors="vendors"
                     :stafs="stafs"
@@ -142,14 +144,14 @@ const listPengantaran = computed(() =>
                 />
 
                 <TabPengerjaan
-                    v-if="activeTab === 'pengerjaan'"
+                    v-if="isVendor || activeTab === 'pengerjaan'"
                     :pesananList="listPengerjaan"
                     :currentUser="currentUser"
                     :currentVendorId="currentVendorId"
                 />
 
                 <TabPengantaran
-                    v-if="activeTab === 'pengantaran'"
+                    v-if="!isVendor && activeTab === 'pengantaran'"
                     :pesananList="listPengantaran"
                     :currentUser="currentUser"
                 />
